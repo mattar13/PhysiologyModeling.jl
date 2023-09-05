@@ -3,6 +3,18 @@ uuid = "6edd8d80-c083-4fb2-88a3-9ae8efe7fb75"
 authors = ["mattar13 <mtarchick13@gmail.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
+DiffEqOperators = "9fdde737-9c7f-55bf-ade8-46b3f136cc48"
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
+ElectroPhysiology = "da7a9670-f599-43ac-b818-143f8bf87d45"
+Latexify = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
+MethodOfLines = "94925ecb-adb7-4558-8ed8-f975c56a0bf4"
+ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
+PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
+Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
+
 [compat]
 julia = "1"
 
