@@ -41,7 +41,7 @@ fI(g, R, v, E) = -g * R * (v - E)
 
 SAC_eqs = [
      Dt(I_ext) ~ -I_ext + I_app, #This parameter is controlled by an outside      
-     Dt(v) ~ (ILeak(v) + ICa(v) + IK(v) + ITREK(v) + IACh(v) + IGABA(v) + INa(v) + I_ext + W) / C_m,
+     Dt(v) ~ (ILeak(v) + ICa(v) + IK(v) + ITREK(v) + IACh(v) + IGABA(v) + INa(v) + I_ext + g_W*W) / C_m,
      #I_Ca ~ ICa(v),
      #I_Na ~ INa(v),
      #I_K ~ IK(v),

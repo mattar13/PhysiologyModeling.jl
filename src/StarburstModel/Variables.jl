@@ -18,6 +18,7 @@ states = @variables begin
 end
 
 parameters = @parameters begin
+     g_W       = 0.1
      g_leak    = 2.0
      E_leak    = -70.0
      g_Ca      = 8.5
