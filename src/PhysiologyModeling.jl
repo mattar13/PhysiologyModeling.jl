@@ -1,26 +1,34 @@
 module PhysiologyModeling
 
+using ElectroPhysiology
+using PhysiologyPlotting
+
 # Write your package code here.
-using DifferentialEquations, ModelingToolkit
+using DifferentialEquations
+#using OrdinaryDiffEq, StochasticDiffEq
+#using SciMLBase
+
+#Export some commonly used algorithims
+import OrdinaryDiffEq: Tsit5, Rodas5
+export Tsit5, Rodas5
+import StochasticDiffEq: SOSRI, SOSRI2, SOSRA
+export SOSRI
+
+using ModelingToolkit
 #These exports are used in modelling
 export @variables, @parameters, Differential
 export @connector, @component, @unpack
 export Flow, Equation, compose, extend, connect
-export ODAEProblem, ODEProblem, Tsit5
-export @named, ODESystem
-export structural_simplify, ODEProblem, solve, remake 
+export ODAEProblem, Tsit5
+export @named
+export structural_simplify 
+export solve, remake 
 export PresetTimeCallback 
-#Export some commonly used algorithims
-export Rodas5
 
-@variables t #Define the time variables which will stream everything in the model
-
-include("InitialConditions/conditions.jl")
-include("InitialConditions/parameters.jl")
-include("Components/auxillary_functions.jl") #This loads all of the components
-include("Components/components.jl") #This loads all of the components
-export t, LeakySome, Cable
-
+export SDEFunction, SDEProblem, SDESystem
+export ODEFunction, ODEProblem, ODESystem
+include("utilities.jl")
+export Experiment
 #This section deals with parameters and contions
 #Eventually PhysiologyPlotting will include some things we need to plot everything
 end
