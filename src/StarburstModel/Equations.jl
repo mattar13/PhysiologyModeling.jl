@@ -39,12 +39,11 @@ N∞(v, V3, V4) = (1 + tanh((v - V3) / V4)) / 2
 R∞(V, V1, V2) = (1 + tanh((V - V1) / V2)) / 2
 fI(g, R, v, E) = -g * R * (v - E)
 
+#ODE==============================================================================================================#
+
 SAC_eqs = [
      Dt(I_ext) ~ -I_ext + I_app, #This parameter is controlled by an outside      
      Dt(v) ~ (ILeak(v) + ICa(v) + IK(v) + ITREK(v) + IACh(v) + IGABA(v) + INa(v) + I_ext + g_W*W) / C_m,
-     #I_Ca ~ ICa(v),
-     #I_Na ~ INa(v),
-     #I_K ~ IK(v),
      Dt(n) ~ (Λ(v) * ((N∞(v) - n))) / τn,
      Dt(m) ~ α_M(v) * (1 - m) - β_M(v) * m,
      Dt(h) ~ α_H(v) * (1 - h) - β_H(v) * h,
@@ -55,28 +54,8 @@ SAC_eqs = [
      Dt(i) ~ (ρi * Φi(v) - i) / τGABA, #ρi-i, #
      Dt(W) ~ -W / τw
 ]
-#ODE==============================================================================================================#
 
 #SDE==============================================================================================================#
+
 SAC_noise_eqs = zeros(length(SAC_eqs))
 SAC_noise_eqs[end] = 1.0
-#PDE==============================================================================================================#
-
-#Each one of these versions needs a PDE version
-ÎLeak(v̂) = -g_leak * (v̂ - E_leak)
-ÎCa(v̂) = -g_Ca * M∞(v̂) * (v̂ - E_Ca)
-ÎK(v̂) = -g_K * n̂(x, y, t) * (v̂ - E_K)
-ÎTREK(v̂) = -g_TREK * b̂(x, y, t) * (v̂ - E_K)
-ÎACh(v̂) = -g_ACh * ħe(ê(x, y, t)) * (v̂ - E_ACh)
-ÎGABA(v̂) = -g_GABA * ħi(î(x, y, t)) * (v̂ - E_Cl)
-ÎNa(v̂) = -g_Na * m̂(x, y, t)^3 * ĥ(x, y, t) * (v̂ - E_Na)
-
-#Noise models
-noise(du::Array{T2,1}, u::Array{T2,1}, p, t::T) where {T<:Real,T2} = du[end] = p[end]
-noise(du::Array{T2,3}, u::Array{T2,3}, p, t::T) where {T<:Real,T2} = du[:, :, end] .= p[end]
-#noise(du::CuArray{T,3}, u::CuArray{T,3}, p, t::T) where {T<:Real, T2} = du[:, :, end] .= p[end]
-
-function ∇²(u)
-     println(size(u))
-     Dyy(u) - (2 * u) + Dxx(u) #This is the diffusion aspect of the equation
-end
