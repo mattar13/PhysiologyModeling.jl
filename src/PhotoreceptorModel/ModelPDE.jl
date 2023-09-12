@@ -1,6 +1,6 @@
 using PyPlot; PyPlot.pygui(true)
 using DifferentialEquations, ModelingToolkit
-using MethodOfLines, DomainSets, DiffEqOperators
+using MethodOfLines, DomainSets
 using Symbolics: scalarize
 using Latexify
 
@@ -330,3 +330,48 @@ vts = reshape(sol[V(x,y,t)], 121, length(TIME))
 axs[1].plot(TIME, hvs')
 axs[2].plot(TIME, vts')
 axs[2].set_ylim()
+
+# THis is my shelved PDE for the grid. It may be easier just to construct this as a ODE
+#Load the dimensions at the top of the stack
+dt = 0.01; dx = 0.1; dy = 0.1
+xmin = ymin = tmin = 0.0
+tmax = 100.0
+xmax = ymax = 1.0
+tspan = (tmin, tmax)
+
+include("..\\src\\StarburstModel\\Variables.jl")
+include("..\\src\\StarburstModel\\Domains.jl")
+include("..\\src\\StarburstModel\\Equations.jl")
+
+#set up the domains
+@named SAC_PDE = PDESystem(SAC_eqs_PDE, SAC_Boundary, domains, dimensions, SAC_states_PDE, p0)
+x_points = collect(xmin:dx:xmax)  # x grid points
+y_points = collect(ymin:dy:ymax)  # y grid points
+
+#randomize the points on the grid
+#x_points = x_points .+ (rand(11)*0.01)
+#x_points[1] = 0.0
+#x_points[end] = 1.0
+#y_points = y_points .+ (rand(11)*0.01)
+#y_points[1] = 0.0
+#y_points[end] = 1.0
+
+discretization = MOLFiniteDifference([x => x_points, y => y_points], t)
+GRID = get_discrete(SAC_PDE, discretization) #Make a representation of the discrete map
+GRID[x]
+@time SAC_prob_ODE = discretize(SAC_PDE, discretization);
+
+discretization_EVEN = MOLFiniteDifference([x => dx, y => dy], t)
+GRID = get_discrete(SAC_PDE, discretization_EVEN) #Make a representation of the discrete map
+GRID[x]
+@time SAC_prob_ODE = discretize(SAC_PDE, discretization_EVEN);
+
+#=
+sol = solve(SAC_prob_ODE)
+
+nx = length(GRID[x])
+ny = length(GRID[y])
+
+SAC_prob_SPDE = SDEProblem(SAC_prob_ODE.f, SAC_noise_eqs_PDE, SAC_prob_ODE.u0, SAC_prob_ODE.tspan, SAC_prob_ODE.p)
+sol = solve(SAC_prob_SPDE, SOSRI())
+=#
