@@ -47,8 +47,8 @@ function SAC_ODE(du, u, p, t)
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
      @. da = (α * c^4 * (1 - a) - a) / τa
      @. db = (β * a^4 * (1 - b) - b) / τb
-     @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh #ρe-e, #
-     @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA #ρi-i, #
+     @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh #0.0 #ρe-e 
+     @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA #ρi-i #0
      @. dW = -W / τw
      nothing
 end
@@ -57,7 +57,6 @@ noise1D(du, u, p, t) = du[end] = 0.1
 
 function ∇α(du, u, p, t)
      cell_map = p
-     du .= 0.0 #Set all changes to 0
      for cellx in eachindex(u)
           connected_indices = findall(x -> x != 0, cell_map.connections[:, cellx])
           flow_out = -(cell_map.strength[:, cellx].*cell_map.connections[:, cellx]) * u[cellx]
@@ -71,8 +70,17 @@ function ∇α(du, u, p, t)
      end
 end
 
-function SAC_eqs_PDE(du, u, p, t)
-     
-
-
+function SAC_PDE(du, u, MAP_p, t)
+     #p[1] will be the cell map necessary for the equation to be run
+     cell_map = MAP_p[1]
+     #p[2] is the parameter set
+     p = MAP_p[2]
+     for i in axes(u, 1)
+          dui = view(du, i, :)
+          ui = view(u, i, :)
+          SAC_ODE(dui, ui, p, t)
+     end
+     dE = view(du, :, 8)
+     E = view(u, :, 8)
+     ∇α(dE, E, cell_map, t)
 end

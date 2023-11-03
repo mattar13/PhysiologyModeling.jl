@@ -30,11 +30,13 @@ export nt_u0, nt_p0
 export extract_p0
 
 include("StarburstModel/Models.jl")
-export SAC_ODE, ∇α
+export SAC_ODE, SAC_PDE 
+export ∇α
 export noise1D
 
 include("StarburstModel/Mapping.jl")
-#export CellMap, even_map, random_map
+export even_map
+export CellMap
 
 #This section deals with parameters and contions
 #Eventually PhysiologyPlotting will include some things we need to plot everything
