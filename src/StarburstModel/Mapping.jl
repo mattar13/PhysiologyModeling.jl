@@ -77,17 +77,21 @@ mutable struct CellMap{T}
      domain_y::Tuple{T, T}
 end
 
-function CellMap(cells::Matrix{T}, radii::Vector{T}; strength = 0.05, domain_x = (0.0, 1.0), domain_y = (0.0, 1.0)) where T <: Real
+#This is our non-linear distance function
+δX(x, a, b, c) = a * exp(-((x - b)^2) / (2 * c^2))
+
+function CellMap(cells::Matrix{T}, radii::Vector{T}; 
+     max_strength = 0.05, max_dist = 0.15, slope_strength = 0.01, 
+     domain_x = (0.0, 1.0), domain_y = (0.0, 1.0)
+) where T <: Real
      neighbors = find_neighbors_radius(cells, radii)    
      connections = create_sparse_matrix(neighbors, cells)
-     mx, my = size(connections)
-     if strength == :rand
-          strengths = (connections .> 0.0) .* (1 .- rand(mx,my)*strength)
-     elseif isa(strength, Real)
-          strengths = (connections .> 0.0) .* strength
-     elseif strength == :ones
-          strengths = (connections .> 0.0) .* 1.0
-     end
+     dropzeros!(connections)
+     #Determine the strength of the connection via a distance function
+     rows, cols, values = findnz(connections)
+     println(length(rows))
+     new_values = map(x -> δX(x, max_strength, max_dist, slope_strength), values)
+     strengths = sparse(rows, cols, new_values)
 
      return CellMap(cells[:, 1], cells[:,2], radii, connections, strengths, domain_x, domain_y)
 end
@@ -108,4 +112,3 @@ function rasterize(map::CellMap; dx = 0.2, dy = 0.2)
      
      return x_map, y_map, grid
 end
-

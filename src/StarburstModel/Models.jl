@@ -56,13 +56,14 @@ end
 noise1D(du, u, p, t) = du[end] = 0.1
 
 function ∇α(du, u, p, t)
+     #println(t)
      cell_map = p
      for cellx in eachindex(u)
           connected_indices = findall(x -> x != 0, cell_map.connections[:, cellx])
-          flow_out = -(cell_map.strength[:, cellx].*cell_map.connections[:, cellx]) * u[cellx]
+          flow_out = -cell_map.strength[:, cellx] * u[cellx]
           du[cellx] += sum(flow_out)
           for (i, celly) in enumerate(connected_indices)
-               flow_in = cell_map.strength[celly, cellx]*cell_map.connections[celly, cellx] * u[cellx]
+               flow_in = cell_map.strength[celly, cellx] * u[cellx]
                du[celly] += flow_in
           end
           #we need to find out if this cell is a boundary cell and subtract the correct amount from it
