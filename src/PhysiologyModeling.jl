@@ -11,7 +11,7 @@ using TerminalLoggers: TerminalLogger
 global_logger(TerminalLogger())
 
 #Export some commonly used algorithims
-export Tsit5, Rodas5, ROS3P
+export Tsit5, Rodas5, ROS3P, TRBDF2, KenCarp47
 export AutoTsit5, Rosenbrock23
 export SOSRI
 export solve
