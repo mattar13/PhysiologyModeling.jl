@@ -3,53 +3,39 @@ module PhysiologyModeling
 using ElectroPhysiology
 using PhysiologyPlotting
 # Write your package code here.
+using SparseArrays
 using DifferentialEquations
 
+using Logging: global_logger
+using TerminalLoggers: TerminalLogger
+global_logger(TerminalLogger())
+
 #Export some commonly used algorithims
-#import OrdinaryDiffEq: Tsit5, Rodas5
 export Tsit5, Rodas5, ROS3P
-#import StochasticDiffEq: SOSRI, SOSRI2, SOSRA
+export AutoTsit5, Rosenbrock23
 export SOSRI
-
-#Utilities for PDEs
-using MethodOfLines, DomainSets, DiffEqOperators
-export Interval, IntervalDomain, MOLFiniteDifference, chebyspace
-export ProductDomain
-export get_discrete, discretize, symbolic_discretize
-
-using SparseArrays
-
-using ModelingToolkit
-#These exports are used in modelling
-export @variables, @parameters, Differential
-export @connector, @component, @unpack
-export Flow, Equation, compose, extend, connect
-export ODAEProblem, Tsit5
-export @named
-export structural_simplify 
-export solve, remake 
-export PresetTimeCallback 
-
-export SDEFunction, SDEProblem, SDESystem
-export ODEFunction, ODEProblem, ODESystem
-export PDESystem, PDEProblem
+export solve
+export SDEProblem, ODEProblem
 
 include("utilities.jl")
 export Experiment
 
+include("StarburstModel/AuxillaryFunctions.jl")
+
 include("StarburstModel/Variables.jl")
-export t
-export SAC_states, SAC_parameters
+export SAC_u0_dict, SAC_p0_dict
+export keys_u0, keys_p0
+export vals_u0, vals_p0
+export nt_u0, nt_p0
+export extract_p0
 
-include("StarburstModel/Equations.jl")
-export SAC_eqs, SAC_noise_eqs
+include("StarburstModel/Models.jl")
+export SAC_ODE, ∇α
+export noise1D
 
-include("StarburstModel/RunModel.jl")
-export runODEModel, runSDEModel
+include("StarburstModel/Mapping.jl")
+#export CellMap, even_map, random_map
 
-include("StarburstModel/Domains.jl")
-export CellMap, ∇α, generate_points
-export rasterize, SAC_eqs_PDE
 #This section deals with parameters and contions
 #Eventually PhysiologyPlotting will include some things we need to plot everything
 end
