@@ -1,3 +1,4 @@
+import Base.size
 # Generate random points
 function even_map(;xmin=0.0, dx=0.1, xmax=1.0, ymin=0.0, dy=0.1, ymax=1.0)
      cells = vec([(i, j) for i in xmin:dx:xmax, j in ymin:dy:ymax])
@@ -89,7 +90,6 @@ function CellMap(cells::Matrix{T}, radii::Vector{T};
      dropzeros!(connections)
      #Determine the strength of the connection via a distance function
      rows, cols, values = findnz(connections)
-     println(length(rows))
      new_values = map(x -> δX(x, max_strength, max_dist, slope_strength), values)
      strengths = sparse(rows, cols, new_values)
 
@@ -112,3 +112,6 @@ function rasterize(map::CellMap; dx = 0.2, dy = 0.2)
      
      return x_map, y_map, grid
 end
+
+#Some utility functions for CellMap
+size(cell_map::CellMap) = length(cell_map.xs)
