@@ -13,7 +13,7 @@ dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
 cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax = ymax)
 #radii = rand(0.1:0.01:0.20, size(cells, 1))
 radii = fill(0.200, size(cells, 1))
-cell_map = CellMap(cells, radii, max_strength = 0.0005);
+cell_map = CellMap(cells, radii, max_strength = 0.005);
 
 #Define the initial state and timespan
 u0 = zeros(size(cell_map.connections, 1))

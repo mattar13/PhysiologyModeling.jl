@@ -4,28 +4,31 @@ using PhysiologyPlotting
 using GLMakie
 
 #%% Step 1. Set up all parameters for the ODE
-tspan = (0.0, 100e3)
+tspan = (0.0, 50e3)
 
 SAC_p0_dict["I_app"] = 00.0
 #SAC_p0_dict["g_ACh"] = 0.0
 SAC_p0_dict["g_GABA"] = 0.0
-SAC_p0_dict["ρe"] = 0.10
+SAC_p0_dict["ρe"] = -1.0
 
 prob = ODEProblem(SAC_ODE_NT_CLAMP, vals_u0, tspan, extract_p0(SAC_p0_dict))
 @time sol = solve(prob, progress = true, progress_steps = 1)
 
 time = sol.t
-fODE = Figure(resolution = (800, 800))
-ax1 = Axis(fODE[1,1])
-ax2 = Axis(fODE[2,1])
-ax3 = Axis(fODE[3,1])
-ax4 = Axis(fODE[4,1])
-ax5 = Axis(fODE[5,1])
-ax6 = Axis(fODE[1,2])
-ax7 = Axis(fODE[2,2])
-ax8 = Axis(fODE[3,2])
-ax9 = Axis(fODE[4,2])
-ax10 = Axis(fODE[5,2])
+fODE = Figure(resolution = (1800, 800))
+ax1 = Axis(fODE[1,1], title = "Voltage (Vt)")
+ax2 = Axis(fODE[2,1], title = "K Repol. (Nt)")
+ax3 = Axis(fODE[3,1], title = "Na Gating (Mt)")
+ax4 = Axis(fODE[4,1], title = "Na Close (Ht)")
+
+ax5 = Axis(fODE[1,2], title = "Calcium (Ct)")
+ax6 = Axis(fODE[2,2], title = "cAMP (At)")
+ax7 = Axis(fODE[3,2], title = "TREK (Bt)")
+
+ax8 = Axis(fODE[1,3], title = "ACh (Et)")
+ax9 = Axis(fODE[2,3], title = "GABA (It)")
+
+ax10 = Axis(fODE[1,4], title = "Noise (Wt)")
 
 lines!(ax1, time, map(t -> sol(t)[1], time))
 lines!(ax2, time, map(t -> sol(t)[2], time))
