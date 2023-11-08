@@ -82,7 +82,7 @@ zlims!(ax8, minimum(sol[:, 8, :]), maximum(sol[:, 8, :]))
 zlims!(ax9, minimum(sol[:, 9, :]), maximum(sol[:, 9, :]))
 zlims!(ax10, minimum(sol[:, 10, :]), maximum(sol[:, 10, :]))
 #%%
-record(fDIFF, "time_animation.mp4", 0.0:5.0:sol.t[end]) do t
+record(fDIFF, "test/SAC_model_tests/model_animation.mp4", 0.0:5.0:sol.t[end]) do t
 	println(t)
 	v = sol(t)[:, 1]
      n = sol(t)[:, 2]

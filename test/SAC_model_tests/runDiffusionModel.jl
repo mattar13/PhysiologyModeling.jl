@@ -30,7 +30,6 @@ probSDE = SDEProblem(DIFFUSION_MODEL, DIFFUSION_NOISE, u0, tspan, cell_map)
 
 sol |> maximum
 
-Φe(-10.0, SAC_p0_dict["VSe"], SAC_p0_dict["V0e"]) * SAC_p0_dict["ρe"]
 #%% Plot the figure
 # Animation settings
 n_frames = 1000
@@ -61,7 +60,7 @@ xlims!(ax12, (xmin, xmax))
 ylims!(ax12, (ymin, ymax))
 zlims!(ax12, (0.0, 1.0))
 
-record(fDIFF, "time_animation.mp4", animate_t, framerate = fps) do t
+record(fDIFF, "test/SAC_model_tests/diffusion_animation.mp4", animate_t, framerate = fps) do t
 	#println(t)
 	u = sol(t)
 	surf2[3] = u
