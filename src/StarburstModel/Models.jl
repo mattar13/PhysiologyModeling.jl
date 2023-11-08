@@ -59,6 +59,7 @@ function ∇α(du, u, p, t)
      #println(t)
      cell_map = p
      for cellx in eachindex(u)
+          #println(cellx)
           connected_indices = findall(x -> x != 0, cell_map.connections[:, cellx])
           flow_out = -cell_map.strength[:, cellx] * u[cellx]
           du[cellx] += sum(flow_out)
@@ -70,6 +71,19 @@ function ∇α(du, u, p, t)
           #if the cell is a single boundary we subtract one flow out
      end
 end
+
+function DIFFUSION_MODEL(du, u, p, t)
+     #println(maximum(u))
+     du .= -u/540 #du decays over time
+     #println(du |> maximum)
+     if 500.0 < t < 1040.0
+          #We want to add some diffusive material during a time range
+          du[113] .= 6.0
+     end
+     ∇α(du, u, p, t)#Diffusion occurs after
+end
+
+DIFFUSION_NOISE(du, u, p, t) = du[:] .= 0.001
 
 function SAC_PDE(du, u, MAP_p, t)
      #p[1] will be the cell map necessary for the equation to be run
@@ -85,3 +99,26 @@ function SAC_PDE(du, u, MAP_p, t)
      E = view(u, :, 8)
      ∇α(dE, E, cell_map, t)
 end
+
+#Periodic stimulation of a x value
+function SAC_PDE_STIM(du, u, MAP_p, t)
+     #p[1] will be the cell map necessary for the equation to be run
+     cell_map = MAP_p[1]
+     #p[2] is the parameter set
+     p = MAP_p[2]
+     for i in axes(u, 1)
+          if i == 61 && 5.0 < t < 100.0
+               p[1] = 10.0
+          else
+               p[1] = 0.0
+          end 
+          dui = view(du, i, :)
+          ui = view(u, i, :)
+          SAC_ODE(dui, ui, p, t)
+     end
+     dE = view(du, :, 8)
+     E = view(u, :, 8)
+     ∇α(dE, E, cell_map, t)
+end
+
+noise2D(du, u, p, t) = du[:, end] .= 0.1
