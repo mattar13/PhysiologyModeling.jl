@@ -11,8 +11,9 @@ SAC_p0_dict["g_ACh"] = 0.0
 SAC_p0_dict["g_GABA"] = 0.0
 
 prob = ODEProblem(SAC_ODE, vals_u0, tspan, extract_p0(SAC_p0_dict))
-sol = solve(prob, progress = true, progress_steps = 1)
+@time sol = solve(prob, progress = true, progress_steps = 1)
 
+#%%
 time = sol.t
 fODE = Figure(resolution = (800, 800))
 ax1 = Axis(fODE[1,1])
@@ -37,3 +38,5 @@ lines!(ax8, time, map(t -> sol(t)[8], time))
 lines!(ax9, time, map(t -> sol(t)[9], time))
 lines!(ax10, time, map(t -> sol(t)[10], time))
 display(fODE)
+
+#%%
