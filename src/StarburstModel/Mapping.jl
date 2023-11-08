@@ -78,8 +78,6 @@ mutable struct CellMap{T}
      domain_y::Tuple{T, T}
 end
 
-#This is our non-linear distance function
-δX(x, a, b, c) = a * exp(-((x - b)^2) / (2 * c^2))
 
 function CellMap(cells::Matrix{T}, radii::Vector{T}; 
      max_strength = 0.05, max_dist = 0.15, slope_strength = 0.01, 

@@ -19,3 +19,6 @@ ITREK(v, b, g_TREK, E_K) = -g_TREK * b * (v - E_K)
 IACh(v, e, g_ACh, k_ACh, E_ACh) = -g_ACh * ħe(e, k_ACh) * (v - E_ACh)
 IGABA(v, i, g_GABA, k_GABA, E_Cl) = -g_GABA * ħi(i, k_GABA) * (v - E_Cl)
 INa(v, m, h, g_Na, E_Na) = -g_Na * m^3 * h * (v - E_Na)
+
+#This is our non-linear distance function
+δX(x, a, b, c) = a * exp(-((x - b)^2) / (2 * c^2))
