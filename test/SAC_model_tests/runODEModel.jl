@@ -4,14 +4,13 @@ using PhysiologyPlotting
 using GLMakie
 
 #%% Step 1. Set up all parameters for the ODE
-tspan = (0.0, 50e3)
+tspan = (0.0, 2e3)
 
-SAC_p0_dict["I_app"] = 00.0
-#SAC_p0_dict["g_ACh"] = 0.0
+SAC_p0_dict["I_app"] = 10.0
+SAC_p0_dict["g_ACh"] = 0.0
 SAC_p0_dict["g_GABA"] = 0.0
-SAC_p0_dict["ρe"] = -1.0
 
-prob = ODEProblem(SAC_ODE_NT_CLAMP, vals_u0, tspan, extract_p0(SAC_p0_dict))
+prob = ODEProblem(SAC_ODE, vals_u0, tspan, extract_p0(SAC_p0_dict))
 @time sol = solve(prob, progress = true, progress_steps = 1)
 
 time = sol.t
@@ -41,3 +40,4 @@ lines!(ax8, time, map(t -> sol(t)[8], time))
 lines!(ax9, time, map(t -> sol(t)[9], time))
 lines!(ax10, time, map(t -> sol(t)[10], time))
 display(fODE)
+save("test/SAC_model_tests/ODESol.png", fODE)
