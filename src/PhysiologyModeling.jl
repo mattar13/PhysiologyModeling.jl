@@ -30,8 +30,9 @@ export nt_u0, nt_p0
 export extract_p0
 
 include("StarburstModel/Models.jl")
-export SAC_ODE, SAC_PDE, SAC_PDE_STIM 
+export SAC_ODE, SAC_ODE_NT_CLAMP 
 export ∇α, DIFFUSION_MODEL, DIFFUSION_NOISE
+export SAC_PDE, SAC_PDE_STIM 
 export noise1D, noise2D
 
 include("StarburstModel/Mapping.jl")
