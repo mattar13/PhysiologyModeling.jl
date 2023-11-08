@@ -4,7 +4,7 @@ using PhysiologyPlotting
 using GLMakie
 
 #%% Step 1. Set up all parameters for the ODE
-tspan = (0.0, 2e3)
+tspan = (0.0, 4e3)
 
 SAC_p0_dict["I_app"] = 10.0
 SAC_p0_dict["g_ACh"] = 0.0

@@ -133,7 +133,7 @@ function DIFFUSION_MODEL(du, u, p, t)
      #println(du |> maximum)
      if 500.0 < t < 750.0
           #We want to add some diffusive material during a time range
-          du[113] = 0.1
+          du[113] = 0.5
      end
      ∇α(du, u, p, t)#Diffusion occurs after
 end
