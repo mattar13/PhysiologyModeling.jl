@@ -68,16 +68,27 @@ function create_sparse_matrix(neighbors::Vector{Vector{Int64}}, points::Vector{T
      return sparse(I, J, V)
 end
 
+function return_connected_indices(cells, connections)
+     indices = Vector{Vector{Int64}}()
+     n = size(cells, 1);
+     for cellx in 1:n
+          connected_indices = findall(x -> x != 0, connections[:, cellx])
+          push!(indices, connected_indices)
+
+     end
+     return indices
+end
+
 mutable struct CellMap{T}
 	xs::Vector{T}
 	ys::Vector{T}
      radius::Vector{T}
 	connections::SparseMatrixCSC{T, Int64}
+     connected_indices::Vector{Vector{Int64}}
      strength::SparseMatrixCSC{T, Int64}
      domain_x::Tuple{T, T}
      domain_y::Tuple{T, T}
 end
-
 
 function CellMap(cells::Matrix{T}, radii::Vector{T}; 
      max_strength = 0.05, max_dist = 0.15, slope_strength = 0.01, 
@@ -86,12 +97,14 @@ function CellMap(cells::Matrix{T}, radii::Vector{T};
      neighbors = find_neighbors_radius(cells, radii)    
      connections = create_sparse_matrix(neighbors, cells)
      dropzeros!(connections)
+     connected_indices = return_connected_indices(cells, connections)
+
      #Determine the strength of the connection via a distance function
      rows, cols, values = findnz(connections)
      new_values = map(x -> δX(x, max_strength, max_dist, slope_strength), values)
      strengths = sparse(rows, cols, new_values)
 
-     return CellMap(cells[:, 1], cells[:,2], radii, connections, strengths, domain_x, domain_y)
+     return CellMap(cells[:, 1], cells[:,2], radii, connections, connected_indices, strengths, domain_x, domain_y)
 end
 
 function rasterize(map::CellMap; dx = 0.2, dy = 0.2)

@@ -110,13 +110,11 @@ end
 
 noise1D(du, u, p, t) = du[end] = 0.1
 
-function ∇α(du, u, p, t)
-     #println(t)
-     cell_map = p
+function ∇α(du, u, cell_map, t)
+     flow_out = similar(cell_map.strength[:, 1]) #preallocate an array for flow_out
      for cellx in eachindex(u)
-          #println(cellx)
-          connected_indices = findall(x -> x != 0, cell_map.connections[:, cellx])
-          flow_out = -cell_map.strength[:, cellx] * u[cellx]
+          connected_indices = cell_map.connected_indices[cellx]
+          mul!(flow_out, -cell_map.strength[:, cellx], u[cellx])
           du[cellx] += sum(flow_out)
           for (i, celly) in enumerate(connected_indices)
                flow_in = cell_map.strength[celly, cellx] * u[cellx]
@@ -128,14 +126,14 @@ function ∇α(du, u, p, t)
 end
 
 function DIFFUSION_MODEL(du, u, p, t)
-     #println(maximum(u))
      du .= -u/540 #du decays over time
-     #println(du |> maximum)
-     if 500.0 < t < 750.0
+     if 500.0 < t < 2500.0
           #We want to add some diffusive material during a time range
-          du[113] = 0.5
+          du[221] += 0.1
      end
      ∇α(du, u, p, t)#Diffusion occurs after
+     #We should go through and decay the edges 
+     
 end
 
 DIFFUSION_NOISE(du, u, p, t) = du[:] .= 0.001
@@ -144,7 +142,7 @@ function SAC_PDE(du, u, MAP_p, t)
      #p[1] will be the cell map necessary for the equation to be run
      cell_map = MAP_p[1]
      #p[2] is the parameter set
-     p = MAP_p[2]
+     p = MAP_p[300]
      for i in axes(u, 1)
           dui = view(du, i, :)
           ui = view(u, i, :)
