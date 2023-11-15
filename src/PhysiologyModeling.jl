@@ -3,7 +3,7 @@ module PhysiologyModeling
 using ElectroPhysiology
 using PhysiologyPlotting
 # Write your package code here.
-using SparseArrays
+using SparseArrays, LinearAlgebra
 using DifferentialEquations
 
 using Logging: global_logger
