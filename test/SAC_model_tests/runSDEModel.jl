@@ -1,4 +1,4 @@
-using Revise
+using Revise, BenchmarkTools
 using PhysiologyModeling
 using PhysiologyPlotting
 using GLMakie
@@ -7,10 +7,12 @@ using GLMakie
 tspan = (0.0, 50e3)
 
 SAC_p0_dict["I_app"] = 0.0
-SAC_p0_dict["g_ACh"] = 0.0
 SAC_p0_dict["g_GABA"] = 0.0
+SAC_p0_dict["g_ACh"] = 1.0
+SAC_p0_dict["ρe"] = 3.8
 
-prob = SDEProblem(SAC_ODE, noise1D, vals_u0, tspan, extract_p0(SAC_p0_dict))
+p0 = extract_p0(SAC_p0_dict)
+prob = SDEProblem(SAC_ODE_NT_CLAMP, noise1D, vals_u0, tspan, p0)
 @time sol = solve(prob, SOSRI(), progress = true, progress_steps = 1)
 
 time = sol.t
@@ -40,4 +42,4 @@ lines!(ax8, time, map(t -> sol(t)[8], time))
 lines!(ax9, time, map(t -> sol(t)[9], time))
 lines!(ax10, time, map(t -> sol(t)[10], time))
 display(fSDE)
-save("test/SAC_model_tests/ODESol.png", fSDE)
+save("test/SAC_model_tests/SDESol.png", fSDE)
