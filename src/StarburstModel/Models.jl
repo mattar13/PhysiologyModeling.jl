@@ -108,6 +108,79 @@ function SAC_ODE_NT_CLAMP(du, u, p, t)
      nothing
 end
 
+function SAC_ODE_STIM(du, u, p, t)
+     v = view(u, 1)
+     n = view(u, 2)
+     m = view(u, 3)
+     h = view(u, 4)
+     c = view(u, 5)
+     a = view(u, 6)
+     b = view(u, 7)
+     e = view(u, 8)
+     i = view(u, 9)
+     W = view(u, 10)
+
+     dv = view(du, 1)
+     dn = view(du, 2)
+     dm = view(du, 3)
+     dh = view(du, 4)
+     dc = view(du, 5)
+     da = view(du, 6)
+     db = view(du, 7)
+     de = view(du, 8)
+     di = view(du, 9)
+     dW = view(du, 10)
+
+     (I_app,
+          C_m, g_W, τw, 
+          g_leak, E_leak, 
+          g_K, V3, V4, E_K, τn, 
+          g_Ca, V1, V2,E_Ca, τc,
+          g_Na, E_Na, 
+          g_TREK,
+          C_0, λ , δ,  
+          α, τa, 
+          β, τb, 
+          VSe, ρe, V0e, g_ACh, k_ACh, E_ACh,  τACh,
+          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA,
+          De, Di, 
+          V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
+     ) = extract_p0(p)
+
+     if 1000 < t < 1500
+          I_app = 10.0
+     elseif 2000 < t < 2500
+          I_app = 10.0
+     elseif 3000 < t < 3500
+          I_app = 10.0
+     elseif 4000 < t < 4500
+          I_app = 10.0
+     elseif 5000 < t < 5500
+          I_app = 10.0
+     else
+          I_app = 0.0
+     end
+     #println(I_app)
+     @. dv = (ILeak(v, g_leak, E_leak) + 
+          ICa(v, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
+          IACh(v, e, g_ACh, k_ACh, E_ACh) + IGABA(v, i, g_GABA, k_GABA, E_Cl) + 
+          I_app + W) / C_m
+     @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
+     @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
+     @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
+     @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
+     @. da = (α * c^4 * (1 - a) - a) / τa
+     @. db = (β * a^4 * (1 - b) - b) / τb
+     @. de = ρe-e 
+     @. di = ρi-i
+     @. dW = -W / τw
+     nothing
+end
+
+function SAC_ODE_Compartment(du, u, p, t)
+     
+end
+
 noise1D(du, u, p, t) = du[end] = 0.1
 
 function ∇α(du, u, cell_map, t)
@@ -142,7 +215,7 @@ function SAC_PDE(du, u, MAP_p, t)
      #p[1] will be the cell map necessary for the equation to be run
      cell_map = MAP_p[1]
      #p[2] is the parameter set
-     p = MAP_p[300]
+     p = MAP_p[2]
      for i in axes(u, 1)
           dui = view(du, i, :)
           ui = view(u, i, :)

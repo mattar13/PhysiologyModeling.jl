@@ -107,6 +107,10 @@ function CellMap(cells::Matrix{T}, radii::Vector{T};
      return CellMap(cells[:, 1], cells[:,2], radii, connections, connected_indices, strengths, domain_x, domain_y)
 end
 
+function map_points(cell_map::CellMap)
+     hcat(cell_map.xs, cell_map.ys)
+end
+
 function rasterize(map::CellMap; dx = 0.2, dy = 0.2)
      #round each xs and ys to integers. Then color the heatmap in based on that
      domains = map.domains
