@@ -16,11 +16,16 @@ cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax =
 radii = fill(0.200, size(cells, 1))
 cell_map = CellMap(cells, radii, max_strength = 0.005);
 
+
+
+cell_map.xs .== ymax || cell_map.ys .== ymin 
+
+cell_map
+
+
 #Define the initial state and timespan
 u0 = zeros(size(cell_map.connections, 1))
 mid = round(Int64, size(cell_map.xs, 1)/2)+1
-
-cell_map.xs
 
 #Run model
 tspan = (0.0, 5000)

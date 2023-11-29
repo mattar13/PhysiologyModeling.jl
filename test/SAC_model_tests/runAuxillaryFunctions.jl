@@ -5,14 +5,31 @@ using GLMakie
 using SparseArrays
 import PhysiologyModeling: Φe, δX, IACh, IGABA, ħe, ħi
 
-#%% Plot out the acetylcholine release functions
+#%% write the function
 f_REL = Figure()
 ax_REL = Axis(f_REL[1,1], xlabel = "Voltage (mV)", ylabel = "NT Release (uM)")
-
-
-
-
 display(f_REL)
+
+function fOVERLAP(r, d)
+     if d >= 2 * r || d <= 0
+          return 0.0
+      else
+          return 2 * r^2 * acos(d / (2r)) - (d / 2) * sqrt(4 * r^2 - d^22)
+      end     
+end
+#%%
+f_DIST = Figure()
+ax_DIST = Axis(f_DIST[1,1], xlabel = "Distance from Soma (um)", ylabel = "NT Release (uM)")
+
+xs = 0.05:0.001:0.3
+OD = 0.18
+ID = 0.1
+δe = map(d -> fOVERLAP(OD, d) - fOVERLAP(ID, d), xs)
+
+lines!(ax_DIST, xs, δe)
+display(f_DIST)
+save("test/SAC_model_tests/DistanceFunc.png", f_DIST)
+
 
 #%% Plot out the diffusion distance function
 f_DIST = Figure()

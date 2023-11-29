@@ -4,11 +4,12 @@ using PhysiologyPlotting
 using GLMakie
 
 #%% Step 1. Set up all parameters for the ODE
-tspan = (0.0, 4e3)
+tspan = (0.0, 300e3)
 
 SAC_p0_dict["I_app"] = 10.0
 SAC_p0_dict["g_ACh"] = 0.0
 SAC_p0_dict["g_GABA"] = 0.0
+SAC_p0_dict["g_K"] = 10.0
 
 prob = ODEProblem(SAC_ODE, vals_u0, tspan, extract_p0(SAC_p0_dict))
 @time sol = solve(prob, progress = true, progress_steps = 1)

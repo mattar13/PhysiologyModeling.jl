@@ -5,8 +5,8 @@ using GLMakie
 using SparseArrays
 
 # Step 1 determine the domains and spacing of cells. 
-domain_x = (xmin, xmax) = (0.0, 2.0)
-domain_y = (ymin, ymax) = (0.0, 2.0)
+domain_x = (xmin, xmax) = (0.0, 3.0)
+domain_y = (ymin, ymax) = (0.0, 3.0)
 dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
 
 # Step 2 create the map of cells and their radii
@@ -29,7 +29,7 @@ MAP_p = (cell_map, extract_p0(SAC_p0_dict));
 
 #%% Warmup the problem for 50s
 probWARM = SDEProblem(SAC_PDE, noise2D, u0, (0.0, 60e3), MAP_p)
-@time solWARM = solve(probWARM, SOSRI(), save_everystep = false, save_start = false, reltol=0.1, abstol=0.1, progress=true, progress_steps=1)
+@time solWARM = solve(probWARM, SOSRI(), save_everystep = false, save_start = false, reltol=0.01, abstol=0.01, progress=true, progress_steps=1)
 solWARM[end]
 
 #%% Run the model
@@ -37,7 +37,7 @@ tspan = (0.0, 60e3)
 #prob = ODEProblem(SAC_PDE, u0, tspan, MAP_p)
 prob = SDEProblem(SAC_PDE, noise2D, solWARM[end], tspan, MAP_p)
 #sol = solve(prob, TRBDF2(), reltol=0.01, abstol=0.01, progress=true, progress_steps=1)
-@time sol = solve(prob, SOSRI(), saveat = 1.0, reltol=0.1, abstol=0.1, progress=true, progress_steps=1)
+@time sol = solve(prob, SOSRI(), saveat = 1.0, reltol=0.01, abstol=0.01, progress=true, progress_steps=1)
 
 #%% Plot the figure
 fDIFF = Figure(resolution = (1800,1000))
@@ -80,9 +80,6 @@ n_frames = 1000
 animate_t = LinRange(0.0, sol.t[end], n_frames)
 dt = animate_t[2] - animate_t[1]
 fps = round(Int64, (1/dt) * 1000)
-
-
-sol_arr[:, 8, :] |> maximum
 
 record(fDIFF, "test/SAC_model_tests/model_animation.mp4", animate_t, framerate = 8) do t
 	println(t)
