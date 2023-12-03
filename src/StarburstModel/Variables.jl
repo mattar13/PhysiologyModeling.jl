@@ -72,6 +72,8 @@ SAC_p0_dict = Dict(
 )
 
 keys_u0 = ["v", "n", "m", "h", "c", "a", "b", "e", "i", "W"]
+GAP_keys_u0 = ["v", "n", "m", "h", "c", "a", "b", "W"] #This parameter set is for gap junctions only
+
 vals_u0 = map(k -> SAC_u0_dict[k], keys_u0)
 nt_u0 = NamedTuple{Symbol.(keys_u0) |> Tuple}(vals_u0)
 
@@ -99,6 +101,9 @@ vals_p0 = map(k -> SAC_p0_dict[k], keys_p0)
 
 nt_p0 = NamedTuple{Symbol.(keys_p0) |> Tuple}(vals_p0)
 
-extract_p0(d::Dict{String, Float64}) = map(k -> d[k], keys_p0)
+extract_dict(d::Dict{String, Float64}, keys) = map(k -> d[k], keys)
+extract_p0(d::Dict{String, Float64})  = extract_dict(d, keys_p0)
 extract_p0(d::NamedTuple) = d
 extract_p0(d) = d
+
+extract_u0(d::Dict{String, Float64}) = extract_dict(d, keys_u0)
