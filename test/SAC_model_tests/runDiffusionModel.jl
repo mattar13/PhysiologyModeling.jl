@@ -1,10 +1,9 @@
-using Revise, BenchmarkTools
+using Revise
 using PhysiologyModeling
 using PhysiologyPlotting
 using GLMakie
 using SparseArrays, LinearAlgebra
-import PhysiologyModeling: Φe, find_neighbors_radius, create_sparse_matrix
-import PhysiologyModeling:OLD_∇α
+import PhysiologyModeling: Φe
 #%% Set up the PDE
 #Here is all of the ways to set up morphology
 domain_x = (xmin, xmax) = (0.0, 1.0)
@@ -14,14 +13,7 @@ dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
 cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax = ymax)
 #radii = rand(0.10:0.01:0.20, size(cells, 1))
 radii = fill(0.200, size(cells, 1))
-cell_map = CellMap(cells, radii, max_strength = 0.005);
-
-
-
-cell_map.xs .== ymax || cell_map.ys .== ymin 
-
-cell_map
-
+cell_map = CellMap(cells, radii);
 
 #Define the initial state and timespan
 u0 = zeros(size(cell_map.connections, 1))
