@@ -3,7 +3,7 @@ module PhysiologyModeling
 using ElectroPhysiology
 using PhysiologyPlotting
 # Write your package code here.
-using SparseArrays, LinearAlgebra
+using LinearAlgebra,SparseArrays
 using DifferentialEquations
 
 using Logging: global_logger
@@ -27,12 +27,14 @@ export SAC_u0_dict, SAC_p0_dict
 export keys_u0, keys_p0
 export vals_u0, vals_p0
 export nt_u0, nt_p0
-export extract_p0
+export extract_p0, extract_u0, extract_dict
 
 include("StarburstModel/Models.jl")
 export SAC_ODE, SAC_ODE_NT_CLAMP, SAC_ODE_STIM
 export ∇α, DIFFUSION_MODEL, DIFFUSION_NOISE
 export SAC_PDE, SAC_PDE_STIM 
+export SAC_GAP #Make a model for a gap junction
+export SAC_ODE_Compartment
 export noise1D, noise2D
 
 include("StarburstModel/Mapping.jl")
