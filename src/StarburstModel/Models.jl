@@ -108,7 +108,7 @@ function SAC_ODE_NT_CLAMP(du, u, p, t)
      nothing
 end
 
-function SAC_ODE_STIM(du, u, p, t)
+function SAC_ODE_STIM(du, u, p, t; stim_start = 1000.0, stim_stop = 1500.0, stim_amp = 10.0)
      v = view(u, 1)
      n = view(u, 2)
      m = view(u, 3)
@@ -147,18 +147,8 @@ function SAC_ODE_STIM(du, u, p, t)
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
      ) = extract_p0(p)
 
-     if 1000 < t < 1500
-          I_app = 10.0
-     elseif 2000 < t < 2500
-          I_app = 10.0
-     elseif 3000 < t < 3500
-          I_app = 10.0
-     elseif 4000 < t < 4500
-          I_app = 10.0
-     elseif 5000 < t < 5500
-          I_app = 10.0
-     else
-          I_app = 0.0
+     if stim_start < t < stim_stop
+          I_app = stim_amp
      end
      #println(I_app)
      @. dv = (ILeak(v, g_leak, E_leak) + 
@@ -171,14 +161,34 @@ function SAC_ODE_STIM(du, u, p, t)
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
      @. da = (α * c^4 * (1 - a) - a) / τa
      @. db = (β * a^4 * (1 - b) - b) / τb
-     @. de = ρe-e 
-     @. di = ρi-i
+     @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
+     @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
      @. dW = -W / τw
      nothing
 end
 
-function SAC_ODE_Compartment(du, u, p, t)
-     
+function SAC_ODE_Compartment(du, u, p, t; 
+     gGAP = 0.01, 
+     gK = [ 10.0, 8.125, 6.25, 4.375, 0.5], 
+     #stim_starts = [2000.0, 1500.0, 1000.0, 500.0, 0.0], #Reverse the
+     #stim_starts = [0.0, 500.0, 1000.0, 1500.0, 2000.0], #Forward list
+     stim_starts = [0.0, 1000.0, 2000.0, 3000.0, 10000.0], #Reverse the
+     stim_amp = 100.0,
+     stim_dur = 500.0
+)
+     for i in axes(u, 1)
+          dui = view(du, i, :)
+          ui = view(u, i, :)
+          p[7] = gK[i] #Change the parameter
+          if i == 1
+               SAC_ODE_STIM(dui, ui, p, t; stim_start = stim_starts[i], stim_stop = stim_starts[i]+stim_dur, stim_amp = stim_amp)
+          else
+               #println(500*(i-1))
+               #Change the paramater gK
+               SAC_ODE_STIM(dui, ui, p, t; stim_start = stim_starts[i], stim_stop = stim_starts[i]+stim_dur, stim_amp = stim_amp)
+               dui[1] += gGAP * (u[i-1, 1] - u[i, 1]) #maybe make this more eff
+          end
+     end
 end
 
 noise1D(du, u, p, t) = du[end] = 0.1
@@ -248,3 +258,18 @@ function SAC_PDE_STIM(du, u, MAP_p, t)
 end
 
 noise2D(du, u, p, t) = du[:, end] .= 0.1
+
+function SAC_GAP(du, u, p, t)
+     #p[1] will be the cell map necessary for the equation to be run
+     cell_map = MAP_p[1]
+     #p[2] is the parameter set
+     p = MAP_p[2]
+     for i in axes(u, 1)
+          dui = view(du, i, :)
+          ui = view(u, i, :)
+          SAC_ODE(dui, ui, p, t)
+     end
+     dE = view(du, :, 1)
+     E = view(u, :, 1)
+     ∇α(dE, E, cell_map, t)
+end
