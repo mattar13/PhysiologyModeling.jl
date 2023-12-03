@@ -3,44 +3,14 @@ using PhysiologyModeling
 using PhysiologyPlotting
 using GLMakie
 using SparseArrays
-import PhysiologyModeling: Φe, δX, IACh, IGABA, ħe, ħi
+import PhysiologyModeling: Φe, IACh, IGABA, ħe, ħi, ring_circle_overlap_area
 
-#%% write the function
-f_REL = Figure()
-ax_REL = Axis(f_REL[1,1], xlabel = "Voltage (mV)", ylabel = "NT Release (uM)")
-display(f_REL)
-
-function fOVERLAP(r, d)
-     if d >= 2 * r || d <= 0
-          return 0.0
-      else
-          return 2 * r^2 * acos(d / (2r)) - (d / 2) * sqrt(4 * r^2 - d^22)
-      end     
-end
 #%%
 f_DIST = Figure()
 ax_DIST = Axis(f_DIST[1,1], xlabel = "Distance from Soma (um)", ylabel = "NT Release (uM)")
 
-xs = 0.05:0.001:0.3
-OD = 0.18
-ID = 0.1
-δe = map(d -> fOVERLAP(OD, d) - fOVERLAP(ID, d), xs)
-
-lines!(ax_DIST, xs, δe)
-display(f_DIST)
-save("test/SAC_model_tests/DistanceFunc.png", f_DIST)
-
-
-#%% Plot out the diffusion distance function
-f_DIST = Figure()
-ax_DIST = Axis(f_DIST[1,1], xlabel = "Distance from Soma (um)", ylabel = "NT Release (uM)")
-
-max_strength = 0.05
-max_dist = 0.15
-slope_strength = 0.01
-
-xs = 0.0:0.0005:0.2
-δe = map(x -> δX(x, max_strength, max_dist, slope_strength), xs)
+xs = 0.0:0.001:0.3
+δe = map(d -> ring_circle_overlap_area(d; r_inner = 0.05, r_outer = 0.09, r_circle = 0.09), xs)
 
 lines!(ax_DIST, xs, δe)
 display(f_DIST)

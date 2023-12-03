@@ -97,8 +97,10 @@ ring(d; max_strength = 0.05, max_dist = 0.15, slope = 0.01) = max_strength * exp
 function circle_overlap_area(d, r1, r2)
      if d >= r1 + r2
          return 0.0  # No overlap
+     elseif d == 0.0
+          return 0.0 #Cells are one in the same
      elseif d <= abs(r1 - r2)
-         return π * min(r1, r2)^2  # One circle is completely inside the other
+          return π * min(r1, r2)^2  # One circle is completely inside the other
      else
          # Calculate overlap area
          part1 = r1^2 * acos((d^2 + r1^2 - r2^2) / (2 * d * r1))
@@ -108,7 +110,7 @@ function circle_overlap_area(d, r1, r2)
      end
 end
  
-function ring_circle_overlap_area(d; r_inner = 0.05, r_outer = 0.18, r_circle = 0.18)
+function ring_circle_overlap_area(d; density = 1.0, r_inner = 0.05, r_outer = 0.09, r_circle = 0.09)
      # Area of overlap between outer circle of the ring and the circle
      outer_overlap = circle_overlap_area(d, r_outer, r_circle)
 
@@ -116,7 +118,7 @@ function ring_circle_overlap_area(d; r_inner = 0.05, r_outer = 0.18, r_circle = 
      inner_overlap = circle_overlap_area(d, r_inner, r_circle)
 
      # The overlapping area with the ring is the difference
-     return max(0.0, outer_overlap - inner_overlap)
+     return density*max(0.0, outer_overlap - inner_overlap)
 end
 
 function CellMap(cells::Matrix{T}, radii::Vector{T}; 
