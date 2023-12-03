@@ -23,28 +23,26 @@ ax10 = Axis(fSDE[1,4], title = "Noise (Wt)")
 # Step 1. Set up all parameters for the ODE
 tspan = (0.0, 10e3)
 
-for GK in 1.0:1.0:10.0
-     SAC_p0_dict["I_app"] = 0.0
-     SAC_p0_dict["g_GABA"] = 0.0
-     SAC_p0_dict["g_ACh"] = 0.0
-     SAC_p0_dict["g_K"] = GK
+SAC_p0_dict["I_app"] = 0.0
+SAC_p0_dict["g_GABA"] = 0.0
+SAC_p0_dict["g_ACh"] = 0.0
+SAC_p0_dict["g_K"] = GK
 
-     p0 = extract_p0(SAC_p0_dict)
-     prob = SDEProblem(SAC_ODE_STIM, noise1D, vals_u0, tspan, p0)
-     @time sol = solve(prob, SOSRI(), progress = true, progress_steps = 1)
+p0 = extract_p0(SAC_p0_dict)
+prob = SDEProblem(SAC_ODE_STIM, noise1D, vals_u0, tspan, p0)
+@time sol = solve(prob, SOSRI(), progress = true, progress_steps = 1)
 
 
-     lines!(ax1, time, map(t -> sol(t)[1], time))
-     lines!(ax2, time, map(t -> sol(t)[2], time))
-     lines!(ax3, time, map(t -> sol(t)[3], time))
-     lines!(ax4, time, map(t -> sol(t)[4], time))
-     lines!(ax5, time, map(t -> sol(t)[5], time))
-     lines!(ax6, time, map(t -> sol(t)[6], time))
-     lines!(ax7, time, map(t -> sol(t)[7], time))
-     lines!(ax8, time, map(t -> sol(t)[8], time))
-     lines!(ax9, time, map(t -> sol(t)[9], time))
-     lines!(ax10, time, map(t -> sol(t)[10], time))
-     display(fSDE)
+lines!(ax1, time, map(t -> sol(t)[1], time))
+lines!(ax2, time, map(t -> sol(t)[2], time))
+lines!(ax3, time, map(t -> sol(t)[3], time))
+lines!(ax4, time, map(t -> sol(t)[4], time))
+lines!(ax5, time, map(t -> sol(t)[5], time))
+lines!(ax6, time, map(t -> sol(t)[6], time))
+lines!(ax7, time, map(t -> sol(t)[7], time))
+lines!(ax8, time, map(t -> sol(t)[8], time))
+lines!(ax9, time, map(t -> sol(t)[9], time))
+lines!(ax10, time, map(t -> sol(t)[10], time))
+display(fSDE)
 
-     #save("test/SAC_model_tests/SDESol.png", fSDE)
-end
+#save("test/SAC_model_tests/SDESol.png", fSDE)
