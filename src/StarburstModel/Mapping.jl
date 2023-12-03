@@ -90,8 +90,37 @@ mutable struct CellMap{T}
      domain_y::Tuple{T, T}
 end
 
+#These are the distance functions we can use to calculate the strength
+#This is our non-linear distance function
+ring(d; max_strength = 0.05, max_dist = 0.15, slope = 0.01) = max_strength * exp(-((d - max_dist)^2) / (2 * slope^2))
+
+function circle_overlap_area(d, r1, r2)
+     if d >= r1 + r2
+         return 0.0  # No overlap
+     elseif d <= abs(r1 - r2)
+         return π * min(r1, r2)^2  # One circle is completely inside the other
+     else
+         # Calculate overlap area
+         part1 = r1^2 * acos((d^2 + r1^2 - r2^2) / (2 * d * r1))
+         part2 = r2^2 * acos((d^2 + r2^2 - r1^2) / (2 * d * r2))
+         part3 = 0.5 * sqrt((-d + r1 + r2) * (d + r1 - r2) * (d - r1 + r2) * (d + r1 + r2))
+         return part1 + part2 - part3
+     end
+end
+ 
+function ring_circle_overlap_area(d; r_inner = 0.05, r_outer = 0.18, r_circle = 0.18)
+     # Area of overlap between outer circle of the ring and the circle
+     outer_overlap = circle_overlap_area(d, r_outer, r_circle)
+
+     # Area of overlap between inner circle of the ring and the circle
+     inner_overlap = circle_overlap_area(d, r_inner, r_circle)
+
+     # The overlapping area with the ring is the difference
+     return max(0.0, outer_overlap - inner_overlap)
+end
+
 function CellMap(cells::Matrix{T}, radii::Vector{T}; 
-     max_strength = 0.05, max_dist = 0.15, slope_strength = 0.01, 
+     distance_function = ring_circle_overlap_area,
      domain_x = (0.0, 1.0), domain_y = (0.0, 1.0)
 ) where T <: Real
      neighbors = find_neighbors_radius(cells, radii)    
@@ -101,7 +130,7 @@ function CellMap(cells::Matrix{T}, radii::Vector{T};
 
      #Determine the strength of the connection via a distance function
      rows, cols, values = findnz(connections)
-     new_values = map(x -> δX(x, max_strength, max_dist, slope_strength), values)
+     new_values = map(x -> distance_function(x), values)
      strengths = sparse(rows, cols, new_values)
 
      return CellMap(cells[:, 1], cells[:,2], radii, connections, connected_indices, strengths, domain_x, domain_y)
