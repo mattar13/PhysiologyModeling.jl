@@ -194,6 +194,23 @@ end
 noise1D(du, u, p, t) = du[end] = 0.1
 
 function ∇α(du, u, cell_map, t)
+     # Diffusion into points
+     flow_in = similar(du)
+     flow_out = similar(du)
+     mul!(flow_in, cell_map.strength, u)
+     flow_out = cell_map.strength_out .* u 
+     du = flow_out + flow_in
+end
+
+function ∇α_V2(du, u, cell_map, t)
+     mul!(du, cell_map.strength, u) #This diffuses in the forwarf
+     for i in eachindex(du)
+          diffusion_out = sum(cell_map.strength[i, :] * u[i])
+          du[i] -= diffusion_out
+     end
+end
+
+function ∇α_V1(du, u, cell_map, t)
      flow_out = similar(cell_map.strength[:, 1]) #preallocate an array for flow_out
      for cellx in eachindex(u)
           connected_indices = cell_map.connected_indices[cellx]
@@ -208,11 +225,11 @@ function ∇α(du, u, cell_map, t)
      end
 end
 
-function DIFFUSION_MODEL(du, u, p, t)
+function DIFFUSION_MODEL(du, u, p, t; active_cell = 221)
      du .= -u/540 #du decays over time
      if 500.0 < t < 2500.0
           #We want to add some diffusive material during a time range
-          du[221] += 0.1
+          du[active_cell] += 1.0
      end
      ∇α(du, u, p, t)#Diffusion occurs after
      #We should go through and decay the edges 
@@ -221,11 +238,10 @@ end
 
 DIFFUSION_NOISE(du, u, p, t) = du[:] .= 0.001
 
-function SAC_PDE(du, u, MAP_p, t)
+function SAC_PDE(du, u, p, t, MAP)
+     #This needs to be loaded into a function with the map object(s) attached
      #p[1] will be the cell map necessary for the equation to be run
-     cell_map = MAP_p[1]
      #p[2] is the parameter set
-     p = MAP_p[2]
      for i in axes(u, 1)
           dui = view(du, i, :)
           ui = view(u, i, :)
@@ -233,7 +249,7 @@ function SAC_PDE(du, u, MAP_p, t)
      end
      dE = view(du, :, 8)
      E = view(u, :, 8)
-     ∇α(dE, E, cell_map, t)
+     ∇α(dE, E, MAP, t) #The map function gets fed into this network
 end
 
 #Periodic stimulation of a x value

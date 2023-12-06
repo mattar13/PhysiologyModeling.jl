@@ -12,6 +12,12 @@ function random_map(n_points)
 end
 
 # Calculate Euclidean distance between two points
+function euclidean_distance(p1::Tuple{T,T}, p2::Tuple{T,T}) where T <: Real
+     x1, y1 = p1
+     x2, y2 = p2
+     return sqrt((x2 - x1)^2 + (y2 - y1)^2)
+end
+
 function euclidean_distance(p1, p2)
      return sqrt(sum((p1 .- p2) .^ 2))
 end
@@ -84,8 +90,8 @@ mutable struct CellMap{T}
 	ys::Vector{T}
      radius::Vector{T}
 	connections::SparseMatrixCSC{T, Int64}
-     connected_indices::Vector{Vector{Int64}}
      strength::SparseMatrixCSC{T, Int64}
+     strength_out::Vector{T}
      domain_x::Tuple{T, T}
      domain_y::Tuple{T, T}
 end
@@ -93,6 +99,7 @@ end
 #These are the distance functions we can use to calculate the strength
 #This is our non-linear distance function
 ring(d; max_strength = 0.05, max_dist = 0.15, slope = 0.01) = max_strength * exp(-((d - max_dist)^2) / (2 * slope^2))
+
 
 function circle_overlap_area(d, r1, r2)
      if d >= r1 + r2
@@ -109,9 +116,21 @@ function circle_overlap_area(d, r1, r2)
          return part1 + part2 - part3
      end
 end
- 
-function ring_circle_overlap_area(d; density = 1.0, r_inner = 0.05, r_outer = 0.09, r_circle = 0.09)
+
+function ring_circle_overlap_area(d; density = 2.0, r_inner = 0.085, r_outer = 0.09, r_circle = 0.09)
      # Area of overlap between outer circle of the ring and the circle
+     outer_overlap = circle_overlap_area(d, r_outer, r_circle)
+
+     # Area of overlap between inner circle of the ring and the circle
+     inner_overlap = circle_overlap_area(d, r_inner, r_circle)
+
+     # The overlapping area with the ring is the difference
+     return density*max(0.0, outer_overlap - inner_overlap)
+end
+
+function ring_circle_overlap_area(p1::Tuple{T, T}, p2::Tuple{T, T}; density = 1.0, r_inner = 0.05, r_outer = 0.09, r_circle = 0.09) where T <: Real
+     # Area of overlap between outer circle of the ring and the circle
+     d = euclidean_distance(p1, p2)
      outer_overlap = circle_overlap_area(d, r_outer, r_circle)
 
      # Area of overlap between inner circle of the ring and the circle
@@ -128,14 +147,15 @@ function CellMap(cells::Matrix{T}, radii::Vector{T};
      neighbors = find_neighbors_radius(cells, radii)    
      connections = create_sparse_matrix(neighbors, cells)
      dropzeros!(connections)
-     connected_indices = return_connected_indices(cells, connections)
 
      #Determine the strength of the connection via a distance function
      rows, cols, values = findnz(connections)
-     new_values = map(x -> distance_function(x), values)
-     strengths = sparse(rows, cols, new_values)
 
-     return CellMap(cells[:, 1], cells[:,2], radii, connections, connected_indices, strengths, domain_x, domain_y)
+     new_values = map(x -> distance_function(x), values)
+     strength = sparse(rows, cols, new_values)
+     strength_out = -sum(strength, dims=2) |> vec #Preallocate the diffusion out for more efficient calculations
+
+     return CellMap(cells[:, 1], cells[:,2], radii, connections, strength, strength_out, domain_x, domain_y)
 end
 
 function map_points(cell_map::CellMap)
