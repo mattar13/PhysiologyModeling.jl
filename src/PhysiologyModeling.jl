@@ -13,7 +13,7 @@ global_logger(TerminalLogger())
 #Export some commonly used algorithims
 export Tsit5, Rodas5, ROS3P, TRBDF2, KenCarp47
 export AutoTsit5, Rosenbrock23
-export SOSRI
+export SOSRI, SOSRA, SOSRA2
 export solve
 export SDEProblem, ODEProblem
 
@@ -40,6 +40,7 @@ export noise1D, noise2D
 include("StarburstModel/Mapping.jl")
 export even_map
 export CellMap
+
 
 #This section deals with parameters and contions
 #Eventually PhysiologyPlotting will include some things we need to plot everything

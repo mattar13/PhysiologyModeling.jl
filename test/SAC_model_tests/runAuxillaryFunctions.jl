@@ -9,8 +9,8 @@ import PhysiologyModeling: Φe, IACh, IGABA, ħe, ħi, ring_circle_overlap_area
 f_DIST = Figure()
 ax_DIST = Axis(f_DIST[1,1], xlabel = "Distance from Soma (um)", ylabel = "NT Release (uM)")
 
-xs = 0.0:0.001:0.3
-δe = map(d -> ring_circle_overlap_area(d; r_inner = 0.05, r_outer = 0.09, r_circle = 0.09), xs)
+xs = 0.0:0.001:0.30
+δe = map(d -> ring_circle_overlap_area(d; density = 1.0, r_inner = 0.088, r_outer = 0.09, r_circle = 0.09), xs)
 
 lines!(ax_DIST, xs, δe)
 display(f_DIST)

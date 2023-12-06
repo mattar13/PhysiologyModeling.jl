@@ -1,43 +1,36 @@
-using Revise
+using Revise, Profile, ProfileSVG
 using PhysiologyModeling
 using PhysiologyPlotting
 using GLMakie
 using SparseArrays
+import PhysiologyModeling: SRIW1, EM
 
 # Step 1 determine the domains and spacing of cells. 
-domain_x = (xmin, xmax) = (0.0, 3.0)
-domain_y = (ymin, ymax) = (0.0, 3.0)
-dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
+domain_x = (xmin, xmax) = (0.0, 1.0)
+domain_y = (ymin, ymax) = (0.0, 1.0)
+dx = dy = 0.057 #Mean distribution is 40-50 micron (WR taylor et al)
 
 # Step 2 create the map of cells and their radii
-#cells = rand(50, 2) .|> abs
-#radii = rand(0.05:0.01:0.180, size(cells, 1)) #Switch this on to get random radii
 cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax = ymax)
-radii = fill(0.18, size(cells, 1)) #Switch this on to get constant radii
-cell_map = CellMap(cells, radii, max_strength = 0.005);
+radii = fill(0.200, size(cells, 1)) #Switch this on to get constant radii
+cell_map = CellMap(cells, radii);
 
 #Step 3 create the initial conditions and parameters
 u0 = vcat(fill(vals_u0, size(cells, 1))'...)
-mid = round(Int64, size(cell_map.xs, 1)/2)+1
-#u0[mid, 8] = 5.0
 
 #Set parameters
 SAC_p0_dict["g_GABA"] = 0.0
 SAC_p0_dict["I_app"] = 0.0
 SAC_p0_dict["g_ACh"] = 1.0
-MAP_p = (cell_map, extract_p0(SAC_p0_dict));
+p0 = extract_p0(SAC_p0_dict);
 
-#%% Warmup the problem for 50s
-probWARM = SDEProblem(SAC_PDE, noise2D, u0, (0.0, 60e3), MAP_p)
-@time solWARM = solve(probWARM, SOSRI(), save_everystep = false, save_start = false, reltol=0.01, abstol=0.01, progress=true, progress_steps=1)
-solWARM[end]
+# Run the model
+tspan = (0.0, 60.0)
+f_PDE(du, u, p, t) = SAC_PDE(du, u, p, t, cell_map)
+prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
+@profile sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress=true, progress_steps=1);
 
-#%% Run the model
-tspan = (0.0, 60e3)
-#prob = ODEProblem(SAC_PDE, u0, tspan, MAP_p)
-prob = SDEProblem(SAC_PDE, noise2D, solWARM[end], tspan, MAP_p)
-#sol = solve(prob, TRBDF2(), reltol=0.01, abstol=0.01, progress=true, progress_steps=1)
-@time sol = solve(prob, SOSRI(), saveat = 1.0, reltol=0.01, abstol=0.01, progress=true, progress_steps=1)
+ProfileSVG.save("profile.svg")
 
 #%% Plot the figure
 fDIFF = Figure(resolution = (1800,1000))
@@ -47,21 +40,13 @@ ax3 = Axis3(fDIFF[1,3]; aspect=(1, 1, 1))
 ax4 = Axis3(fDIFF[2,1]; aspect=(1, 1, 1))
 ax5 = Axis3(fDIFF[2,2]; aspect=(1, 1, 1))
 ax6 = Axis3(fDIFF[2,3]; aspect=(1, 1, 1))
-#ax7 = Axis3(fDIFF[2,2]; aspect=(1, 1, 1))
-#ax8 = Axis3(fDIFF[2,3]; aspect=(1, 1, 1))
-#ax9 = Axis3(fDIFF[2,4]; aspect=(1, 1, 1))
-#ax10 = Axis3(fDIFF[2,5]; aspect=(1, 1, 1))
 
-surf1 = surface!(ax1, cells[:, 1], cells[:, 2], sol(100.0)[:, 1])#sol(0.0)[:, 1])
+surf1 = surface!(ax1, cells[:, 1], cells[:, 2], sol(100.0)[:, 1])
 surf2 = surface!(ax2, cells[:, 1], cells[:, 2], sol(100.0)[:, 10])
 surf3 = surface!(ax3, cells[:, 1], cells[:, 2], sol(100.0)[:, 8])
 surf4 = surface!(ax4, cells[:, 1], cells[:, 2], sol(100.0)[:, 5])
 surf5 = surface!(ax5, cells[:, 1], cells[:, 2], sol(100.0)[:, 6])
 surf6 = surface!(ax6, cells[:, 1], cells[:, 2], sol(100.0)[:, 7])
-#surf7 = surface!(ax7, cells[:, 1], cells[:, 2], sol(100.0)[:, 7])
-#surf8 = surface!(ax8, cells[:, 1], cells[:, 2], sol(100.0)[:, 8])
-#surf9 = surface!(ax9, cells[:, 1], cells[:, 2], sol(100.0)[:, 9])
-#surf10 = surface!(ax10, cells[:, 1], cells[:, 2], sol(100.0)[:, 10])
 
 zlims!(ax1, minimum(sol[:, 1, :]), maximum(sol[:, 1, :]))
 zlims!(ax2, minimum(sol[:, 10, :]), maximum(sol[:, 10, :]))

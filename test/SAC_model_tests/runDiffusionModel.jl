@@ -1,30 +1,32 @@
-using Revise
+using Revise, Profile, ProfileSVG
 using PhysiologyModeling
 using PhysiologyPlotting
 using GLMakie
 using SparseArrays, LinearAlgebra
 import PhysiologyModeling: Φe
-#%% Set up the PDE
-#Here is all of the ways to set up morphology
-domain_x = (xmin, xmax) = (0.0, 1.0)
-domain_y = (ymin, ymax) = (0.0, 1.0)
-dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
 
+#1) determine the domains and spacing of cells. 
+domain_x = (xmin, xmax) = (0.0, 0.5)
+domain_y = (ymin, ymax) = (0.0, 0.5)
+dx = dy = 0.057 #Mean distribution is 40-50 micron (WR taylor et al)
+
+#2) create the map of cells and their radii
 cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax = ymax)
-#radii = rand(0.10:0.01:0.20, size(cells, 1))
-radii = fill(0.200, size(cells, 1))
+radii = fill(0.200, size(cells, 1)) #Switch this on to get constant radii
 cell_map = CellMap(cells, radii);
 
-#Define the initial state and timespan
+#3) Define the initial state and timespan
 u0 = zeros(size(cell_map.connections, 1))
-mid = round(Int64, size(cell_map.xs, 1)/2)+1
+mid = round(Int64, size(cell_map.connections, 1)/2)+1
+u0[mid] = 1.0
 
-#Run model
+#4) Run model
 tspan = (0.0, 5000)
-probSDE = SDEProblem(DIFFUSION_MODEL, DIFFUSION_NOISE, u0, tspan, cell_map)
-@time sol = solve(probSDE, SOSRI(), reltol=0.01, abstol=0.01, progress=true, progress_steps=1)
+f_diffuse(du, u, p, t) = DIFFUSION_MODEL(du, u, p, t; active_cell = mid)
+probSDE = SDEProblem(f_diffuse, DIFFUSION_NOISE, u0, tspan, cell_map)
+@time sol = solve(probSDE, SOSRI(), reltol=0.01, abstol=0.01, progress=true, progress_steps=1);
 
-#%% Animate the soluiton
+# 5) Animate the soluiton
 fDIFF = Figure(resolution = (1000,1000))
 ax1 = Axis3(fDIFF[1,1]; aspect=(1, 1, 1), title = "T = 0.00")
 
