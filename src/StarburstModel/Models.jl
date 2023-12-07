@@ -199,7 +199,7 @@ function ∇α(du, u, cell_map, t)
      flow_out = similar(du)
      mul!(flow_in, cell_map.strength, u)
      flow_out = cell_map.strength_out .* u 
-     du = flow_out + flow_in
+     du .+= flow_out + flow_in #In order to properly work this, we need to both add and assign
 end
 
 function ∇α_V2(du, u, cell_map, t)
@@ -229,7 +229,7 @@ function DIFFUSION_MODEL(du, u, p, t; active_cell = 221)
      du .= -u/540 #du decays over time
      if 500.0 < t < 2500.0
           #We want to add some diffusive material during a time range
-          du[active_cell] += 1.0
+          du[active_cell] = 1.0
      end
      ∇α(du, u, p, t)#Diffusion occurs after
      #We should go through and decay the edges 
