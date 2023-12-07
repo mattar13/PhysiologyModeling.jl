@@ -40,6 +40,7 @@ export noise1D, noise2D
 include("StarburstModel/Mapping.jl")
 export even_map
 export CellMap
+export ring_circle_overlap_area
 
 
 #This section deals with parameters and contions
