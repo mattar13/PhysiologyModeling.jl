@@ -6,14 +6,16 @@ using SparseArrays
 import PhysiologyModeling: SRIW1, EM
 
 # Step 1 determine the domains and spacing of cells. 
-domain_x = (xmin, xmax) = (0.0, 1.0)
-domain_y = (ymin, ymax) = (0.0, 1.0)
-dx = dy = 0.057 #Mean distribution is 40-50 micron (WR taylor et al)
+domain_x = (xmin, xmax) = (0.0, 3.0)
+domain_y = (ymin, ymax) = (0.0, 3.0)
+dx = dy = 0.1 #Mean distribution is 40-50 micron (WR taylor et al)
 
 # Step 2 create the map of cells and their radii
 cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax = ymax)
 radii = fill(0.200, size(cells, 1)) #Switch this on to get constant radii
-cell_map = CellMap(cells, radii);
+cell_map = CellMap(cells, radii, 
+     distance_function = x -> ring_circle_overlap_area(x; density = 1.0)
+);
 
 #Step 3 create the initial conditions and parameters
 u0 = vcat(fill(vals_u0, size(cells, 1))'...)
@@ -25,15 +27,13 @@ SAC_p0_dict["g_ACh"] = 1.0
 p0 = extract_p0(SAC_p0_dict);
 
 # Run the model
-tspan = (0.0, 60.0)
+tspan = (0.0, 120e3)
 f_PDE(du, u, p, t) = SAC_PDE(du, u, p, t, cell_map)
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
-@profile sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress=true, progress_steps=1);
-
-ProfileSVG.save("profile.svg")
+@time sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress=true, progress_steps=1);
 
 #%% Plot the figure
-fDIFF = Figure(resolution = (1800,1000))
+fDIFF = Figure(size = (1800,1000))
 ax1 = Axis3(fDIFF[1,1]; aspect=(1, 1, 1))
 ax2 = Axis3(fDIFF[1,2]; aspect=(1, 1, 1))
 ax3 = Axis3(fDIFF[1,3]; aspect=(1, 1, 1))
@@ -60,7 +60,6 @@ zlims!(ax6, minimum(sol[:, 7, :]), maximum(sol[:, 7, :]))
 #zlims!(ax10, minimum(sol[:, 10, :]), maximum(sol[:, 10, :]))
 
 #display(fDIFF)
-#
 n_frames = 1000
 animate_t = LinRange(0.0, sol.t[end], n_frames)
 dt = animate_t[2] - animate_t[1]
