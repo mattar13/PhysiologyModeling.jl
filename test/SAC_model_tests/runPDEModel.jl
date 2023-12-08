@@ -8,7 +8,7 @@ import PhysiologyModeling: SRIW1, EM
 # Step 1 determine the domains and spacing of cells. 
 domain_x = (xmin, xmax) = (0.0, 3.0)
 domain_y = (ymin, ymax) = (0.0, 3.0)
-dx = dy = 0.1 #Mean distribution is 40-50 micron (WR taylor et al)
+dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
 
 # Step 2 create the map of cells and their radii
 cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax = ymax)
@@ -27,10 +27,13 @@ SAC_p0_dict["g_ACh"] = 1.0
 p0 = extract_p0(SAC_p0_dict);
 
 # Run the model
-tspan = (0.0, 120e3)
+tspan = (0.0, 100.0)
 f_PDE(du, u, p, t) = SAC_PDE(du, u, p, t, cell_map)
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
-@time sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress=true, progress_steps=1);
+@profile sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress=true, progress_steps=1);
+ProfileSVG.save("model_test.svg")
+
+
 
 #%% Plot the figure
 fDIFF = Figure(size = (1800,1000))
