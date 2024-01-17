@@ -1,4 +1,4 @@
-using Revise, Profile, ProfileSVG
+using Revise
 using PhysiologyModeling
 using PhysiologyPlotting
 using GLMakie
