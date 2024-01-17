@@ -39,7 +39,7 @@ n_frames = 1000
 animate_t = LinRange(0.0, sol.t[end], n_frames)
 dt = animate_t[2] - animate_t[1]
 fps = round(Int64, (1/dt) * 1000)
-record(fDIFF, "test/SAC_model_tests/diffusion_animation.mp4", animate_t, framerate = fps) do t
+GLMakie.record(fDIFF, "test/SAC_model_tests/diffusion_animation.mp4", animate_t, framerate = fps) do t
 	println(t)
 	u = sol(t)
 	ax1.title = "T = $(round(t/1000, digits = 3))s"
