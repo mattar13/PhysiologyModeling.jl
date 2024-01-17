@@ -4,6 +4,8 @@ authors = ["mattar13 <mtarchick13@gmail.com> and contributors"]
 version = "0.1.0"
 
 [deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 ElectroPhysiology = "da7a9670-f599-43ac-b818-143f8bf87d45"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"

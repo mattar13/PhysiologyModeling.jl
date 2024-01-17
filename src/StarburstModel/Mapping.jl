@@ -96,6 +96,11 @@ mutable struct CellMap{T}
      domain_y::Tuple{T, T}
 end
 
+function Make_GPU!(MAP::CellMap{T}) where T <: Real
+
+
+
+end
 #These are the distance functions we can use to calculate the strength
 #This is our non-linear distance function
 ring(d; max_strength = 0.05, max_dist = 0.15, slope = 0.01) = max_strength * exp(-((d - max_dist)^2) / (2 * slope^2))
