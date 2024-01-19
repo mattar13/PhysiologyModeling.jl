@@ -1,9 +1,10 @@
 using Revise
 using PhysiologyModeling
+using Pkg; Pkg.activate("test")
+
 using PhysiologyPlotting
 using GLMakie
 using SparseArrays, LinearAlgebra
-import PhysiologyModeling: Φe
 
 #1) determine the domains and spacing of cells. 
 domain_x = (xmin, xmax) = (0.0, 1.0)
