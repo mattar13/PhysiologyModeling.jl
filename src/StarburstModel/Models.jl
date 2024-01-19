@@ -238,7 +238,7 @@ end
 
 DIFFUSION_NOISE(du, u, p, t) = du[:] .= 0.001
 
-function SAC_PDE(du, u, p, t, MAP)
+function SAC_PDE_ITERATION(du, u, p, t, MAP)
      #This needs to be loaded into a function with the map object(s) attached
      #p[1] will be the cell map necessary for the equation to be run
      #p[2] is the parameter set
@@ -250,6 +250,64 @@ function SAC_PDE(du, u, p, t, MAP)
      dE = view(du, :, 8)
      E = view(u, :, 8)
      ∇α(dE, E, MAP, t) #The map function gets fed into this network
+     return
+end
+
+#A more inline version
+function SAC_PDE(du, u, p, t, MAP)
+     v = view(u, :, 1)
+     n = view(u, :, 2)
+     m = view(u, :, 3)
+     h = view(u, :, 4)
+     c = view(u, :, 5)
+     a = view(u, :, 6)
+     b = view(u, :, 7)
+     e = view(u, :, 8)
+     i = view(u, :, 9)
+     W = view(u, :, 10)
+
+     dv = view(du, :, 1)
+     dn = view(du, :, 2)
+     dm = view(du, :, 3)
+     dh = view(du, :, 4)
+     dc = view(du, :, 5)
+     da = view(du, :, 6)
+     db = view(du, :, 7)
+     de = view(du, :, 8)
+     di = view(du, :, 9)
+     dW = view(du, :, 10)
+     (I_app,
+          C_m, g_W, τw, 
+          g_leak, E_leak, 
+          g_K, V3, V4, E_K, τn, 
+          g_Ca, V1, V2,E_Ca, τc,
+          g_Na, E_Na, 
+          g_TREK,
+          C_0, λ , δ,  
+          α, τa, 
+          β, τb, 
+          VSe, ρe, V0e, g_ACh, k_ACh, E_ACh,  τACh,
+          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA,
+          De, Di, 
+          V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
+     ) = extract_p0(p)
+     @. dv = (ILeak(v, g_leak, E_leak) + 
+          ICa(v, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
+          IACh(v, e, g_ACh, k_ACh, E_ACh) + IGABA(v, i, g_GABA, k_GABA, E_Cl) + 
+          I_app + W) / C_m
+     @. dn = 0.0 #(Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
+     @. dm = 0.0 #α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
+     @. dh = 0.0 #α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
+     @. dc = 0.0 #(C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
+     @. da = 0.0 #(α * c^4 * (1 - a) - a) / τa
+     @. db = 0.0 #(β * a^4 * (1 - b) - b) / τb
+     @. de = 0.0 #(ρe * Φe(v, VSe, V0e) - e) / τACh
+     #Do the PDE operations here
+     ∇α(de, e, MAP, t) 
+     @. di = 0.0 #(ρi * Φi(v, VSi, V0i) - i) / τGABA
+     @. dW = 0.0 #-W / τw
+
+     return
 end
 
 #Periodic stimulation of a x value
