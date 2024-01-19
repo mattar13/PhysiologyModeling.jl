@@ -193,13 +193,8 @@ end
 
 noise1D(du, u, p, t) = du[end] = 0.1
 
-function ∇α(du, u, cell_map, t)
-     # Diffusion into points
-     flow_in = similar(du)
-     flow_out = similar(du)
-     mul!(flow_in, cell_map.strength, u)
-     flow_out = cell_map.strength_out .* u 
-     du .+= flow_out + flow_in #In order to properly work this, we need to both add and assign
+function ∇α(du, u, cell_map, t) #Could it really be this easy? 
+     du .+= (cell_map.strength_out .* u) + (cell_map.strength * u)
 end
 
 function ∇α_V2(du, u, cell_map, t)
@@ -237,21 +232,6 @@ function DIFFUSION_MODEL(du, u, p, t; active_cell = 221)
 end
 
 DIFFUSION_NOISE(du, u, p, t) = du[:] .= 0.001
-
-function SAC_PDE_ITERATION(du, u, p, t, MAP)
-     #This needs to be loaded into a function with the map object(s) attached
-     #p[1] will be the cell map necessary for the equation to be run
-     #p[2] is the parameter set
-     for i in axes(u, 1)
-          dui = view(du, i, :)
-          ui = view(u, i, :)
-          SAC_ODE(dui, ui, p, t)
-     end
-     dE = view(du, :, 8)
-     E = view(u, :, 8)
-     ∇α(dE, E, MAP, t) #The map function gets fed into this network
-     return
-end
 
 #A more inline version
 function SAC_PDE(du, u, p, t, MAP)
@@ -295,17 +275,17 @@ function SAC_PDE(du, u, p, t, MAP)
           ICa(v, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
           IACh(v, e, g_ACh, k_ACh, E_ACh) + IGABA(v, i, g_GABA, k_GABA, E_Cl) + 
           I_app + W) / C_m
-     @. dn = 0.0 #(Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
-     @. dm = 0.0 #α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
-     @. dh = 0.0 #α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
-     @. dc = 0.0 #(C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
-     @. da = 0.0 #(α * c^4 * (1 - a) - a) / τa
-     @. db = 0.0 #(β * a^4 * (1 - b) - b) / τb
-     @. de = 0.0 #(ρe * Φe(v, VSe, V0e) - e) / τACh
+     @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
+     @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
+     @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
+     @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
+     @. da = (α * c^4 * (1 - a) - a) / τa
+     @. db = (β * a^4 * (1 - b) - b) / τb
+     @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      #Do the PDE operations here
-     ∇α(de, e, MAP, t) 
-     @. di = 0.0 #(ρi * Φi(v, VSi, V0i) - i) / τGABA
-     @. dW = 0.0 #-W / τw
+     ∇α(de, e, MAP, t) #This takes alot of allocations. 
+     @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
+     @. dW = -W / τw
 
      return
 end
