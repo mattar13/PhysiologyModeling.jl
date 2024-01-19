@@ -23,7 +23,7 @@ function parallel_add!(y, x)
     return nothing
 end    
 
-function add_broadcast!(y, x)
+function add_broadcast!(y, x) #Using this method seems to be the fastest way to do operations
     CUDA.@sync y .+= x
     return
 end
@@ -47,3 +47,4 @@ end
 @btime parallel_add!($y, $x)
 @btime add_broadcast!($y_d, $x_d)
 @btime bench_gpu1!($y_d, $x_d)
+nothing
