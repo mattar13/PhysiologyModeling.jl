@@ -1,7 +1,7 @@
 module PhysiologyModeling
 
 using ElectroPhysiology
-using PhysiologyPlotting
+#using PhysiologyPlotting
 # Write your package code here.
 using LinearAlgebra,SparseArrays
 using DifferentialEquations
