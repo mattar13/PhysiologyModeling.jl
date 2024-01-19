@@ -1,3 +1,4 @@
 [deps]
+ElectroPhysiology = "da7a9670-f599-43ac-b818-143f8bf87d45"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 PhysiologyPlotting = "d5a2a81f-3167-4eb5-8f67-b1ebe6a4430d"
