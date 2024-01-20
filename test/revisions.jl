@@ -1,10 +1,12 @@
 using Revise
+using ElectroPhysiology
 using PhysiologyModeling
 using Pkg; Pkg.activate("test") #Activate the testing environment
-#I think a good next step is to add in the ability to open and compare data versus physiologyical data
-# create a model output here
-using ElectroPhysiology
 using PhysiologyPlotting, GLMakie
+using BenchmarkTools
+
+#%% Section A: Testing models against physiology data
+#I think a good next step is to add in the ability to open and compare data versus physiologyical data
 
 f = Figure(size = (2.5, 2.5))
 ax1 = Axis(f[1,1], 
@@ -18,9 +20,6 @@ folder = raw"F:\SAC_project_backup_Feller_Lab\SAC-project_ephys_data\01132023-P1
 file = "gap_free_voltage_0000.abf"
 path = joinpath(folder, file)
 data = readABF(path, channels = ["I_MTest 1"], stimulus_name = nothing)
-size(data)
-data.t
-
 downsample!(data, 10.0)
 plot_experiment(ax1, data)
 
@@ -40,18 +39,10 @@ ax1 = Axis(f[1,1],
 plot_experiment(ax1, sim_exp)
 
 
-#%% This section is testing the GPU 
-#1) Run the model using the default settings
-#I want to use GPUs to improve the speed of the diffusion reaction. 
-
-using Revise, Profile, ProfileSVG
-using CUDA 
-using BenchmarkTools
-using PhysiologyModeling
-using PhysiologyPlotting
-using GLMakie
-using SparseArrays, LinearAlgebra
-import PhysiologyModeling: Φe
+#%% Section B: Running using GPUs and phys data
+using CUDA
+using SparseArrays
+using LinearAlgebra
 
 #1) determine the domains and spacing of cells. 
 domain_x = (xmin, xmax) = (0.0, 10.0)
@@ -64,23 +55,11 @@ radii = fill(0.200, size(cells, 1)) #Switch this on to get constant radii
 cell_map = CellMap(cells, radii);
 
 #3) Define the initial state and timespan
-u = ones(size(cell_map.connections, 1))
+u = rand(size(cell_map.connections, 1), 10)
 du = similar(u)
+p0 = extract_p0(SAC_p0_dict);
+@btime SAC_PDE(du, u, p0, 0.0, cell_map);
 
-uG = ones(size(cell_map.connections, 1)) |> CuArray
+uG = ones(size(cell_map.connections, 1), 10) |> CuArray{Float32}
 duG = similar(uG)
-cell_connect_G = cell_map.connections |> CuSparseMatrixCSC
-
-function testf(du, u, S)
-    mul!(du, S, u);
-end
-
-function testf_GPU(du, u, S)
-    #CUDA.@sync mul!(du, S, u);
-    CUDA.@sync du .= S * u
-end
-
-@time cell_map.connections * du;
-
-@time testf(du, u, cell_map.connections);
-@time testf_GPU(duG, uG, cell_connect_G);
+cell_map_G = make_GPU(cell_map)
