@@ -92,15 +92,10 @@ mutable struct CellMap{T}
 	connections::SparseMatrixCSC{T, Int64}
      strength::SparseMatrixCSC{T, Int64}
      strength_out::Vector{T}
-     domain_x::Tuple{T, T}
-     domain_y::Tuple{T, T}
 end
 
-function Make_GPU!(MAP::CellMap{T}) where T <: Real
 
 
-
-end
 #These are the distance functions we can use to calculate the strength
 #This is our non-linear distance function
 ring(d; max_strength = 0.05, max_dist = 0.15, slope = 0.01) = max_strength * exp(-((d - max_dist)^2) / (2 * slope^2))
@@ -149,8 +144,7 @@ function ring_circle_overlap_area(p1::Tuple{T, T}, p2::Tuple{T, T}; density = 1.
 end
 
 function CellMap(cells::Matrix{T}, radii::Vector{T}; 
-     distance_function = ring_circle_overlap_area,
-     domain_x = (0.0, 1.0), domain_y = (0.0, 1.0)
+     distance_function = ring_circle_overlap_area
 ) where T <: Real
      neighbors = find_neighbors_radius(cells, radii)    
      connections = create_sparse_matrix(neighbors, cells)
@@ -163,7 +157,7 @@ function CellMap(cells::Matrix{T}, radii::Vector{T};
      strength = sparse(rows, cols, new_values)
      strength_out = -sum(strength, dims=2) |> vec #Preallocate the diffusion out for more efficient calculations
 
-     return CellMap(cells[:, 1], cells[:,2], radii, connections, strength, strength_out, domain_x, domain_y)
+     return CellMap(cells[:, 1], cells[:,2], radii, connections, strength, strength_out)
 end
 
 function map_points(cell_map::CellMap)
