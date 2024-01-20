@@ -1,5 +1,6 @@
 module PhysiologyModeling
 
+using Requires
 using ElectroPhysiology
 #using PhysiologyPlotting
 # Write your package code here.
@@ -41,8 +42,19 @@ include("StarburstModel/Mapping.jl")
 export even_map
 export CellMap
 export ring_circle_overlap_area
-
+export make_GPU
 
 #This section deals with parameters and contions
 #Eventually PhysiologyPlotting will include some things we need to plot everything
+
+function __init__()
+    @requrie CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
+        println("GPU mode enabled")
+        using .CUDA
+        include("make_GPU.jl")
+        export make_GPU
+    end
+end
+
+
 end
