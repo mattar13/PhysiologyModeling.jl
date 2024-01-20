@@ -193,8 +193,19 @@ end
 
 noise1D(du, u, p, t) = du[end] = 0.1
 
+
+
 function ∇α(du, u, cell_map, t) #Could it really be this easy? 
      du .+= (cell_map.strength_out .* u) + (cell_map.strength * u)
+end
+
+function ∇α_OLD(du, u, cell_map, t)
+     # Diffusion into points
+     flow_in = similar(du) #I think these take a ton of
+     flow_out = similar(du)
+     mul!(flow_in, cell_map.strength, u)
+     flow_out = cell_map.strength_out .* u 
+     du .+= flow_out + flow_in #In order to properly work this, we need to both add and assign
 end
 
 function ∇α_V2(du, u, cell_map, t)
