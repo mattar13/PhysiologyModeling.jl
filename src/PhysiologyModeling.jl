@@ -48,11 +48,11 @@ export make_GPU
 #Eventually PhysiologyPlotting will include some things we need to plot everything
 
 function __init__()
-    @requrie CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
+    @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
         println("GPU mode enabled")
         using .CUDA
         include("make_GPU.jl")
-        export make_GPU
+        export make_GPU, CellMap_GPU, SAC_PDE_GPU
     end
 end
 
