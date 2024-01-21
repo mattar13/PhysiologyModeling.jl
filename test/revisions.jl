@@ -58,8 +58,12 @@ cell_map = CellMap(cells, radii);
 u = rand(size(cell_map.connections, 1), 10)
 du = similar(u)
 p0 = extract_p0(SAC_p0_dict);
-@btime SAC_PDE(du, u, p0, 0.0, cell_map);
 
 uG = ones(size(cell_map.connections, 1), 10) |> CuArray{Float32}
 duG = similar(uG)
 cell_map_G = make_GPU(cell_map)
+
+SAC_PDE_GPU(du, u, p, t, cell_map) = CUDA.@sync SAC_PDE(du, u, p, t, cell_map)
+
+@btime SAC_PDE(du, u, p0, 0.0, cell_map);
+@btime SAC_PDE_G(duG, uG, p0, 0.0, cell_map)
