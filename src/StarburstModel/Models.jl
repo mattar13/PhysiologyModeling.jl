@@ -193,8 +193,6 @@ end
 
 noise1D(du, u, p, t) = du[end] = 0.1
 
-
-
 function ∇α(du, u, cell_map, t) #Could it really be this easy? 
      du .+= (cell_map.strength_out .* u) + (cell_map.strength * u)
 end
