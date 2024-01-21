@@ -19,4 +19,3 @@ ITREK(v::T, b::T, g_TREK::Float64, E_K::Float64) where T = -g_TREK * b * (v - E_
 IACh(v::T, e::T, g_ACh::Float64, k_ACh::Float64, E_ACh::Float64) where T = -g_ACh * ħe(e, k_ACh) * (v - E_ACh)
 IGABA(v::T, i::T, g_GABA::Float64, k_GABA::Float64, E_Cl::Float64) where T = -g_GABA * ħi(i, k_GABA) * (v - E_Cl)
 INa(v::T, m::T, h::T, g_Na::Float64, E_Na::Float64) where T = -g_Na * m^3 * h * (v - E_Na)
-
