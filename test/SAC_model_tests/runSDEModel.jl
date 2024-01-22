@@ -1,8 +1,10 @@
-using Revise
 using PhysiologyModeling
+
+using Pkg; Pkg.activate("test")
 using PhysiologyPlotting
 using GLMakie
 
+#%% Run the example after here
 fSDE = Figure(size = (1800, 800))
 ax1 = Axis(fSDE[1,1], title = "Voltage (Vt)")
 ax2 = Axis(fSDE[2,1], title = "K Repol. (Nt)")
@@ -19,19 +21,26 @@ ax9 = Axis(fSDE[2,3], title = "GABA (It)")
 ax10 = Axis(fSDE[1,4], title = "Noise (Wt)")
 
 # Step 1. Set up all parameters for the ODE
-tspan = (0.0, 120e3)
+tspan = (0.0, 60e3)
 
+SAC_u0_dict["a"] = 1.0
 SAC_p0_dict["I_app"] = 0.0
 SAC_p0_dict["g_GABA"] = 0.0
 SAC_p0_dict["g_ACh"] = 0.0
+SAC_p0_dict["g_TREK"] = 3.0
+SAC_p0_dict["α"] = 625.0
+SAC_p0_dict["β"] = 2.5
 
-n_epoch = 10
-xvals = LinRange(1.0, 5.0, n_epoch)
-for x in xvals
-     SAC_p0_dict["g_K"] = x
+param_modify = 1:10
+for x in param_modify
+     #SAC_p0_dict["g_TREK"] = x #may cause issues
+     #SAC_p0_dict["α"] = x #seems fine
+     #SAC_p0_dict["β"] = x #adjust this
      p0 = extract_p0(SAC_p0_dict)
      prob = SDEProblem(SAC_ODE, noise1D, vals_u0, tspan, p0)
+     #prob = ODEProblem(SAC_ODE, vals_u0, tspan, p0)
      @time sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress = true, progress_steps = 1)
+     #@time sol = solve(prob, reltol = 0.01, abstol = 0.01, progress = true, progress_steps = 1)
 
      # Plot the solution
      time = sol.t
