@@ -4,7 +4,7 @@ mutable struct CellMapGPU{T}
      radius::Vector{T}
 	connections::CUDA.CUSPARSE.CuSparseMatrixCSC{T, Int32}
      strength::CUDA.CUSPARSE.CuSparseMatrixCSC{T, Int32}
-     strength_out::Vector{T}
+     strength_out::CuArray{T}
 end
 
 function make_GPU(MAP::CellMap{T}) where T <: Real
@@ -13,8 +13,14 @@ function make_GPU(MAP::CellMap{T}) where T <: Real
      radius = MAP.radius |> Vector{Float32}
      connections = MAP.connections .|> Float32 |> CUSPARSE.CuSparseMatrixCSC
      strength = MAP.strength .|> Float32 |> CUSPARSE.CuSparseMatrixCSC
-     strength_out = MAP.strength_out |> Vector{Float32}
+     strength_out = MAP.strength_out |> CuArray{Float32}
      return CellMapGPU(xs, ys, radius, connections, strength, strength_out)
+end
+
+function DIFFUSION_MODEL_GPU(du, u, p, t; active_cell = 221)
+     #CUDA.@sync DIFFUSION_MODEL(du, u, p, t; active_cell = active_cell)
+     CUDA.@sync ∇α(du, u, p, t)
+     return
 end
 
 function SAC_PDE_GPU(du, u, p, t, MAP::CellMapGPU)
