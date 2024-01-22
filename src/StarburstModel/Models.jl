@@ -45,8 +45,8 @@ function SAC_ODE(du, u, p, t)
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
-     @. da = (α * c^4 * (1 - a) - a) / τa
-     @. db = (β * a^4 * (1 - b) - b) / τb
+     @. da = (-α * c^4 * a + (1 - a)) / τa
+     @. db = (β * (1-a^4) * (1 - b) - b) / τb
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
      @. dW = -W / τw
