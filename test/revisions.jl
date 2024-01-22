@@ -5,6 +5,43 @@ using Pkg; Pkg.activate("test") #Activate the testing environment
 using PhysiologyPlotting, GLMakie
 using BenchmarkTools
 
+#%% Making cAMP a quantity will help with adding dopamine into models I think
+
+# Step 1. Set up all parameters for the ODE
+tspan = (0.0, 120e3)
+
+SAC_p0_dict["I_app"] = 0.0
+SAC_p0_dict["g_GABA"] = 0.0
+SAC_p0_dict["g_ACh"] = 0.0
+
+n_epoch = 10
+xvals = LinRange(1.0, 5.0, n_epoch)
+
+p0 = extract_p0(SAC_p0_dict)
+prob = SDEProblem(SAC_ODE, noise1D, vals_u0, tspan, p0)
+@time sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress = true, progress_steps = 1)
+
+#%% Section B: Running using GPUs and phys data
+using CUDA
+using SparseArrays
+using LinearAlgebra
+
+#1) determine the domains and spacing of cells. 
+domain_x = (xmin, xmax) = (0.0, 10.0)
+domain_y = (ymin, ymax) = (0.0, 10.0)
+dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
+
+#2) create the map of cells and their radii
+cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax = ymax)
+radii = fill(0.200, size(cells, 1)) #Switch this on to get constant radii
+cell_map = make_GPU(CellMap(cells, radii));
+u0 = vcat(fill(vals_u0, size(cells, 1))'...) |> CuArray{Float32} #Generate a new initial conditions
+
+tspan = (0.0, 10000.0)
+f_PDE(du, u, p, t) = SAC_PDE_GPU(du, u, p, t, cell_map)
+prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
+@time sol = solve(prob, SOSRI(), reltol = 2e-2, abstol = 2e-2, progress=true, progress_steps=1);
+
 #%% Section A: Testing models against physiology data
 #I think a good next step is to add in the ability to open and compare data versus physiologyical data
 
@@ -37,33 +74,3 @@ ax1 = Axis(f[1,1],
      ylabel = "Response (μV)"
 )
 plot_experiment(ax1, sim_exp)
-
-
-#%% Section B: Running using GPUs and phys data
-using CUDA
-using SparseArrays
-using LinearAlgebra
-
-#1) determine the domains and spacing of cells. 
-domain_x = (xmin, xmax) = (0.0, 10.0)
-domain_y = (ymin, ymax) = (0.0, 10.0)
-dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
-
-#2) create the map of cells and their radii
-cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax = ymax)
-radii = fill(0.200, size(cells, 1)) #Switch this on to get constant radii
-cell_map = CellMap(cells, radii);
-
-#3) Define the initial state and timespan
-u = rand(size(cell_map.connections, 1), 10)
-du = similar(u)
-p0 = extract_p0(SAC_p0_dict);
-
-uG = ones(size(cell_map.connections, 1), 10) |> CuArray{Float32}
-duG = similar(uG)
-cell_map_G = make_GPU(cell_map)
-
-SAC_PDE_GPU(du, u, p, t, cell_map) = CUDA.@sync SAC_PDE(du, u, p, t, cell_map)
-
-@btime SAC_PDE(du, u, p0, 0.0, cell_map);
-@btime SAC_PDE_G(duG, uG, p0, 0.0, cell_map)
