@@ -52,7 +52,8 @@ function __init__()
         println("GPU mode enabled")
         using .CUDA
         include("make_GPU.jl")
-        export make_GPU, CellMap_GPU, SAC_PDE_GPU
+        export make_GPU, CellMap_GPU, SAC_PDE_GPU 
+        export DIFFUSION_MODEL_GPU
     end
 end
 
