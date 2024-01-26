@@ -31,6 +31,7 @@ function SAC_ODE(du, u, p, t)
           C_0, λ , δ,  
           α, τa, 
           β, τb, 
+          a_n, b_n,
           VSe, ρe, V0e, g_ACh, k_ACh, E_ACh,  τACh,
           VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA,
           De, Di, 
@@ -45,8 +46,8 @@ function SAC_ODE(du, u, p, t)
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
-     @. da = (-α * c^4 * a + (1 - a)) / τa
-     @. db = (β * (1-a^4) * (1 - b) - b) / τb
+     @. da = -α*a#(-α * (1-c^a_n) * a + (1 - a)) / τa #Normally we take C to the 4th power, but this seems to cause issues
+     @. db = 0.0#(β * (1-a^b_n) * (1 - b) - b) / τb
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
      @. dW = -W / τw
@@ -191,7 +192,7 @@ function SAC_ODE_Compartment(du, u, p, t;
      end
 end
 
-noise1D(du, u, p, t) = du[end] = 0.1
+noise1D(du, u, p, t) = du[end] = p[3]
 
 function ∇α(du, u, cell_map, t) #Could it really be this easy? 
      du .+= (cell_map.strength_out .* u) + (cell_map.strength * u)
@@ -320,7 +321,7 @@ function SAC_PDE_STIM(du, u, MAP_p, t)
      ∇α(dE, E, cell_map, t)
 end
 
-noise2D(du, u, p, t) = du[:, end] .= 0.1
+noise2D(du, u, p, t) = du[:, end] .= 1.0
 
 function SAC_GAP(du, u, p, t)
      #p[1] will be the cell map necessary for the equation to be run
