@@ -5,15 +5,19 @@ using ElectroPhysiology
 #using PhysiologyPlotting
 # Write your package code here.
 using LinearAlgebra,SparseArrays
+using ForwardDiff, NLsolve
 using DifferentialEquations
 
 using Logging: global_logger
 using TerminalLoggers: TerminalLogger
+
 global_logger(TerminalLogger())
 
 #Export some commonly used algorithims
 export Tsit5, Rodas5, ROS3P, TRBDF2, KenCarp47
 export AutoTsit5, Rosenbrock23
+export remake
+export EnsembleProblem, EnsembleDistributed
 export SOSRI, SOSRA, SOSRA2
 export solve
 export SDEProblem, ODEProblem
@@ -46,6 +50,12 @@ export make_GPU
 
 #This section deals with parameters and contions
 #Eventually PhysiologyPlotting will include some things we need to plot everything
+
+include("DynamicalAnalysis/phase_plane_analysis.jl")
+export phase_plane
+
+include("DynamicalAnalysis/equilibria_analysis.jl")
+export find_equilibria
 
 function __init__()
     @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
