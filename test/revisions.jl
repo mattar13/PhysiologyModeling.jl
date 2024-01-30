@@ -5,21 +5,27 @@ using Pkg; Pkg.activate("test") #Activate the testing environment
 using PhysiologyPlotting, GLMakie
 using BenchmarkTools
 
-#%% Making cAMP a quantity will help with adding dopamine into models I think
-
-# Step 1. Set up all parameters for the ODE
-tspan = (0.0, 120e3)
-
-SAC_p0_dict["I_app"] = 0.0
+#%%
+tspan = (0.0, 4000.0)
+SAC_p0_dict["I_app"] = 5.0
 SAC_p0_dict["g_GABA"] = 0.0
 SAC_p0_dict["g_ACh"] = 0.0
-
-n_epoch = 10
-xvals = LinRange(1.0, 5.0, n_epoch)
-
+SAC_p0_dict["g_W"] = 0.0
+SAC_p0_dict["g_TREK"] = 0.0
 p0 = extract_p0(SAC_p0_dict)
-prob = SDEProblem(SAC_ODE, noise1D, vals_u0, tspan, p0)
-@time sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress = true, progress_steps = 1)
+u0 = extract_u0(SAC_u0_dict)
+prob = SDEProblem(SAC_ODE_STIM, noise1D, u0, tspan, p0)
+
+xlims = (-90.0, 10.0)
+ylims = (-0.10, 5.0)
+xmap = LinRange(xlims[1], xlims[2], 100)
+ymap = LinRange(ylims[1], ylims[2], 100)
+@time zplane = phase_plane(prob, xmap, ymap);
+#arrows(xmap, ymap, zplane[:,:,1], zplane[:,:,2], align = :center, arrowsize = 1, lengthscale = 0.03,)
+
+prob |> typeof |> fieldnames
+
+find_equilibria(prob, xlims, ylims, verbose = true)
 
 #%% Section B: Running using GPUs and phys data
 using CUDA
@@ -40,7 +46,7 @@ u0 = vcat(fill(vals_u0, size(cells, 1))'...) |> CuArray{Float32} #Generate a new
 tspan = (0.0, 10000.0)
 f_PDE(du, u, p, t) = SAC_PDE_GPU(du, u, p, t, cell_map)
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
-@time sol = solve(prob, SOSRI(), reltol = 2e-2, abstol = 2e-2, progress=true, progress_steps=1);
+@Time sol = solve(prob, SOSRI(), reltol = 2e-2, abstol = 2e-2, progress=true, progress_steps=1);
 
 #%% Section A: Testing models against physiology data
 #I think a good next step is to add in the ability to open and compare data versus physiologyical data
@@ -64,7 +70,7 @@ display(f)
 #1) Run the model using the default settingstspan = (0.0, 10e3)
 p0 = extract_p0(SAC_p0_dict)
 prob = SDEProblem(SAC_ODE, noise1D, vals_u0, (0.0, 300e3), p0)
-@time sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress = true, progress_steps = 1)
+@Time sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress = true, progress_steps = 1)
 sim_exp = Experiment(sol) #Turn this into an experiment
 
 f = Figure(size = (2.5, 2.5))
