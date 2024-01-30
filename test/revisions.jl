@@ -8,6 +8,55 @@ using BenchmarkTools
 #%%
 tspan = (0.0, 4000.0)
 SAC_p0_dict["I_app"] = 5.0
+#%% Section A: Testing models against physiology data
+#I think a good next step is to add in the ability to open and compare data versus physiologyical data
+root = raw"E:\Data\Patching"
+file = "2024_01_25_ChAT-RFP_DSGC/Cell1/24125000.abf"
+filename = joinpath(root, file)
+data = readABF(filename)
+import ElectroPhysiology.create_signal_waveform!
+create_signal_waveform!(data, "Analog 0")
+
+
+f = Figure(size = (200, 200))
+ax1 = Axis(f[1,1], 
+     title = "Experiment Plot Test",
+     xlabel = "Time (ms)", 
+     ylabel = "Response (mV)"
+)
+ax2 = Axis(f[1,2])
+
+plot_experiment(ax1, exp; channels = 1)
+plot_experiment(ax1, exp; channels = 2)
+
+#First try opening some data
+#find a good data point
+data = readABF(filename)
+size(data)
+
+
+downsample!(data, 10.0)
+plot_experiment(ax1, data)
+
+display(f)
+#1) Run the model using the default settingstspan = (0.0, 10e3)
+p0 = extract_p0(SAC_p0_dict)
+prob = SDEProblem(SAC_ODE, noise1D, vals_u0, (0.0, 300e3), p0)
+@time sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress = true, progress_steps = 1)
+sim_exp = Experiment(sol) #Turn this into an experiment
+
+f = Figure(size = (2.5, 2.5))
+ax1 = Axis(f[1,1], 
+     title = "Experiment Plot Test",
+     xlabel = "Time (ms)", 
+     ylabel = "Response (μV)"
+)
+plot_experiment(ax1, sim_exp)
+
+# Step 1. Set up all parameters for the ODE
+tspan = (0.0, 120e3)
+
+SAC_p0_dict["I_app"] = 0.0
 SAC_p0_dict["g_GABA"] = 0.0
 SAC_p0_dict["g_ACh"] = 0.0
 SAC_p0_dict["g_W"] = 0.0
