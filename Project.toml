@@ -19,7 +19,7 @@ TerminalLoggers = "5d786b92-1e48-4d6f-9151-6b4477ca9bed"
 
 [compat]
 DifferentialEquations = "7"
-ElectroPhysiology = "0.4"
+ElectroPhysiology = "0.5"
 ForwardDiff = "0.10"
 GLMakie = "0.9"
 JLD = "0.13"
