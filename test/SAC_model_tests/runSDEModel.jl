@@ -1,19 +1,16 @@
 using PhysiologyModeling
-
 using Pkg; Pkg.activate("test")
 using PhysiologyPlotting
 using GLMakie
 
 #%% Run the example after here
-tspan = (0.0, 4000.0)
-SAC_p0_dict["I_app"] = 5.0
+tspan = (0.0, 300e3)
 SAC_p0_dict["g_GABA"] = 0.0
 SAC_p0_dict["g_ACh"] = 0.0
-SAC_p0_dict["g_W"] = 0.0
-SAC_p0_dict["g_TREK"] = 3.0
+SAC_p0_dict["g_W"] = 0.075
 p0 = extract_p0(SAC_p0_dict)
 u0 = extract_u0(SAC_u0_dict)
-prob = SDEProblem(SAC_ODE_STIM, noise1D, u0, tspan, p0)
+prob = SDEProblem(SAC_ODE, noise1D, u0, tspan, p0)
 @time sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress = true, progress_steps = 1)
 
 fSDE = Figure(size = (1800, 800))
