@@ -282,24 +282,27 @@ function SAC_PDE(du, u, p, t, MAP)
           C_0, λ , δ,  
           α, τa, 
           β, τb, 
+          a_n, b_n,
           VSe, ρe, V0e, g_ACh, k_ACh, E_ACh,  τACh,
           VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA,
           De, Di, 
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
      ) = extract_p0(p)
+
+
      @. dv = (ILeak(v, g_leak, E_leak) + 
           ICa(v, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
           IACh(v, e, g_ACh, k_ACh, E_ACh) + IGABA(v, i, g_GABA, k_GABA, E_Cl) + 
-          I_app + W) / C_m
+          I_app + W) / C_m 
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
-     @. da = (α * c^4 * (1 - a) - a) / τa
-     @. db = (β * a^4 * (1 - b) - b) / τb
-     @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
+     @. da = (-α*(c^a_n)*a + (1-a))/τa     
+     @. db = (β*(1-a)^b_n * (1 - b) - b) / τb
      #Do the PDE operations here
      ∇α(de, e, MAP, t) #This takes alot of allocations. 
+     @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
      @. dW = -W / τw
 
@@ -327,7 +330,7 @@ function SAC_PDE_STIM(du, u, MAP_p, t)
      ∇α(dE, E, cell_map, t)
 end
 
-noise2D(du, u, p, t) = du[:, end] .= 1.0
+noise2D(du, u, p, t) = du[:, end] .= p[3]
 
 function SAC_GAP(du, u, p, t)
      #p[1] will be the cell map necessary for the equation to be run
