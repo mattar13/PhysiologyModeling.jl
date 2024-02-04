@@ -204,38 +204,6 @@ function ∇α(du, u, cell_map, t) #Could it really be this easy?
      du .+= (cell_map.strength_out .* u) + (cell_map.strength * u)
 end
 
-function ∇α_OLD(du, u, cell_map, t)
-     # Diffusion into points
-     flow_in = similar(du) #I think these take a ton of
-     flow_out = similar(du)
-     mul!(flow_in, cell_map.strength, u)
-     flow_out = cell_map.strength_out .* u 
-     du .+= flow_out + flow_in #In order to properly work this, we need to both add and assign
-end
-
-function ∇α_V2(du, u, cell_map, t)
-     mul!(du, cell_map.strength, u) #This diffuses in the forwarf
-     for i in eachindex(du)
-          diffusion_out = sum(cell_map.strength[i, :] * u[i])
-          du[i] -= diffusion_out
-     end
-end
-
-function ∇α_V1(du, u, cell_map, t)
-     flow_out = similar(cell_map.strength[:, 1]) #preallocate an array for flow_out
-     for cellx in eachindex(u)
-          connected_indices = cell_map.connected_indices[cellx]
-          mul!(flow_out, -cell_map.strength[:, cellx], u[cellx])
-          du[cellx] += sum(flow_out)
-          for (i, celly) in enumerate(connected_indices)
-               flow_in = cell_map.strength[celly, cellx] * u[cellx]
-               du[celly] += flow_in
-          end
-          #we need to find out if this cell is a boundary cell and subtract the correct amount from it
-          #if the cell is a single boundary we subtract one flow out
-     end
-end
-
 function DIFFUSION_MODEL(du, u, p, t; active_cell = 221)
      du .= -u/540 #du decays over time
      if 500.0 < t < 2500.0
@@ -300,9 +268,8 @@ function SAC_PDE(du, u, p, t, MAP)
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
      @. da = (-α*(c^a_n)*a + (1-a))/τa     
      @. db = (β*(1-a)^b_n * (1 - b) - b) / τb
-     #Do the PDE operations here
-     ∇α(de, e, MAP, t) #This takes alot of allocations. 
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
+     ∇α(de, e, MAP, t) #This takes alot of allocations. 
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
      @. dW = -W / τw
 
