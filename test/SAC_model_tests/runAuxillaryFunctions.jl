@@ -1,16 +1,18 @@
 using Revise
 using PhysiologyModeling
+import PhysiologyModeling: ring, Φe, IACh, IGABA, ħe, ħi, ring_circle_overlap_area
+using Pkg; Pkg.activate("test")
+
 using PhysiologyPlotting
 using GLMakie
 using SparseArrays
-import PhysiologyModeling: Φe, IACh, IGABA, ħe, ħi, ring_circle_overlap_area
 
 #%%
 f_DIST = Figure()
 ax_DIST = Axis(f_DIST[1,1], xlabel = "Distance from Soma (um)", ylabel = "NT Release (uM)")
 
 xs = 0.0:0.001:0.30
-δe = map(d -> ring_circle_overlap_area(d; density = 1.0, r_inner = 0.088, r_outer = 0.09, r_circle = 0.09), xs)
+δe = map(d -> ring(d; max_strength = 0.05, max_dist = 0.15, slope = 0.01), xs)
 
 lines!(ax_DIST, xs, δe)
 display(f_DIST)

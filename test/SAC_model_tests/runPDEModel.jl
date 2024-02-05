@@ -5,23 +5,28 @@ import PhysiologyModeling: SRIW1, EM
 using Pkg; Pkg.activate("test") #Activate the testing environment
 using PhysiologyPlotting, GLMakie
 using CUDA
+CUDA.allowscalar(false)
 using SparseArrays
 using LinearAlgebra
 
 #%% 1) determine the domains and spacing of cells. 
-domain_x = (xmin, xmax) = (0.0, 1.0)
-domain_y = (ymin, ymax) = (0.0, 1.0)
+domain_x = (xmin, xmax) = (0.0, 0.50)
+domain_y = (ymin, ymax) = (0.0, 0.50)
 dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
 
-#%% 2) create the map of cells and their radii
+#2) create the map of cells and their radii
 cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax = ymax)
-radii = fill(0.200, size(cells, 1)) #Switch this on to get constant radii
+radii = fill(0.2, size(cells, 1)) #Switch this on to get constant radii
 cell_map = make_GPU(CellMap(cells, radii));
-u0 = vcat(fill(vals_u0, size(cells, 1))'...) |> CuArray{Float32} #Generate a new initial conditions
-SAC_p0_dict["g_ACh"] = 0.1
+ics = extract_u0(SAC_u0_dict)
+u0_CPU = vcat(fill(ics, size(cells, 1))'...) 
+u0_CPU[1, 1] = 0.0
+u0 = u0_CPU |> CuArray{Float32} #Generate a new initial conditions
+
+SAC_p0_dict["g_ACh"] = 0.0
 SAC_p0_dict["g_GABA"] = 0.0
-SAC_p0_dict["g_W"] = 0.075
-p0 = extract_p0(SAC_p0_dict)
+SAC_p0_dict["g_W"] = 0.1
+p0 = extract_p0(SAC_p0_dict) 
 
 #3) Define the problem
 tspan = (0.0, 100e3)
@@ -29,18 +34,18 @@ f_PDE(du, u, p, t) = SAC_PDE_GPU(du, u, p, t, cell_map)
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
 
 #%% Pause here before running the model
-@time sol = solve(prob, SOSRA(), reltol = 2e-1, abstol= 2e-1, progress=true, progress_steps=1)
-sol.t
-
-#Save the solution end. No need to warm up again
+@time sol = solve(prob, SOSRI(), reltol = 2e-1, abstol= 2e-1, progress=true, progress_steps=1)
 #save("data.jld", "initial_cond", sol[end])
+sol.t
 #%% Find the zlims
+CUDA.allowscalar(true) #
 zlims1 =  (minimum(sol[:, 1, :]), maximum(sol[:, 1, :]))
 zlims2 =  (minimum(sol[:, 8, :]), maximum(sol[:, 8, :]))
 zlims3 =  (minimum(sol[:, 9, :]), maximum(sol[:, 9, :]))
 zlims4 =  (minimum(sol[:, 5, :]), maximum(sol[:, 5, :]))
 zlims5 =  (minimum(sol[:, 6, :]), maximum(sol[:, 6, :]))
 zlims6 =  (minimum(sol[:, 7, :]), maximum(sol[:, 7, :]))
+
 #%% Plot the figure
 fDIFF = Figure(size = (1800,1000))
 ax1 = Axis3(fDIFF[1,1]; aspect=(1, 1, 1), title = "Voltage")
@@ -72,7 +77,7 @@ animate_t = LinRange(0.0, sol.t[end], n_frames)
 dt = animate_t[2] - animate_t[1]
 fps = round(Int64, (1/dt) * 1000)
 
-GLMakie.record(fDIFF, "test/SAC_model_tests/model_animation.mp4", animate_t, framerate = 8) do t
+GLMakie.record(fDIFF, "test/SAC_model_tests/large.mp4", animate_t, framerate = 8) do t
 	println(t)
 	v = sol(t)[:, 1]
      e = sol(t)[:, 8]
@@ -104,7 +109,7 @@ ax9 = Axis(fSDE[2,3], title = "GABA (It)")
 
 ax10 = Axis(fSDE[1,4], title = "Noise (Wt)")
 Time = LinRange(sol.t[1], sol.t[end], 1000)
-for i in rand(1:size(sol, 1), 100)
+for i in rand(1:size(sol, 1), 10)
      lines!(ax1, Time, map(t -> sol(t)[i, 1], Time))
      lines!(ax2, Time, map(t -> sol(t)[i, 2], Time))
      lines!(ax3, Time, map(t -> sol(t)[i, 3], Time))

@@ -44,7 +44,7 @@ display(fSDE)
 
 #%% Run an ensemble solution
 tspan = (0.0, 300e3)
-SAC_p0_dict["I_app"] = 5.0
+SAC_p0_dict["I_app"] = 0.0
 SAC_p0_dict["g_GABA"] = 0.0
 SAC_p0_dict["g_ACh"] = 0.0
 SAC_p0_dict["g_W"] = 0.1
