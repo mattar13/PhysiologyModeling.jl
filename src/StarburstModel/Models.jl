@@ -206,13 +206,12 @@ end
 
 function DIFFUSION_MODEL(du, u, p, t; active_cell = 221)
      du .= -u/540 #du decays over time
-     if 100.0 < t < 200.0
+     if 500.0 < t < 2500.0
           #We want to add some diffusive material during a time range
-          du[active_cell] = 1.0
+          du[active_cell] = 0.05
      end
      ∇α(du, u, p, t)#Diffusion occurs after
      #We should go through and decay the edges 
-     println(t)
 end
 
 DIFFUSION_NOISE(du, u, p, t) = du[:] .= 0.001
