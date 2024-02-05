@@ -18,7 +18,7 @@ cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax =
 radii = fill(0.200, size(cells, 1)) #Switch this on to get constant radii
 cell_map = make_GPU(CellMap(cells, radii));
 u0 = vcat(fill(vals_u0, size(cells, 1))'...) |> CuArray{Float32} #Generate a new initial conditions
-SAC_p0_dict["g_ACh"] = 1.0
+SAC_p0_dict["g_ACh"] = 0.1
 SAC_p0_dict["g_GABA"] = 0.0
 SAC_p0_dict["g_W"] = 0.075
 p0 = extract_p0(SAC_p0_dict)
@@ -29,7 +29,7 @@ f_PDE(du, u, p, t) = SAC_PDE_GPU(du, u, p, t, cell_map)
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
 
 #%% Pause here before running the model
-@time sol = solve(prob, SOSRA(), reltol = 2e-2, abstol= 2e-2, progress=true, progress_steps=1)
+@time sol = solve(prob, SOSRA(), reltol = 2e-1, abstol= 2e-1, progress=true, progress_steps=1)
 sol.t
 
 #Save the solution end. No need to warm up again
@@ -87,3 +87,33 @@ GLMakie.record(fDIFF, "test/SAC_model_tests/model_animation.mp4", animate_t, fra
      surf5[3] = a
      surf6[3] = b
 end
+
+#%%
+fSDE = Figure(size = (1800, 800))
+ax1 = Axis(fSDE[1,1], title = "Voltage (Vt)")
+ax2 = Axis(fSDE[2,1], title = "K Repol. (Nt)")
+ax3 = Axis(fSDE[3,1], title = "Na Gating (Mt)")
+ax4 = Axis(fSDE[4,1], title = "Na Close (Ht)")
+
+ax5 = Axis(fSDE[1,2], title = "Calcium (Ct)")
+ax6 = Axis(fSDE[2,2], title = "cAMP (At)")
+ax7 = Axis(fSDE[3,2], title = "TREK (Bt)")
+
+ax8 = Axis(fSDE[1,3], title = "ACh (Et)")
+ax9 = Axis(fSDE[2,3], title = "GABA (It)")
+
+ax10 = Axis(fSDE[1,4], title = "Noise (Wt)")
+Time = LinRange(sol.t[1], sol.t[end], 1000)
+for i in rand(1:size(sol, 1), 100)
+     lines!(ax1, Time, map(t -> sol(t)[i, 1], Time))
+     lines!(ax2, Time, map(t -> sol(t)[i, 2], Time))
+     lines!(ax3, Time, map(t -> sol(t)[i, 3], Time))
+     lines!(ax4, Time, map(t -> sol(t)[i, 4], Time))
+     lines!(ax5, Time, map(t -> sol(t)[i, 5], Time))
+     lines!(ax6, Time, map(t -> sol(t)[i, 6], Time))
+     lines!(ax7, Time, map(t -> sol(t)[i, 7], Time))
+     lines!(ax8, Time, map(t -> sol(t)[i, 8], Time))
+     lines!(ax9, Time, map(t -> sol(t)[i, 9], Time))
+     lines!(ax10, Time, map(t -> sol(t)[i, 10], Time))
+end
+display(fSDE)
