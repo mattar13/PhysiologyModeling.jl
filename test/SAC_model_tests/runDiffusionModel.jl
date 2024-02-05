@@ -16,7 +16,8 @@ dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
 #2) create the map of cells and their radii
 cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax = ymax)
 radii = fill(0.200, size(cells, 1)) #Switch this on to get constant radii
-cell_map = CellMap(cells, radii; distance_function = ring) |> make_GPU;
+dist_func(d) = ring(d; max_strength = 0.005, max_dist = 0.18)
+cell_map = CellMap(cells, radii; distance_function = dist_func) |> make_GPU;
 
 #3) Define the initial state and timespan
 u0 = zeros(size(cell_map.connections, 1)) |> CuArray{Float32}
@@ -24,12 +25,12 @@ mid = round(Int64, size(cell_map.connections, 1)/2)+1
 u0[mid] = 0.0
 
 #4) Run model
-tspan = (0.0, 300.0)
+tspan = (0.0, 10e3)
 f_diffuse(du, u, p, t) = DIFFUSION_MODEL_GPU(du, u, p, t; active_cell = mid)
 probSDE = SDEProblem(f_diffuse, DIFFUSION_NOISE, u0, tspan, cell_map)
 @time sol = solve(probSDE, SOSRI(), reltol=1e-1, abstol=1e-1, progress=true, progress_steps=1)
 
-#%% 5) Animate the soluiton
+# 5) Animate the soluiton
 fDIFF = Figure(size = (1000,1000))
 ax1 = Axis3(fDIFF[1,1]; aspect=(1, 1, 1), title = "T = 0.00")
 
