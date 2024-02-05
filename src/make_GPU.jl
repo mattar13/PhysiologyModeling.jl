@@ -18,8 +18,8 @@ function make_GPU(MAP::CellMap{T}) where T <: Real
 end
 
 function DIFFUSION_MODEL_GPU(du, u, p, t; active_cell = 221)
-     #CUDA.@sync DIFFUSION_MODEL(du, u, p, t; active_cell = active_cell)
-     CUDA.@sync ∇α(du, u, p, t)
+     CUDA.@sync DIFFUSION_MODEL(du, u, p, t; active_cell = active_cell)
+     #CUDA.@sync ∇α(du, u, p, t)
      return
 end
 
