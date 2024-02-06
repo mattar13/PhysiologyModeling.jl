@@ -62,7 +62,11 @@ function SAC_ODE(du, u, p, t)
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
      #@. da = (-α*(c^a_n)*a + (1-a))/τa     
+<<<<<<< HEAD
      #@. db = (β * (1-a)^b_n * (1 - b) - b) / τb
+=======
+     #@. db = (β*(1-a)^b_n * (1 - b) - b) / τb
+>>>>>>> 2bf090629e6fa2423d96c9ab45526336893b6aa6
      @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
@@ -340,7 +344,11 @@ function SAC_PDE(du, u, p, t, MAP)
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
      #@. da = (-α*(c^a_n)*a + (1-a))/τa     
+<<<<<<< HEAD
      #@. db = (β * (1-a)^b_n * (1 - b) - b) / τb
+=======
+     #@. db = (β*(1-a)^b_n * (1 - b) - b) / τb
+>>>>>>> 2bf090629e6fa2423d96c9ab45526336893b6aa6
      @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
