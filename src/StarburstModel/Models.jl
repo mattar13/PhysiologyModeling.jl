@@ -1,25 +1,27 @@
 function SAC_ODE(du, u, p, t)
-     v = view(u, 1)
-     n = view(u, 2)
-     m = view(u, 3)
-     h = view(u, 4)
-     c = view(u, 5)
-     a = view(u, 6)
-     b = view(u, 7)
-     e = view(u, 8)
-     i = view(u, 9)
-     W = view(u, 10)
+     I_ext = view(u, 1)
+     v = view(u, 2)
+     n = view(u, 3)
+     m = view(u, 4)
+     h = view(u, 5)
+     c = view(u, 6)
+     a = view(u, 7)
+     b = view(u, 8)
+     e = view(u, 9)
+     i = view(u, 10)
+     W = view(u, 11)
 
-     dv = view(du, 1)
-     dn = view(du, 2)
-     dm = view(du, 3)
-     dh = view(du, 4)
-     dc = view(du, 5)
-     da = view(du, 6)
-     db = view(du, 7)
-     de = view(du, 8)
-     di = view(du, 9)
-     dW = view(du, 10)
+     dI_ext = view(u, 1)
+     dv = view(du, 2)
+     dn = view(du, 3)
+     dm = view(du, 4)
+     dh = view(du, 5)
+     dc = view(du, 6)
+     da = view(du, 7)
+     db = view(du, 8)
+     de = view(du, 9)
+     di = view(du, 10)
+     dW = view(du, 11)
 
      (I_app,
           C_m, g_W, τw, 
@@ -46,10 +48,10 @@ function SAC_ODE(du, u, p, t)
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
-     @. da = (-α*(c^a_n)*a + (1-a))/τa     
-     @. db = (β * (1-a)^b_n * (1 - b) - b) / τb
-     #@. da = (α * c^4 * (1 - a) - a) / τa #These were the old options
-     #@. db = (β * a^4 * (1 - b) - b) / τb #These were the old options
+     #@. da = (-α*(c^a_n)*a + (1-a))/τa     
+     #@. db = (β * (1-a)^b_n * (1 - b) - b) / τb
+     @. da = (α * c^4 * (1 - a) - a) / τa #These were the old options
+     @. db = (β * a^4 * (1 - b) - b) / τb #These were the old options
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
      @. dW = -W / τw
@@ -57,27 +59,29 @@ function SAC_ODE(du, u, p, t)
 end
 
 function SAC_ODE_STIM(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
-     v = view(u, 1)
-     n = view(u, 2)
-     m = view(u, 3)
-     h = view(u, 4)
-     c = view(u, 5)
-     a = view(u, 6)
-     b = view(u, 7)
-     e = view(u, 8)
-     i = view(u, 9)
-     W = view(u, 10)
+     I_ext = view(u, 1)
+     v = view(u, 2)
+     n = view(u, 3)
+     m = view(u, 4)
+     h = view(u, 5)
+     c = view(u, 6)
+     a = view(u, 7)
+     b = view(u, 8)
+     e = view(u, 9)
+     i = view(u, 10)
+     W = view(u, 11)
 
-     dv = view(du, 1)
-     dn = view(du, 2)
-     dm = view(du, 3)
-     dh = view(du, 4)
-     dc = view(du, 5)
-     da = view(du, 6)
-     db = view(du, 7)
-     de = view(du, 8)
-     di = view(du, 9)
-     dW = view(du, 10)
+     dI_ext = view(u, 1)
+     dv = view(du, 2)
+     dn = view(du, 3)
+     dm = view(du, 4)
+     dh = view(du, 5)
+     dc = view(du, 6)
+     da = view(du, 7)
+     db = view(du, 8)
+     de = view(du, 9)
+     di = view(du, 10)
+     dW = view(du, 11)
 
      (I_app,
           C_m, g_W, τw, 
@@ -109,10 +113,10 @@ function SAC_ODE_STIM(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
-     @. da = (-α*(c^a_n)*a + (1-a))/τa     
-     @. db = (β * (1-a)^b_n * (1 - b) - b) / τb
-     #@. da = (α * c^4 * (1 - a) - a) / τa #These were the old options
-     #@. db = (β * a^4 * (1 - b) - b) / τb #These were the old options
+     #@. da = (-α*(c^a_n)*a + (1-a))/τa     
+     #@. db = (β * (1-a)^b_n * (1 - b) - b) / τb
+     @. da = (α * c^4 * (1 - a) - a) / τa #These were the old options
+     @. db = (β * a^4 * (1 - b) - b) / τb #These were the old options
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
      @. dW = -W / τw
@@ -120,27 +124,29 @@ function SAC_ODE_STIM(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
 end
 
 function SAC_ODE_NT_CLAMP(du, u, p, t)
-     v = view(u, 1)
-     n = view(u, 2)
-     m = view(u, 3)
-     h = view(u, 4)
-     c = view(u, 5)
-     a = view(u, 6)
-     b = view(u, 7)
-     e = view(u, 8)
-     i = view(u, 9)
-     W = view(u, 10)
+     I_ext = view(u, 1)
+     v = view(u, 2)
+     n = view(u, 3)
+     m = view(u, 4)
+     h = view(u, 5)
+     c = view(u, 6)
+     a = view(u, 7)
+     b = view(u, 8)
+     e = view(u, 9)
+     i = view(u, 10)
+     W = view(u, 11)
 
-     dv = view(du, 1)
-     dn = view(du, 2)
-     dm = view(du, 3)
-     dh = view(du, 4)
-     dc = view(du, 5)
-     da = view(du, 6)
-     db = view(du, 7)
-     de = view(du, 8)
-     di = view(du, 9)
-     dW = view(du, 10)
+     dI_ext = view(u, 1)
+     dv = view(du, 2)
+     dn = view(du, 3)
+     dm = view(du, 4)
+     dh = view(du, 5)
+     dc = view(du, 6)
+     da = view(du, 7)
+     db = view(du, 8)
+     de = view(du, 9)
+     di = view(du, 10)
+     dW = view(du, 11)
 
      (I_app,
           C_m, g_W, τw, 
@@ -218,27 +224,30 @@ DIFFUSION_NOISE(du, u, p, t) = du[:] .= 0.001
 
 #A more inline version
 function SAC_PDE(du, u, p, t, MAP)
-     v = view(u, :, 1)
-     n = view(u, :, 2)
-     m = view(u, :, 3)
-     h = view(u, :, 4)
-     c = view(u, :, 5)
-     a = view(u, :, 6)
-     b = view(u, :, 7)
-     e = view(u, :, 8)
-     i = view(u, :, 9)
-     W = view(u, :, 10)
+     I_ext = view(u, 1)
+     v = view(u, 2)
+     n = view(u, 3)
+     m = view(u, 4)
+     h = view(u, 5)
+     c = view(u, 6)
+     a = view(u, 7)
+     b = view(u, 8)
+     e = view(u, 9)
+     i = view(u, 10)
+     W = view(u, 11)
 
-     dv = view(du, :, 1)
-     dn = view(du, :, 2)
-     dm = view(du, :, 3)
-     dh = view(du, :, 4)
-     dc = view(du, :, 5)
-     da = view(du, :, 6)
-     db = view(du, :, 7)
-     de = view(du, :, 8)
-     di = view(du, :, 9)
-     dW = view(du, :, 10)
+     dI_ext = view(u, 1)
+     dv = view(du, 2)
+     dn = view(du, 3)
+     dm = view(du, 4)
+     dh = view(du, 5)
+     dc = view(du, 6)
+     da = view(du, 7)
+     db = view(du, 8)
+     de = view(du, 9)
+     di = view(du, 10)
+     dW = view(du, 11)
+
      (I_app,
           C_m, g_W, τw, 
           g_leak, E_leak, 
@@ -265,8 +274,10 @@ function SAC_PDE(du, u, p, t, MAP)
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
-     @. da = (-α*(c^a_n)*a + (1-a))/τa     
-     @. db = (β*(1-a)^b_n * (1 - b) - b) / τb
+     #@. da = (-α*(c^a_n)*a + (1-a))/τa     
+     #@. db = (β * (1-a)^b_n * (1 - b) - b) / τb
+     @. da = (α * c^4 * (1 - a) - a) / τa #These were the old options
+     @. db = (β * a^4 * (1 - b) - b) / τb #These were the old options
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      ∇α(de, e, MAP, t) #This takes alot of allocations. 
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
