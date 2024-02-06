@@ -14,6 +14,7 @@ SAC_u0_dict = Dict(
 
 SAC_p0_dict = Dict(
     "I_app"     => 0.0,
+    "VC"        => 0.0, #For voltage clamp
     "C_m"       => 13.6,
     "g_W"       => 0.1,
     "τw"        => 800.0,
@@ -81,7 +82,7 @@ vals_u0 = map(k -> SAC_u0_dict[k], keys_u0)
 nt_u0 = NamedTuple{Symbol.(keys_u0) |> Tuple}(vals_u0)
 
 keys_p0 = [
-     "I_app",
+     "I_app", "VC",
      "C_m", "g_W", "τw", 
      "g_leak", "E_leak", 
      "g_K", "V3", "V4", "E_K", "τn", 
@@ -97,7 +98,6 @@ keys_p0 = [
      "VSe", "ρe", "V0e", "g_ACh", "k_ACh", "E_ACh",  "τACh",
      "VSi", "V0i", "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
 
-     "De", "Di", 
      "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18"
 ]
 
