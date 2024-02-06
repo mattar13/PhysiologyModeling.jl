@@ -56,7 +56,7 @@ function SAC_ODE(du, u, p, t)
      @. dv = (ILeak(v, g_leak, E_leak) + 
           ICa(v, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
           IACh(v, e, g_ACh, k_ACh, E_ACh) + IGABA(v, i, g_GABA, k_GABA, E_Cl) + 
-          I_app + W) / C_m
+          I_ext + W) / C_m
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
@@ -121,7 +121,7 @@ function SAC_ODE_IC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
      @. dv = (ILeak(v, g_leak, E_leak) + 
           ICa(v, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
           IACh(v, e, g_ACh, k_ACh, E_ACh) + IGABA(v, i, g_GABA, k_GABA, E_Cl) + 
-          stim_amp + W) / C_m
+          I_ext + W) / C_m
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
@@ -187,7 +187,7 @@ function SAC_ODE_VC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
      @. dv = (ILeak(v, g_leak, E_leak) + 
           ICa(v, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
           IACh(v, e, g_ACh, k_ACh, E_ACh) + IGABA(v, i, g_GABA, k_GABA, E_Cl) + 
-          stim_amp + W) / C_m
+          I_ext + W) / C_m
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
@@ -314,7 +314,7 @@ function SAC_PDE(du, u, p, t, MAP)
      di = view(du, 10)
      dW = view(du, 11)
 
-     (I_app,
+     (I_app, VC,
           C_m, g_W, τw, 
           g_leak, E_leak, 
           g_K, V3, V4, E_K, τn, 
@@ -326,16 +326,15 @@ function SAC_PDE(du, u, p, t, MAP)
           β, τb, 
           a_n, b_n,
           VSe, ρe, V0e, g_ACh, k_ACh, E_ACh,  τACh,
-          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA,
-          De, Di, 
+          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
      ) = extract_p0(p)
 
-
+     @. dI_ext = I_app
      @. dv = (ILeak(v, g_leak, E_leak) + 
           ICa(v, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
           IACh(v, e, g_ACh, k_ACh, E_ACh) + IGABA(v, i, g_GABA, k_GABA, E_Cl) + 
-          I_app + W) / C_m 
+          I_ext + W) / C_m 
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
