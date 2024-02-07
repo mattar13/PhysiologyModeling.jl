@@ -32,8 +32,8 @@ function SAC_ODE(du, u, p, t)
           α, τa, 
           β, τb, 
           a_n, b_n,
-          VSe, ρe, V0e, g_ACh, k_ACh, E_ACh,  τACh,
-          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA,
+          VSe, V0e, ρe, g_ACh, k_ACh, E_ACh,  τACh,
+          VSi, V0i, ρi, g_GABA, k_GABA, E_Cl, τGABA,
           De, Di, 
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
      ) = extract_p0(p)
@@ -239,6 +239,7 @@ function SAC_PDE(du, u, p, t, MAP)
      de = view(du, :, 8)
      di = view(du, :, 9)
      dW = view(du, :, 10)
+     
      (I_app,
           C_m, g_W, τw, 
           g_leak, E_leak, 
@@ -250,8 +251,8 @@ function SAC_PDE(du, u, p, t, MAP)
           α, τa, 
           β, τb, 
           a_n, b_n,
-          VSe, ρe, V0e, g_ACh, k_ACh, E_ACh,  τACh,
-          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA,
+          VSe, V0e, ρe, g_ACh, k_ACh, E_ACh,  τACh,
+          VSi, V0i, ρi, g_GABA, k_GABA, E_Cl, τGABA,
           De, Di, 
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
      ) = extract_p0(p)

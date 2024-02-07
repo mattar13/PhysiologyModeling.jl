@@ -1,7 +1,7 @@
 using Revise
 using ElectroPhysiology
 using PhysiologyModeling
-import PhysiologyModeling: SRIW1, EM, ring
+import PhysiologyModeling: CVODE_BDF, ring
 using Pkg; Pkg.activate("test") #Activate the testing environment
 using PhysiologyPlotting, GLMakie
 using CUDA
@@ -12,7 +12,7 @@ using LinearAlgebra
 #%% 1) determine the domains and spacing of cells. 
 domain_x = (xmin, xmax) = (0.0, 1.0)
 domain_y = (ymin, ymax) = (0.0, 1.0)
-dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
+dx = dy = 0.04 #Mean distribution is 40-50 micron (WR taylor et al)
 
 #2) create the map of cells and their radii
 cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax = ymax)
@@ -22,7 +22,6 @@ cell_map = CellMap(cells, radii; distance_function = dist_func) |> make_GPU;
 
 ics = extract_u0(SAC_u0_dict)
 u0_CPU = vcat(fill(ics, size(cells, 1))'...) 
-u0_CPU[1, 1] = 0.0
 u0 = u0_CPU |> CuArray{Float32} #Generate a new initial conditions
 
 SAC_p0_dict["g_ACh"] = 1.0
@@ -31,23 +30,27 @@ SAC_p0_dict["g_W"] = 0.075
 p0 = extract_p0(SAC_p0_dict) 
 
 #3) Define the problem
-tspan = (0.0, 100e3)
+tspan = (0.0, 1000.0)
 f_PDE(du, u, p, t) = SAC_PDE_GPU(du, u, p, t, cell_map)
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
 
 # Pause here before running the model
-@time sol = solve(prob, SOSRI(), reltol = 2e-1, abstol= 2e-1, progress=true, progress_steps=1)
+@time sol = solve(prob, SOSRI(), dtmax = 1.0, reltol = 2e-2, abstol = 2e-2, progress=true, progress_steps=1)
+
 #save("data.jld", "initial_cond", sol[end])
-sol.t
 
 #%% Find the zlims
 CUDA.allowscalar(true) #
-zlims1 =  (minimum(sol[:, 1, :]), maximum(sol[:, 1, :]))
-zlims2 =  (minimum(sol[:, 8, :]), maximum(sol[:, 8, :]))
-zlims3 =  (minimum(sol[:, 9, :]), maximum(sol[:, 9, :]))
-zlims4 =  (minimum(sol[:, 5, :]), maximum(sol[:, 5, :]))
-zlims5 =  (minimum(sol[:, 6, :]), maximum(sol[:, 6, :]))
-zlims6 =  (minimum(sol[:, 7, :]), maximum(sol[:, 7, :]))
+zlimsV =  (minimum(sol[:, 1, :]), maximum(sol[:, 1, :]))
+zlimsN =  (minimum(sol[:, 2, :]), maximum(sol[:, 2, :]))
+zlimsM =  (minimum(sol[:, 3, :]), maximum(sol[:, 3, :]))
+zlimsH =  (minimum(sol[:, 4, :]), maximum(sol[:, 4, :]))
+zlimsC =  (minimum(sol[:, 5, :]), maximum(sol[:, 5, :]))
+zlimsA =  (minimum(sol[:, 6, :]), maximum(sol[:, 6, :]))
+zlimsB =  (minimum(sol[:, 7, :]), maximum(sol[:, 7, :]))
+zlimsE =  (minimum(sol[:, 8, :]), maximum(sol[:, 8, :]))
+zlimsI =  (minimum(sol[:, 9, :]), maximum(sol[:, 9, :]))
+zlimsW =  (minimum(sol[:, 10, :]), maximum(sol[:, 10, :]))
 
 # Plot the figure
 fDIFF = Figure(size = (1800,1000))
@@ -97,6 +100,7 @@ GLMakie.record(fDIFF, "test/SAC_model_tests/model_animation.mp4", animate_t, fra
 end
 
 #%%
+CUDA.allowscalar(true) #
 fSDE = Figure(size = (1800, 800))
 ax1 = Axis(fSDE[1,1], title = "Voltage (Vt)")
 ax2 = Axis(fSDE[2,1], title = "K Repol. (Nt)")

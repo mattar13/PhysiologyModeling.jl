@@ -93,7 +93,7 @@ keys_p0 = [
      "β", "τb", 
      "a_n", "b_n",
 
-     "VSe", "ρe", "V0e", "g_ACh", "k_ACh", "E_ACh",  "τACh",
+     "VSe", "V0e", "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
      "VSi", "V0i", "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
 
      "De", "Di", 
