@@ -52,7 +52,8 @@ function SAC_ODE(du, u, p, t)
           VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA,
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
      ) = extract_p0(p)
-     @. dI_ext = I_app + -I_ext 
+
+     @. dI_ext = I_app
      @. dv = (ILeak(v, g_leak, E_leak) + 
           ICa(v, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
           IACh(v, e, g_ACh, k_ACh, E_ACh) + IGABA(v, i, g_GABA, k_GABA, E_Cl) + 
@@ -283,11 +284,6 @@ function SAC_ODE_Compartment(du, u, p, t;
      end
 end
 
-noise1D(du, u, p, t) = du[end] = p[3]
-
-
-
-
 #A more inline version
 function SAC_PDE(du, u, p, t, MAP)
      I_ext = view(u, 1)
@@ -373,5 +369,6 @@ function SAC_PDE_STIM(du, u, MAP_p, t)
 end
 
 DIFFUSION_NOISE(du, u, p, t) = du[:] .= 0.001
+noise1D(du, u, p, t) = du[end] = p[4]
 
-noise2D(du, u, p, t) = du[:, end] .= p[3]
+noise2D(du, u, p, t) = du[:, end] .= p[4]
