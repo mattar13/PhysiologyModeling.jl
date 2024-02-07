@@ -48,8 +48,8 @@ function SAC_ODE(du, u, p, t)
           α, τa, 
           β, τb, 
           a_n, b_n,
-          VSe, ρe, V0e, g_ACh, k_ACh, E_ACh,  τACh,
-          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA,
+          VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
+          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
      ) = extract_p0(p)
 
@@ -108,8 +108,8 @@ function SAC_ODE_IC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
           α, τa, 
           β, τb, 
           a_n, b_n,
-          VSe, ρe, V0e, g_ACh, k_ACh, E_ACh,  τACh,
-          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA,
+          VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
+          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
      ) = extract_p0(p)
 
@@ -173,7 +173,7 @@ function SAC_ODE_VC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
           α, τa, 
           β, τb, 
           a_n, b_n,
-          VSe, ρe, V0e, g_ACh, k_ACh, E_ACh,  τACh,
+          VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
           VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
      ) = extract_p0(p)
@@ -228,7 +228,7 @@ function SAC_ODE_NT_CLAMP(du, u, p, t)
      di = view(du, 10)
      dW = view(du, 11)
 
-     (I_app,
+     (I_app, VC,
           C_m, g_W, τw, 
           g_leak, E_leak, 
           g_K, V3, V4, E_K, τn, 
@@ -238,9 +238,9 @@ function SAC_ODE_NT_CLAMP(du, u, p, t)
           C_0, λ , δ,  
           α, τa, 
           β, τb, 
-          VSe, ρe, V0e, g_ACh, k_ACh, E_ACh,  τACh,
-          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA,
-          De, Di, 
+          a_n, b_n,
+          VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
+          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
      ) = extract_p0(p)
 
@@ -284,8 +284,9 @@ function SAC_ODE_Compartment(du, u, p, t;
      end
 end
 
+
 #A more inline version
-function SAC_PDE(du, u, p, t, MAP)
+function SAC_PDE(du, u, p, t, MAP) 
      I_ext = view(u, 1)
      v = view(u, 2)
      n = view(u, 3)
@@ -321,7 +322,7 @@ function SAC_PDE(du, u, p, t, MAP)
           α, τa, 
           β, τb, 
           a_n, b_n,
-          VSe, ρe, V0e, g_ACh, k_ACh, E_ACh,  τACh,
+          VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
           VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
      ) = extract_p0(p)
@@ -369,6 +370,6 @@ function SAC_PDE_STIM(du, u, MAP_p, t)
 end
 
 DIFFUSION_NOISE(du, u, p, t) = du[:] .= 0.001
-noise1D(du, u, p, t) = du[end] = p[4]
 
 noise2D(du, u, p, t) = du[:, end] .= p[4]
+noise1D(du, u, p, t) = du[end] = p[4]
