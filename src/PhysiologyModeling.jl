@@ -49,6 +49,9 @@ export CellMap
 export ring_circle_overlap_area
 export make_GPU
 
+inclulde("IncExcModel/Models.jl")
+
+include("IncExcModel/Variables.jl")
 #This section deals with parameters and contions
 #Eventually PhysiologyPlotting will include some things we need to plot everything
 
