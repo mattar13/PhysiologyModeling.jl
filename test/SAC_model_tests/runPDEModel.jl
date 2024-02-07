@@ -1,5 +1,5 @@
 using Revise
-using ElectroPhysiology
+ using ElectroPhysiology
 using PhysiologyModeling
 import PhysiologyModeling: CVODE_BDF, ring
 using Pkg; Pkg.activate("test") #Activate the testing environment
@@ -28,6 +28,9 @@ SAC_p0_dict["g_ACh"] = 1.0
 SAC_p0_dict["g_GABA"] = 0.0
 SAC_p0_dict["g_W"] = 0.075
 p0 = extract_p0(SAC_p0_dict) 
+
+cell_map.strength
+cell_map.strength_out
 
 #3) Define the problem
 tspan = (0.0, 1000.0)
