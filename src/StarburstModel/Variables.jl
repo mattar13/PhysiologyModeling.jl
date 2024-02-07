@@ -95,7 +95,7 @@ keys_p0 = [
      "β", "τb", 
      "a_n", "b_n",
 
-     "VSe", "ρe", "V0e", "g_ACh", "k_ACh", "E_ACh",  "τACh",
+     "VSe", "V0e", "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
      "VSi", "V0i", "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
 
      "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18"
