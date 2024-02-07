@@ -14,6 +14,7 @@ using TerminalLoggers: TerminalLogger
 global_logger(TerminalLogger())
 
 #Export some commonly used algorithims
+export EM, Euler
 export Tsit5, Rodas5, ROS3P, TRBDF2, KenCarp47
 export AutoTsit5, Rosenbrock23
 export remake
@@ -24,6 +25,7 @@ export SDEProblem, ODEProblem
 
 include("utilities.jl")
 export Experiment
+export extract_p0, extract_u0, extract_dict
 
 include("StarburstModel/AuxillaryFunctions.jl")
 
@@ -32,7 +34,6 @@ export SAC_u0_dict, SAC_p0_dict
 export keys_u0, keys_p0
 export vals_u0, vals_p0
 export nt_u0, nt_p0
-export extract_p0, extract_u0, extract_dict
 
 include("StarburstModel/Models.jl")
 export SAC_ODE, SAC_ODE_NT_CLAMP
@@ -49,9 +50,12 @@ export CellMap
 export ring_circle_overlap_area
 export make_GPU
 
-inclulde("IncExcModel/Models.jl")
+include("InhExcModel/Models.jl")
+export InhExcModel, gaussian
 
-include("IncExcModel/Variables.jl")
+include("InhExcModel/Variables.jl")
+export InhExc_p0_dict, InhExc_p0_keys
+
 #This section deals with parameters and contions
 #Eventually PhysiologyPlotting will include some things we need to plot everything
 

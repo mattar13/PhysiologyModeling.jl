@@ -105,9 +105,3 @@ vals_p0 = map(k -> SAC_p0_dict[k], keys_p0)
 
 nt_p0 = NamedTuple{Symbol.(keys_p0) |> Tuple}(vals_p0)
 
-extract_dict(d::Dict{String, Float64}, keys) = map(k -> d[k], keys)
-extract_p0(d::Dict{String, Float64})  = extract_dict(d, keys_p0)
-extract_p0(d::NamedTuple) = d
-extract_p0(d) = d
-
-extract_u0(d::Dict{String, Float64}) = extract_dict(d, keys_u0)

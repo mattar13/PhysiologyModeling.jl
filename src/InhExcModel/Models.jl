@@ -22,8 +22,25 @@ end
 
 en=#
 
-function IncExcModel(du, u, p, t)
+function InhExcModel(du, u, p, t)
+    (C_m, g_leak, E_leak, g_Exc, E_Exc, g_Inh, E_Inh) = p
+
+    dI = view(du, 1)
+    dv = view(du, 2)
+
+    I = view(u, 1)
+    v = view(u, 2)
+
+    @. dI = 0.0
+    @. dv = -(
+        g_leak * (v - E_leak) + 
+        g_Exc * (v - E_Exc) +
+        g_Inh * (v - E_Inh)
+    ) / C_m
+    nothing
+end
 
 
-
+function gaussian(x; σ = 1.0, μ = 1.0)
+    1/√(2*π*σ)*exp((-x-μ^2)/(2*σ^2))
 end
