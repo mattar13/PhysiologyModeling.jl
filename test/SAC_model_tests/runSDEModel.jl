@@ -5,6 +5,8 @@ using GLMakie
 
 #%% Run the example after here
 tspan = (0.0, 300e3)
+SAC_p0_dict["VC"] = -60.0
+SAC_p0_dict["I_app"] = 10.0
 SAC_p0_dict["g_GABA"] = 0.0
 SAC_p0_dict["g_ACh"] = 0.0
 SAC_p0_dict["g_W"] = 0.075
@@ -27,17 +29,20 @@ ax8 = Axis(fSDE[1,3], title = "ACh (Et)")
 ax9 = Axis(fSDE[2,3], title = "GABA (It)")
 
 ax10 = Axis(fSDE[1,4], title = "Noise (Wt)")
+ax11 = Axis(fSDE[2,4], title = "I_ext (pA)")
+
 Time = sol.t
-lines!(ax1, Time, map(t -> sol(t)[1], Time))
-lines!(ax2, Time, map(t -> sol(t)[2], Time))
-lines!(ax3, Time, map(t -> sol(t)[3], Time))
-lines!(ax4, Time, map(t -> sol(t)[4], Time))
-lines!(ax5, Time, map(t -> sol(t)[5], Time))
-lines!(ax6, Time, map(t -> sol(t)[6], Time))
-lines!(ax7, Time, map(t -> sol(t)[7], Time))
-lines!(ax8, Time, map(t -> sol(t)[8], Time))
-lines!(ax9, Time, map(t -> sol(t)[9], Time))
-lines!(ax10, Time, map(t -> sol(t)[10], Time))
+lines!(ax1, Time, map(t -> sol(t)[2], Time))
+lines!(ax2, Time, map(t -> sol(t)[3], Time))
+lines!(ax3, Time, map(t -> sol(t)[4], Time))
+lines!(ax4, Time, map(t -> sol(t)[5], Time))
+lines!(ax5, Time, map(t -> sol(t)[6], Time))
+lines!(ax6, Time, map(t -> sol(t)[7], Time))
+lines!(ax7, Time, map(t -> sol(t)[8], Time))
+lines!(ax8, Time, map(t -> sol(t)[9], Time))
+lines!(ax9, Time, map(t -> sol(t)[10], Time))
+lines!(ax10, Time, map(t -> sol(t)[11], Time))
+lines!(ax11, Time, map(t -> sol(t)[1], Time))
 display(fSDE)
 #save("test/SAC_model_tests/SDESol.png", fSDE)
 
