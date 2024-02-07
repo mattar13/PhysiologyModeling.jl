@@ -5,6 +5,13 @@ PhysiologyModeling.__init__()
 using Pkg; Pkg.activate("test") #Activate the testing environment
 using PhysiologyPlotting, GLMakie
 using BenchmarkTools
+
+#Run the ExcInc model according to this funciton
+
+
+
+
+
 #3 Goals
 #GOAL) Speeding up the model
 #GOAL) Analyzing the model
