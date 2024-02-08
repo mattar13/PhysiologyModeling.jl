@@ -1,5 +1,5 @@
 using Revise
- using ElectroPhysiology
+using ElectroPhysiology
 using PhysiologyModeling
 import PhysiologyModeling: CVODE_BDF, ring
 using Pkg; Pkg.activate("test") #Activate the testing environment
