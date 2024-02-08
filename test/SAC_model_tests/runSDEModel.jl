@@ -21,9 +21,7 @@ ax9 = Axis(fSDE[2,3], title = "GABA (It)")
 ax10 = Axis(fSDE[1,4], title = "Noise (Wt)")
 ax11 = Axis(fSDE[2,4], title = "I_ext (pA)")
 
-
 tspan = (0.0, 100e3)
-SAC_p0_dict["VC"] = 10.0
 SAC_p0_dict["g_GABA"] = 0.0
 SAC_p0_dict["g_ACh"] = 0.0
 p0 = extract_p0(SAC_p0_dict)
@@ -51,7 +49,6 @@ display(fSDE)
 
 #%% Run an ensemble solution
 tspan = (0.0, 300e3)
-SAC_p0_dict["VC"] = -60.0
 SAC_p0_dict["g_GABA"] = 0.0
 SAC_p0_dict["g_ACh"] = 0.0
 SAC_p0_dict["g_TREK"] = 0.0
