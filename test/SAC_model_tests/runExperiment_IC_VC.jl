@@ -3,6 +3,7 @@ using Pkg; Pkg.activate("test")
 using PhysiologyPlotting
 using GLMakie
 
+#%% Run a Current clamp experiment
 tspan = (0.0, 1e3)
 SAC_p0_dict["VC"] = -60.0
 SAC_p0_dict["g_GABA"] = 0.0
@@ -58,6 +59,7 @@ for sol in sim
 end
 display(fSDE)
 
+#%% Running a Voltage clamp experiment
 tspan = (0.0, 1e3)
 SAC_p0_dict["VC"] = -60.0
 SAC_p0_dict["g_GABA"] = 0.0
