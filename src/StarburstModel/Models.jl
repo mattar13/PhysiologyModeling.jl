@@ -62,10 +62,10 @@ function SAC_ODE(du, u, p, t)
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
-     #@. da = (-α*(c^a_n)*a + (1-a))/τa     
-     #@. db = (β * (1-a)^b_n * (1 - b) - b) / τb
-     @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
-     @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     #@. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
+     #@. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     @. da = (-α*(c^a_n)*a + (1-a))/τa     
+     @. db = (β * (1-a)^b_n * (1 - b) - b) / τb
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
      @. dW = -W / τw
@@ -127,17 +127,17 @@ function SAC_ODE_IC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
-     #@. da = (-α*(c^a_n)*a + (1-a))/τa     
-     #@. db = (β * (1-a)^b_n * (1 - b) - b) / τb
-     @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
-     @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     #@. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
+     #@. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     @. da = (-α*(c^a_n)*a + (1-a))/τa     
+     @. db = (β * (1-a)^b_n * (1 - b) - b) / τb
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
      @. dW = -W / τw
      nothing
 end
 
-function SAC_ODE_VC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0, R_in = 1.0, hold = -65.0)
+function SAC_ODE_VC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0, hold = -65.0, k = 1000.0)
      I_ext = view(u, 1)
      v = view(u, 2)
      n = view(u, 3)
@@ -177,28 +177,28 @@ function SAC_ODE_VC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0, R_in = 
           VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
      ) = extract_p0(p)
-
+     
      if stim_start < t < stim_stop
-          @. dI_ext = (VC-v) / R_in
+          @. dv = (VC-v)*k
      else
-          @. dI_ext = (hold - v) / R_in
+          @. dv = (hold-v)*k
      end
-
-     @. dv = (ILeak(v, g_leak, E_leak) + 
-          ICa(v, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
-          IACh(v, e, g_ACh, k_ACh, E_ACh) + IGABA(v, i, g_GABA, k_GABA, E_Cl) + 
-          I_ext + W) / C_m
+     @. dI_ext = (ILeak(v, g_leak, E_leak) + 
+          ICa(v, g_Ca, V1, V2, E_Ca) + 
+          IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
+          IACh(v, e, g_ACh, k_ACh, E_ACh) + IGABA(v, i, g_GABA, k_GABA, E_Cl) + W) - I_ext
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
-     #@. da = (-α*(c^a_n)*a + (1-a))/τa     
-     #@. db = (β * (1-a)^b_n * (1 - b) - b) / τb
-     @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
-     @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     #@. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
+     #@. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     @. da = (-α*(c^a_n)*a + (1-a))/τa     
+     @. db = (β * (1-a)^b_n * (1 - b) - b) / τb
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
      @. dW = -W / τw
+
      nothing
 end
 
@@ -334,10 +334,10 @@ function SAC_PDE(du, u, p, t, MAP)
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
-     #@. da = (-α*(c^a_n)*a + (1-a))/τa     
-     #@. db = (β * (1-a)^b_n * (1 - b) - b) / τb
-     @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
-     @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     @. da = (-α*(c^a_n)*a + (1-a))/τa     
+     @. db = (β * (1-a)^b_n * (1 - b) - b) / τb
+     #@. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
+     #@. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      ∇α(de, e, MAP, t) #This takes alot of allocations. 
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA

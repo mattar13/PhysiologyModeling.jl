@@ -4,15 +4,6 @@ using PhysiologyPlotting
 using GLMakie
 
 #%% Run the example after here
-tspan = (0.0, 300e3)
-SAC_p0_dict["VC"] = 10.0
-SAC_p0_dict["g_GABA"] = 0.0
-SAC_p0_dict["g_ACh"] = 0.0
-p0 = extract_p0(SAC_p0_dict)
-u0 = extract_u0(SAC_u0_dict)
-prob_func(du, u, p, t) = SAC_ODE_VC(du, u, p, t; stim_start = 100000.0, stim_stop = 200000.0)
-prob = SDEProblem(prob_func, noise1D, u0, tspan, p0)
-@time sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress = true, progress_steps = 1)
 
 fSDE = Figure(size = (1800, 800))
 ax1 = Axis(fSDE[1,1], title = "Voltage (Vt)")
@@ -29,6 +20,18 @@ ax9 = Axis(fSDE[2,3], title = "GABA (It)")
 
 ax10 = Axis(fSDE[1,4], title = "Noise (Wt)")
 ax11 = Axis(fSDE[2,4], title = "I_ext (pA)")
+
+
+tspan = (0.0, 100e3)
+SAC_p0_dict["VC"] = 10.0
+SAC_p0_dict["g_GABA"] = 0.0
+SAC_p0_dict["g_ACh"] = 0.0
+p0 = extract_p0(SAC_p0_dict)
+u0 = extract_u0(SAC_u0_dict)
+prob_func(du, u, p, t) = SAC_ODE(du, u, p, t)
+prob = SDEProblem(prob_func, noise1D, u0, tspan, p0)
+@time sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress = true, progress_steps = 1)
+sol.u
 
 Time = sol.t
 lines!(ax1, Time, map(t -> sol(t)[2], Time))
@@ -47,17 +50,18 @@ display(fSDE)
 
 
 #%% Run an ensemble solution
-tspan = (0.0, 1e3)
+tspan = (0.0, 300e3)
 SAC_p0_dict["VC"] = -60.0
 SAC_p0_dict["g_GABA"] = 0.0
 SAC_p0_dict["g_ACh"] = 0.0
+SAC_p0_dict["g_TREK"] = 0.0
 p0 = extract_p0(SAC_p0_dict)
 u0 = extract_u0(SAC_u0_dict)
 prob_func(du, u, p, t) = SAC_ODE_VC(du, u, p, t; stim_start = 100.0, stim_stop = 500.0)
 prob = SDEProblem(prob_func, noise1D, u0, tspan, p0)
 
 n_traces = 20
-initial_conditions = LinRange(-50, 40, n_traces)
+initial_conditions = LinRange(-200, 10, n_traces)
 function prob_func(prob, i, repeat; idx = 2)
      pI = prob.p
      pI[idx] = initial_conditions[i]
