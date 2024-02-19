@@ -23,20 +23,23 @@ end
 en=#
 
 function InhExcModel(du, u, p, t)
-    (C_m, g_leak, E_leak, g_Exc, E_Exc, g_Inh, E_Inh) = p
+    (C_m, g_leak, E_leak, E_Exc, E_Inh) = p
 
-    dI = view(du, 1)
-    dv = view(du, 2)
+    dv = view(du, 1)
+    dgE = view(du, 2)
+    dgI = view(du, 3)
 
-    I = view(u, 1)
-    v = view(u, 2)
+    v = view(u, 1)
+    gE = view(u, 2)
+    gI = view(u, 3)
 
-    @. dI = 0.0
     @. dv = -(
         g_leak * (v - E_leak) + 
-        g_Exc * (v - E_Exc) +
-        g_Inh * (v - E_Inh)
+        gE * (v - E_Exc) +
+        gI * (v - E_Inh)
     ) / C_m
+    @. dgE = 0.0
+    @. dgI = 0.0
     nothing
 end
 
