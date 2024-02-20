@@ -51,12 +51,6 @@ export CellMap
 export ring_circle_overlap_area
 export make_GPU
 
-include("InhExcModel/Models.jl")
-export InhExcModel, gaussian
-
-include("InhExcModel/Variables.jl")
-export InhExc_p0_dict, InhExc_p0_keys
-
 #This section deals with parameters and contions
 #Eventually PhysiologyPlotting will include some things we need to plot everything
 using NLsolve
