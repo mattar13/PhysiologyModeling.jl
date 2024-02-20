@@ -34,6 +34,7 @@ export SAC_u0_dict, SAC_p0_dict
 export keys_u0, keys_p0
 export vals_u0, vals_p0
 export nt_u0, nt_p0
+export reset_p0_dict, reset_u0_dict
 
 include("StarburstModel/Models.jl")
 export SAC_ODE, SAC_ODE_NT_CLAMP
@@ -58,12 +59,12 @@ export InhExc_p0_dict, InhExc_p0_keys
 
 #This section deals with parameters and contions
 #Eventually PhysiologyPlotting will include some things we need to plot everything
-
+using NLsolve
 include("DynamicalAnalysis/phase_plane_analysis.jl")
-export phase_plane
+export phase_plane, find_nullclines
 
 include("DynamicalAnalysis/equilibria_analysis.jl")
-export find_equilibria
+export find_fixed_points
 
 function __init__()
     @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin

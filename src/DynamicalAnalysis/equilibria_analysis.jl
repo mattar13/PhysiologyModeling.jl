@@ -67,8 +67,53 @@ export print, length
 
 #Conduct a stability analysis of the current
 #We have to ensure the points we pick are realistic
+function find_fixed_points(prob::SciMLBase.AbstractSciMLProblem, xmap::AbstractVector, ymap::AbstractVector; x_idx = 2, y_idx = 3, verbose = true)
+    xlims = (xmap[1], xmap[end])
+    ylims = (ymap[1], ymap[end])
+    fixed_points = Tuple
+    function test_prob(x)
+        uI = prob.u0
+        du = similar(uI)
+        uI[[x_idx,y_idx]].= x
+        prob.f(du, uI, prob.p, 0.0)
+        return du[[x_idx, y_idx]]
+    end
+    for (idx_x, x) in enumerate(xmap), (idx_y, y) in enumerate(ymap)
+        #Iterate through the y range looking for stable points
+        if verbose
+            println("Checking parameter")
+            println("var 1 = $x")
+            println("var 2 = $y")
+        end
+        res = nlsolve(test_prob, [x,y])
+        #If any of the results are out of bounds then we have to cut it off
+        if verbose
+            print("Results of the nlsolve for uI: ")
+            #println(res)
+            print("f = 0: ")
+            println(res.zero)
+        end
+        var1_inbounds = xlims[1] < res.zero[1] <= xlims[2]
+        var2_inbounds = ylims[1] < res.zero[2] <= ylims[2]
+        if var1_inbounds && var2_inbounds
+
+        else
+            if !var1_inbounds && verbose
+                println("Variable $(x_idx) is out of bounds at $(res.zero[1]) will be skipped")
+            end
+
+            if !var2_inbounds && verbose
+                println("Variable $(y_idx) is out of bounds at $(res.zero[2]) will be skipped")
+            end
+        end
+    end
+
+end
+
+
+#%%
 function find_equilibria(prob::SciMLBase.AbstractSciMLProblem, xlims::Tuple, ylims::Tuple;
-    x_vars = 1, y_vars = 2, 
+    x_vars = 2, y_vars = 3, 
     equilibrium_resolution = 10,
     precision = 2, check_min = 1e-5, verbose = false
 )
