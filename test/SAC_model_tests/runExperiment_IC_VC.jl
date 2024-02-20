@@ -2,15 +2,16 @@ using PhysiologyModeling
 using Pkg; Pkg.activate("test")
 using PhysiologyPlotting
 using GLMakie
-
 #%% Run a Current clamp experiment
 tspan = (0.0, 1e3)
-SAC_p0_dict["VC"] = -60.0
-SAC_p0_dict["g_GABA"] = 0.0
-SAC_p0_dict["g_ACh"] = 0.0
+dt = 1.0
+tstops = tspan[1]:dt:tspan[end]
+gE = rand(-200.0:0.0, length(tstops))
+gI = rand(0.0:200.0, length(tstops))
+p0_dict = SAC_p0_dict()
 p0 = extract_p0(SAC_p0_dict)
 u0 = extract_u0(SAC_u0_dict)
-prob_func(du, u, p, t) = SAC_ODE_IC(du, u, p, t; stim_start = 100.0, stim_stop = 500.0)
+prob_func(du, u, p, t) = SAC_ODE_INH_EXC(du, u, p, t)
 prob = SDEProblem(prob_func, noise1D, u0, tspan, p0)
 
 n_traces = 20

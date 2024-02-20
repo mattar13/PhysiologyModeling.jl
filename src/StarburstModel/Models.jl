@@ -259,6 +259,65 @@ function SAC_ODE_NT_CLAMP(du, u, p, t)
      nothing
 end
 
+function SAC_ODE_INH_EXC(du, u, p, t)
+     I_ext = view(u, 1)
+     v = view(u, 2)
+     n = view(u, 3)
+     m = view(u, 4)
+     h = view(u, 5)
+     c = view(u, 6)
+     a = view(u, 7)
+     b = view(u, 8)
+     gE = view(u, 9)
+     gI = view(u, 10)
+     W = view(u, 11)
+
+     dI_ext = view(du, 1)
+     dv = view(du, 2)
+     dn = view(du, 3)
+     dm = view(du, 4)
+     dh = view(du, 5)
+     dc = view(du, 6)
+     da = view(du, 7)
+     db = view(du, 8)
+     dgE = view(du, 9)
+     dgI = view(du, 10)
+     dW = view(du, 11)
+
+     (I_app, VC,
+          C_m, g_W, τw, 
+          g_leak, E_leak, 
+          g_K, V3, V4, E_K, τn, 
+          g_Ca, V1, V2,E_Ca, τc,
+          g_Na, E_Na, 
+          g_TREK,
+          C_0, λ , δ,  
+          α, τa, 
+          β, τb, 
+          a_n, b_n,
+          VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh, #Many of these will go unused
+          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, #Many of these will go unused
+          V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
+     ) = extract_p0(p)
+
+     @. dI_ext = I_app-I_ext
+     @. dv = (ILeak(v, g_leak, E_leak) + ICa(v, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
+          + -gE*(v-E_ACh) #The conductance will be determined
+          + -gI*(v-E_Cl) #The conductance will be determined
+          + I_ext + W) / C_m
+     @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
+     @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
+     @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
+     @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
+     #@. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
+     #@. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     @. da = (-α*(c^a_n)*a + (1-a))/τa     
+     @. db = (β * (1-a)^b_n * (1 - b) - b) / τb
+     @. dgE = -gE
+     @. dgI = -gI
+     @. dW = -W / τw
+     nothing
+end
 function SAC_ODE_Compartment(du, u, p, t; 
      gGAP = 0.01, 
      gK = [ 10.0, 8.125, 6.25, 4.375, 0.5], 
