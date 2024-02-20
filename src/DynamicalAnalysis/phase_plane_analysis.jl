@@ -33,7 +33,6 @@ function find_nullclines(prob::SciMLBase.AbstractSciMLProblem, xmap::AbstractVec
     # Initialize containers for nullclines
     ysol = fill(NaN, length(xmap))
     for (ix, x) in enumerate(xmap)
-        println(x)
         function x_test_prob(y)
             uI = prob.u0
             du = similar(uI)
@@ -51,7 +50,6 @@ function find_nullclines(prob::SciMLBase.AbstractSciMLProblem, xmap::AbstractVec
     
     xsol = fill(NaN, length(ymap))
     for (iy, y) in enumerate(ymap)
-        println()
         function y_test_prob(x)
             uI = prob.u0
             du = similar(uI)
