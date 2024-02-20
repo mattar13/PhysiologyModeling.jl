@@ -6,31 +6,45 @@ using Pkg; Pkg.activate("test") #Activate the testing environment
 using PhysiologyPlotting, GLMakie
 using BenchmarkTools
 
-#%%Run the ExcInc model according to this funciton
-tspan = (0.0, 1000.0)
-dt = 0.001
-tstops = tspan[1]:dt:tspan[end]
-input_wave = map(t -> gaussian(t), tstops)
-InhExc_p0_dict["g_Exc"] = 1.0 #Set this experimentally
-InhExc_p0_dict["g_Inh"] = 1.0 #Set this experimentally
-p0 = extract_dict(InhExc_p0_dict, InhExc_p0_keys)
-u0 = [0.0, 0.0]
-prob = ODEProblem(InhExcModel, u0, tspan, p0)
-@time sol = solve(prob, tstops = tstops, progress = true, progress_steps = 1)
-
-fInhExc = Figure(size = (400, 400))
-ax1 = Axis(fInhExc[1,1])
-ax2 = Axis(fInhExc[2,1])
-Time = sol.t
-lines!(ax1, Time, map(t -> sol(t)[1], Time))
-lines!(ax2, Time, map(t -> sol(t)[2], Time))
-display(fInhExc)
-
 #3 Goals
+#GOAL) Analysis of Physiological data
 #GOAL) Speeding up the model
 #GOAL) Analyzing the model
-#GOAL) Analysis of Physiological data
 #GOAL) Testing models against physiology data
+
+#%% GOAL: Testing models against physiology data
+#I think a good next step is to add in the ability to open and compare data versus physiologyical data
+  
+f = Figure(size = (2.5, 2.5))
+ax1 = Axis(f[1,1], 
+     title = "Experiment Plot Test",
+     xlabel = "Time (ms)", 
+     ylabel = "Response (μV)"
+)
+#First try opening some data
+#find a good data point
+folder = raw"F:\SAC_project_backup_Feller_Lab\SAC-project_ephys_data\01132023-P10\B2-KO-nGFP\cell1_SAC"
+file = "gap_free_voltage_0000.abf"
+path = joinpath(folder, file)
+data = readABF(path, channels = ["I_MTest 1"], stimulus_name = nothing)
+downsample!(data, 10.0)
+plot_experiment(ax1, data)
+
+display(f)
+#1) Run the model using the default settingstspan = (0.0, 10e3)
+p0 = extract_p0(SAC_p0_dict)
+prob = SDEProblem(SAC_ODE, noise1D, vals_u0, (0.0, 300e3), p0)
+@Time sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress = true, progress_steps = 1)
+sim_exp = Experiment(sol) #Turn this into an experiment
+
+f = Figure(size = (2.5, 2.5))
+ax1 = Axis(f[1,1], 
+     title = "Experiment Plot Test",
+     xlabel = "Time (ms)", 
+     ylabel = "Response (μV)"
+)
+plot_experiment(ax1, sim_exp)
+
 
 #%% GOAL: Speeding up the model
 using CUDA
@@ -50,6 +64,7 @@ cell_map = make_GPU(CellMap(cells, radii));
 u0 = vcat(fill(vals_u0, size(cells, 1))'...) |> CuArray{Float32} #Generate a new initial conditions
 SAC_p0_dict["g_GABA"] = 0.0
 p0 = extract_p0(SAC_p0_dict)
+
 #3) Define the problem
 tspan = (0.0, 100.0)
 f_PDE(du, u, p, t) = SAC_PDE_GPU(du, u, p, t, cell_map)
@@ -108,40 +123,4 @@ xmap = LinRange(xlims[1], xlims[2], 100)
 ymap = LinRange(ylims[1], ylims[2], 100)
 @time zplane = phase_plane(prob, xmap, ymap);
 #arrows(xmap, ymap, zplane[:,:,1], zplane[:,:,2], align = :center, arrowsize = 1, lengthscale = 0.03,)
-
-prob |> typeof |> fieldnames
-
 find_equilibria(prob, xlims, ylims, verbose = true)
-
-#%% GOAL: Testing models against physiology data
-#I think a good next step is to add in the ability to open and compare data versus physiologyical data
-  
-f = Figure(size = (2.5, 2.5))
-ax1 = Axis(f[1,1], 
-     title = "Experiment Plot Test",
-     xlabel = "Time (ms)", 
-     ylabel = "Response (μV)"
-)
-#First try opening some data
-#find a good data point
-folder = raw"F:\SAC_project_backup_Feller_Lab\SAC-project_ephys_data\01132023-P10\B2-KO-nGFP\cell1_SAC"
-file = "gap_free_voltage_0000.abf"
-path = joinpath(folder, file)
-data = readABF(path, channels = ["I_MTest 1"], stimulus_name = nothing)
-downsample!(data, 10.0)
-plot_experiment(ax1, data)
-
-display(f)
-#1) Run the model using the default settingstspan = (0.0, 10e3)
-p0 = extract_p0(SAC_p0_dict)
-prob = SDEProblem(SAC_ODE, noise1D, vals_u0, (0.0, 300e3), p0)
-@Time sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress = true, progress_steps = 1)
-sim_exp = Experiment(sol) #Turn this into an experiment
-
-f = Figure(size = (2.5, 2.5))
-ax1 = Axis(f[1,1], 
-     title = "Experiment Plot Test",
-     xlabel = "Time (ms)", 
-     ylabel = "Response (μV)"
-)
-plot_experiment(ax1, sim_exp)
