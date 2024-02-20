@@ -10,7 +10,7 @@ ga = fig1[1, 1] = GridLayout()
 axA1 = Axis(ga[1, 1], xlabel = "Time (ms)", ylabel = "Voltage (Vt)")
 axA2 = Axis(ga[2, 1], xlabel = "Time (ms)", ylabel = "Repol (Nt)")
 
-gb = fig[1, 2] = GridLayout()
+gb = fig1[1, 2] = GridLayout()
 axB1 = Axis3(gb[1,1], title = "K Repolarization (Nt)", xlabel = "I_app", ylabel = "Voltage. (Vt) ", zlabel = "K Repol. (N)")
 
 # Set some initial parameters
@@ -65,30 +65,35 @@ p0 = extract_p0(p0_dict)
 prob = ODEProblem(SAC_ODE, u0, (0.0, 300.0), p0) #Create the problem
 
 nx = ny = 50
-xmap = LinRange(-70.0, 10.0, nx)
-ymap = LinRange(-0.1, 1.1, ny)
-phase_map = phase_plane(prob, xmap, ymap)
+vmap = LinRange(-70.0, 10.0, nx)
+nmap = LinRange(-0.1, 1.1, ny)
+phase_map = phase_plane(prob, vmap, nmap)
 vt_vector = phase_map[:,:,1]
 nt_vector = phase_map[:,:,2]
 strength = sqrt.(vt_vector .^ 2 .+ nt_vector .^ 2) 
 
-surface!(ax1, xmap, ymap, vt_vector)
-surface!(ax2, xmap, ymap, nt_vector)
+surface!(ax1, vmap, nmap, vt_vector, alpha = 0.5)
+surface!(ax2, vmap, nmap, nt_vector, alpha = 0.5)
 
-heatmap!(ax3, xmap, ymap, strength, alpha = 0.2)
-arrows!(ax3, xmap, ymap, vt_vector, nt_vector, 
+heatmap!(ax3, vmap, nmap, strength, alpha = 0.2)
+arrows!(ax3, vmap, nmap, vt_vector, nt_vector, 
      arrowsize = 10.0, 
      lengthscale = 0.01, normalize = true,
      arrowcolor = strength|>vec, 
+     alpha = 0.2
 )
 
 # finding nullclines
-vt_nc, nt_nc = find_nullclines(prob, xmap, ymap)
-vt_nc
-nt_nc
-lines!(ax1, xmap, nt_nc, color = :black, linewidth = 5.0)
-lines!(ax2, vt_nc, ymap, color = :black, linewidth = 5.0)
+vt_nc, nt_nc = find_nullclines(prob, vmap, nmap)
+lines!(ax1, vmap, nt_nc, color = :red, linewidth = 5.0)
+lines!(ax2, vt_nc, nmap, color = :blue, linewidth = 5.0)
+lines!(ax3, vmap, nt_nc, color = :red)
+lines!(ax3, vt_nc, nmap, color = :blue)
+
+#finding the equilibria
+fixed_points = find_fixed_points(prob, vmap, nmap)
+
 display(fig2)
 
-#%% Can we come up with a clever way to find the nullcline
+
 #find it from the xperspective
