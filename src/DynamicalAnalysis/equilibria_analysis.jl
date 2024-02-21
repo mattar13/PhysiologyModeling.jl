@@ -70,7 +70,7 @@ export print, length
 function find_fixed_points(prob::SciMLBase.AbstractSciMLProblem, xmap::AbstractVector, ymap::AbstractVector; x_idx = 2, y_idx = 3, verbose = true)
     xlims = (xmap[1], xmap[end])
     ylims = (ymap[1], ymap[end])
-    fixed_points = Tuple
+    fixed_points = Tuple[] #This stores all of the fixed points
     function test_prob(x)
         uI = prob.u0
         du = similar(uI)

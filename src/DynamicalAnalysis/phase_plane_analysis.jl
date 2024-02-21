@@ -29,7 +29,7 @@ end
 function find_nullclines(prob::SciMLBase.AbstractSciMLProblem, xmap::AbstractVector, ymap::AbstractVector; 
     x_idx = 2, y_idx = 3, xic = -90.0, yic = 0.0
 )
-
+    #Having some problems finding the entirety of the Nt nullcline
     # Initialize containers for nullclines
     ysol = fill(NaN, length(xmap))
     for (ix, x) in enumerate(xmap)
