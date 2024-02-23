@@ -4,7 +4,7 @@ using Requires
 using ElectroPhysiology
 #using PhysiologyPlotting
 # Write your package code here.
-using LinearAlgebra,SparseArrays
+using LinearAlgebra, SparseArrays
 using ForwardDiff, NLsolve
 using DifferentialEquations
 using DiffEqCallbacks #This is necessary for inserting conductances into the model
@@ -54,12 +54,11 @@ export make_GPU
 
 #This section deals with parameters and contions
 #Eventually PhysiologyPlotting will include some things we need to plot everything
-using NLsolve
 include("DynamicalAnalysis/phase_plane_analysis.jl")
 export phase_plane, find_nullclines
 
 include("DynamicalAnalysis/equilibria_analysis.jl")
-export find_fixed_points
+export find_fixed_points, equilibrium_stability
 
 function __init__()
     @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
