@@ -27,43 +27,43 @@ end
 
 ## In order to do this, we probably need to have xmap and ymap
 function find_nullclines(prob::SciMLBase.AbstractSciMLProblem, xmap::AbstractVector, ymap::AbstractVector; 
-    x_idx = 2, y_idx = 3, xic = -90.0, yic = 0.0
+    x_idx = 2, y_idx = 3, yic = 0.0
 )
-    #Having some problems finding the entirety of the Nt nullcline
+
     # Initialize containers for nullclines
     ysol = fill(NaN, length(xmap))
+    xsol = fill(NaN, length(xmap))
+    #scatter!(axC1, [x], [yic], color = :red)
     for (ix, x) in enumerate(xmap)
         function x_test_prob(y)
             uI = prob.u0
             du = similar(uI)
-            uI[x_idx] = x
-            uI[[y_idx]] .= y
+            uI[[x_idx, y_idx]] .= [x, y[1]]
             prob.f(du, uI, prob.p, 0.0)
             return du[x_idx]
         end
+
         #Solve the test problem
-        nlsol = nlsolve(x_test_prob, [yic])
-        if nlsol.f_converged
-            ysol[ix] = nlsol.zero[1]
+        nlsolx = nlsolve(x_test_prob, [yic])
+        if nlsolx.f_converged
+            #scatter!(axC1, [x], nlsolx.zero, color = :green)
+            ysol[ix] = nlsolx.zero[1]
         end
-    end
-    
-    xsol = fill(NaN, length(ymap))
-    for (iy, y) in enumerate(ymap)
-        function y_test_prob(x)
+
+        #scatter!(axC2, [x], [yic], color = :red)
+        function y_test_prob(y)
             uI = prob.u0
             du = similar(uI)
-            uI[[x_idx]] .= x
-            uI[y_idx] = y
+            uI[[x_idx, y_idx]] .= [x, y[1]]
             prob.f(du, uI, prob.p, 0.0)
             return du[y_idx]
         end
-        #Solve the test problem
-        nlsol = nlsolve(y_test_prob, [xic])
-        if nlsol.f_converged
-                xsol[iy] = nlsol.zero[1]
+        
+        nlsoly = nlsolve(y_test_prob, [yic])
+        if nlsoly.f_converged
+            #scatter!(axC2, [x], nlsoly.zero, color = :green)
+            xsol[ix] = nlsoly.zero[1]
         end
     end
-
     return xsol, ysol
 end
