@@ -67,7 +67,11 @@ export print, length
 
 #Conduct a stability analysis of the current
 #We have to ensure the points we pick are realistic
-function find_fixed_points(prob::SciMLBase.AbstractSciMLProblem, xmap::AbstractVector, ymap::AbstractVector; x_idx = 2, y_idx = 3, verbose = true)
+function find_fixed_points(prob::SciMLBase.AbstractSciMLProblem, xmap::AbstractVector, ymap::AbstractVector; 
+    x_idx = 2, y_idx = 3, 
+    precision = 3,
+    verbose = false
+    )
     xlims = (xmap[1], xmap[end])
     ylims = (ymap[1], ymap[end])
     fixed_points = Tuple[] #This stores all of the fixed points
@@ -86,6 +90,8 @@ function find_fixed_points(prob::SciMLBase.AbstractSciMLProblem, xmap::AbstractV
             println("var 2 = $y")
         end
         res = nlsolve(test_prob, [x,y])
+        #Check to see if the nlsolve failed
+        
         #If any of the results are out of bounds then we have to cut it off
         if verbose
             print("Results of the nlsolve for uI: ")
@@ -96,7 +102,15 @@ function find_fixed_points(prob::SciMLBase.AbstractSciMLProblem, xmap::AbstractV
         var1_inbounds = xlims[1] < res.zero[1] <= xlims[2]
         var2_inbounds = ylims[1] < res.zero[2] <= ylims[2]
         if var1_inbounds && var2_inbounds
-
+            fixed_points_check = map(x -> round(x, digits=precision), res.zero) |> Tuple
+            if fixed_points_check ∉ fixed_points && res.f_converged
+                if verbose
+                    println(res.f_converged)
+                    println(fixed_points_check)
+                end
+                push!(fixed_points, fixed_points_check)
+            end
+                
         else
             if !var1_inbounds && verbose
                 println("Variable $(x_idx) is out of bounds at $(res.zero[1]) will be skipped")
@@ -107,7 +121,7 @@ function find_fixed_points(prob::SciMLBase.AbstractSciMLProblem, xmap::AbstractV
             end
         end
     end
-
+    return fixed_points
 end
 
 
