@@ -1,4 +1,4 @@
-using Revise
+using Revise 
 using ElectroPhysiology
 using PhysiologyModeling
 import PhysiologyModeling: CVODE_BDF, ring
@@ -9,28 +9,29 @@ CUDA.allowscalar(false)
 using SparseArrays
 using LinearAlgebra
 
+#%%
+
 #%% 1) determine the domains and spacing of cells. 
-domain_x = (xmin, xmax) = (0.0, 1.0)
-domain_y = (ymin, ymax) = (0.0, 1.0)
+domain_x = (xmin, xmax) = (0.0, 3.0)
+domain_y = (ymin, ymax) = (0.0, 3.0)
 dx = dy = 0.04 #Mean distribution is 40-50 micron (WR taylor et al)
 
-#2) create the map of cells and their radii
-cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax = ymax)
+#2) create a random distribution of cells and their radii
+ncells = 500
+cells = rand(xmin:dx:xmax, ncells, 2)
+#cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax = ymax)
 radii = fill(0.2, size(cells, 1)) #Switch this on to get constant radii
 dist_func(d) = ring(d; max_strength = 0.005, max_dist = 0.15)
 cell_map = CellMap(cells, radii; distance_function = dist_func) |> make_GPU;
 
-ics = extract_u0(SAC_u0_dict)
-u0_CPU = vcat(fill(ics, size(cells, 1))'...) 
-u0 = u0_CPU |> CuArray{Float32} #Generate a new initial conditions
+p0_dict = SAC_p0_dict()
+p0_dict["g_ACh"] = 1.0
+p0_dict["g_GABA"] = 0.0
+p0_dict["g_W"] = 0.075
+p0 = extract_p0(p0_dict) 
 
-SAC_p0_dict["g_ACh"] = 1.0
-SAC_p0_dict["g_GABA"] = 0.0
-SAC_p0_dict["g_W"] = 0.075
-p0 = extract_p0(SAC_p0_dict) 
-
-cell_map.strength
-cell_map.strength_out
+u0_dict= SAC_u0_dict(mode = :PDE, ncells = ncells)
+u0 = extract_u0(u0_dict) |> CuArray{Float32}
 
 #3) Define the problem
 tspan = (0.0, 1000.0)
@@ -39,31 +40,46 @@ prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
 
 # Pause here before running the model
 @time sol = solve(prob, SOSRI(), dtmax = 1.0, reltol = 2e-2, abstol = 2e-2, progress=true, progress_steps=1)
-
 #save("data.jld", "initial_cond", sol[end])
 
-#%% Find the zlims
-CUDA.allowscalar(true) #
-zlimsV =  (minimum(sol[:, 1, :]), maximum(sol[:, 1, :]))
-zlimsN =  (minimum(sol[:, 2, :]), maximum(sol[:, 2, :]))
-zlimsM =  (minimum(sol[:, 3, :]), maximum(sol[:, 3, :]))
-zlimsH =  (minimum(sol[:, 4, :]), maximum(sol[:, 4, :]))
-zlimsC =  (minimum(sol[:, 5, :]), maximum(sol[:, 5, :]))
-zlimsA =  (minimum(sol[:, 6, :]), maximum(sol[:, 6, :]))
-zlimsB =  (minimum(sol[:, 7, :]), maximum(sol[:, 7, :]))
-zlimsE =  (minimum(sol[:, 8, :]), maximum(sol[:, 8, :]))
-zlimsI =  (minimum(sol[:, 9, :]), maximum(sol[:, 9, :]))
-zlimsW =  (minimum(sol[:, 10, :]), maximum(sol[:, 10, :]))
+#%% Start plotting
+CUDA.allowscalar(true) #allow GPU operations to be offloaded to CPU 
+Time = sol.t[1]:10:sol.t[end]
+vt = hcat(map(t -> sol(t)[:,2], Time)...)|>Array
+nt = hcat(map(t -> sol(t)[:,3], Time)...)|>Array
+mt = hcat(map(t -> sol(t)[:,4], Time)...)|>Array
+ht = hcat(map(t -> sol(t)[:,5], Time)...)|>Array
+ct = hcat(map(t -> sol(t)[:,6], Time)...)|>Array
+at = hcat(map(t -> sol(t)[:,7], Time)...)|>Array
+bt = hcat(map(t -> sol(t)[:,8], Time)...)|>Array
+et = hcat(map(t -> sol(t)[:,9], Time)...)|>Array
+it = hcat(map(t -> sol(t)[:,10], Time)...)|>Array
+Wt = hcat(map(t -> sol(t)[:,11], Time)...)|>Array
 
-# Plot the figure
-fDIFF = Figure(size = (1800,1000))
-ax1 = Axis3(fDIFF[1,1]; aspect=(1, 1, 1), title = "Voltage")
-ax2 = Axis3(fDIFF[1,2]; aspect=(1, 1, 1), title = "Acetylcholine")
-ax3 = Axis3(fDIFF[1,3]; aspect=(1, 1, 1), title = "GABA")
+#%% Plot the figure
+fig1 = Figure(size = (400,400))
+ax1 = Axis(fig1[1,1], title = "Voltage")
+sctV = scatter!(ax1, cells[:,1], cells[:,2], color = sol(0.0)[:,1]|>Array, colorrange = (minimum(vt), maximum(vt)), markersize = 20.0)
+display(fig1)
 
-ax4 = Axis3(fDIFF[2,1]; aspect=(1, 1, 1), title = "Calcium")
-ax5 = Axis3(fDIFF[2,2]; aspect=(1, 1, 1), title = "cAMP")
-ax6 = Axis3(fDIFF[2,3]; aspect=(1, 1, 1), title = "TREK1")
+# record the animation
+n_frames = 1000
+animate_t = LinRange(0.0, sol.t[end], n_frames)
+dt = animate_t[2] - animate_t[1]
+fps = round(Int64, (1/dt) * 1000)
+
+GLMakie.record(fig1, "test/SAC_model_tests/model_animation.mp4", animate_t, framerate = 8) do t
+	println(t)
+	v = sol(t)[:, 2]
+	sctV.color = v
+end
+#%%
+ax2 = Axis(fDIFF[1,2]; aspect=(1, 1, 1), title = "Acetylcholine")
+ax3 = Axis(fDIFF[1,3]; aspect=(1, 1, 1), title = "GABA")
+
+ax4 = Axis(fDIFF[2,1]; aspect=(1, 1, 1), title = "Calcium")
+ax5 = Axis(fDIFF[2,2]; aspect=(1, 1, 1), title = "cAMP")
+ax6 = Axis(fDIFF[2,3]; aspect=(1, 1, 1), title = "TREK1")
 
 surf1 = surface!(ax1, cells[:, 1], cells[:, 2], sol(0.0)[:, 1])
 surf2 = surface!(ax2, cells[:, 1], cells[:, 2], sol(0.0)[:, 8])
