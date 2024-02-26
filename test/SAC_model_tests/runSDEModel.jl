@@ -49,7 +49,7 @@ lines!(ax9, Time, map(t -> sol(t)[10], Time))
 lines!(ax10, Time, map(t -> sol(t)[11], Time))
 lines!(ax11, Time, map(t -> sol(t)[1], Time))
 display(fSDE)
-#save("test/SAC_model_tests/SDESol.png", fSDE)
+save("test/SAC_model_tests/data/SDESol.png", fSDE)
 
 
 #%% Run an ensemble solution
