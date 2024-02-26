@@ -54,6 +54,9 @@ export make_GPU
 
 #This section deals with parameters and contions
 #Eventually PhysiologyPlotting will include some things we need to plot everything
+include("DynamicalAnalysis/ensemble_functions.jl")
+export OneVarEnsembleProb
+
 include("DynamicalAnalysis/phase_plane_analysis.jl")
 export phase_plane, find_nullclines
 
