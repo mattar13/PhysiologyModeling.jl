@@ -1,18 +1,27 @@
-function SAC_u0_dict() 
-     return Dict(
+function SAC_u0_dict(;mode = :ODE, ncells = 100) 
+     u0_dict = Dict(
           "I_ext" => 0.0,               #1  I_ext(t) = 0.00 This is the added current
           "v" =>  -64.23420980876107,   #2  v(t) = -63.6 
           "n" => 1.354100901552747e-5,  #3  n(t) = 0.000 
           "m" => 0.057910684157464414,  #4  m(t) = 0.062 
           "h" => 0.5691112964636721,    #5  h(t) = 0.550 
           "c" => 0.07729839999918353,   #6  c(t) = 0.085 
-          #"a" => 0.021826140913040696, #7  a(t) = 0.026 
-          "a" => 0.9766253703296031,  #7  a(t) = 0.026 
+          "a" => 0.021826140913040696, #7  a(t) = 0.026 
+          #"a" => 0.9766253703296031,  #7  a(t) = 0.026 
           "b" => 7.714363674074932e-6,  #8  b(t) = 0.000 
           "e" => 0.04675168624810658,   #9  e(t) = 0.000 
           "i" => 0.03895973860120606,   #10 i(t) = 0.000 
           "W" => 0.000                  #11 W(t) = 0.000 #Initial conditions
      )
+     if mode == :PDE
+          u0_dict_vector = Dict{String, Vector{Float64}}()
+          for (k,v) in u0_dict
+               u0_dict_vector[k] = fill(v, ncells)
+          end
+          return u0_dict_vector
+     elseif mode == :ODE
+          return u0_dict
+     end
 end
 
 function SAC_p0_dict(;keyset = :default) 

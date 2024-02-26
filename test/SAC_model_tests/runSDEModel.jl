@@ -22,10 +22,15 @@ ax10 = Axis(fSDE[1,4], title = "Noise (Wt)")
 ax11 = Axis(fSDE[2,4], title = "I_ext (pA)")
 
 tspan = (0.0, 100e3)
-SAC_p0_dict["g_GABA"] = 0.0
-SAC_p0_dict["g_ACh"] = 0.0
-p0 = extract_p0(SAC_p0_dict)
-u0 = extract_u0(SAC_u0_dict)
+#Extract and modify parameters
+p0_dict = SAC_p0_dict()
+p0_dict["g_GABA"] = 0.0
+p0_dict["g_ACh"] = 0.0
+p0 = extract_p0(p0_dict)
+#Extract and modify initial conditions
+u0_dict = SAC_u0_dict()
+u0 = extract_u0(u0_dict)
+#Set up the problem
 prob_func(du, u, p, t) = SAC_ODE(du, u, p, t)
 prob = SDEProblem(prob_func, noise1D, u0, tspan, p0)
 @time sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress = true, progress_steps = 1)
