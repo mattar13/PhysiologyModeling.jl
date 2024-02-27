@@ -7,8 +7,22 @@ function even_map(;xmin=0.0, dx=0.1, xmax=1.0, ymin=0.0, dy=0.1, ymax=1.0)
      return  [xs ys]
 end
 
-function random_map(n_points)
-     return rand(n_points, 2) 
+function random_map(n_points; rng_min = 0.0, rng_dt = 0.1, rng_max = 1.0)
+     return rand(rng_min:rng_ft, n_points, 2) 
+end
+
+function generate_ring_coordinates(n ;center = [0.0, 0.0], r = 0.05)
+     cx, cy = center
+     coordinates = zeros(n, 2)
+     
+     for i in 1:n
+         angle = 2 * π * (i / n)
+         x = cx + r * cos(angle)
+         y = cy + r * sin(angle)
+         coordinates[i, :] .= [x, y]
+     end
+     
+     return coordinates
 end
 
 # Calculate Euclidean distance between two points
