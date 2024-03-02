@@ -26,15 +26,15 @@ tspan = (0.0, 100e3)
 p0_dict = SAC_p0_dict()
 p0_dict["g_GABA"] = 0.0
 p0_dict["g_ACh"] = 0.0
+p0_dict["g_W"] = 0.075
 p0 = extract_p0(p0_dict)
 #Extract and modify initial conditions
 u0_dict = SAC_u0_dict()
 u0 = extract_u0(u0_dict)
 #Set up the problem
-prob_func(du, u, p, t) = SAC_ODE(du, u, p, t)
+prob_func(du, u, p, t) = SAC_ODE(du, u, p, t; stim_start = nothing, stim_stop = nothing)
 prob = SDEProblem(prob_func, noise1D, u0, tspan, p0)
-@time sol = solve(prob, SOSRI(), reltol = 0.01, abstol = 0.01, progress = true, progress_steps = 1)
-sol.u
+@time sol = solve(prob, SOSRI(), reltol = 2e-2, abstol = 2e-2, progress = true, progress_steps = 1)
 
 Time = sol.t
 lines!(ax1, Time, map(t -> sol(t)[2], Time))
@@ -48,33 +48,40 @@ lines!(ax8, Time, map(t -> sol(t)[9], Time))
 lines!(ax9, Time, map(t -> sol(t)[10], Time))
 lines!(ax10, Time, map(t -> sol(t)[11], Time))
 lines!(ax11, Time, map(t -> sol(t)[1], Time))
+
+
 display(fSDE)
+#%%
 save("test/SAC_model_tests/data/SDESol.png", fSDE)
 
 
 #%% Run an ensemble solution
-tspan = (0.0, 300e3)
-SAC_p0_dict["g_GABA"] = 0.0
-SAC_p0_dict["g_ACh"] = 0.0
-SAC_p0_dict["g_TREK"] = 0.0
-p0 = extract_p0(SAC_p0_dict)
-u0 = extract_u0(SAC_u0_dict)
-prob_func(du, u, p, t) = SAC_ODE_VC(du, u, p, t; stim_start = 100.0, stim_stop = 500.0)
+tspan = (0.0, 60e3)
+p0_dict = SAC_p0_dict()
+p0_dict["g_GABA"] = 0.0
+p0_dict["g_ACh"] = 0.0
+#p0_dict["g_TREK"] = 0.0
+p0 = extract_p0(p0_dict)
+u0_dict = SAC_u0_dict()
+u0 = extract_u0(u0_dict)
+prob_func(du, u, p, t) = SAC_ODE(du, u, p, t)
 prob = SDEProblem(prob_func, noise1D, u0, tspan, p0)
 
-n_traces = 20
-initial_conditions = LinRange(-200, 10, n_traces)
-function prob_func(prob, i, repeat; idx = 2)
+n_traces = 30
+initial_conditions = LinRange(0.0, 0.1, n_traces)
+function prob_func(prob, i, repeat; idx = 4)
      pI = prob.p
      pI[idx] = initial_conditions[i]
      println(pI)
      remake(prob, p = pI)
 end
 
-ensemble_prob = EnsembleProblem(prob, prob_func = prob_func)
+idx = findfirst(keys_p0 .== "g_W")
+ensemble_prob = EnsembleProblem(prob, prob_func = (prob, i, repeat) -> prob_func(prob, i, repeat; idx = idx))
 @time sim = solve(ensemble_prob, SOSRI(), EnsembleDistributed(), trajectories = n_traces, 
      progress = true, progress_steps = 1, reltol = 0.01, abstol = 0.01, maxiters = 1e7)
 
+#%
 fSDE = Figure(size = (1800, 800))
 ax1 = Axis(fSDE[1,1], title = "Voltage (Vt)")
 ax2 = Axis(fSDE[2,1], title = "K Repol. (Nt)")
@@ -91,19 +98,20 @@ ax9 = Axis(fSDE[2,3], title = "GABA (It)")
 ax10 = Axis(fSDE[1,4], title = "Noise (Wt)")
 ax11 = Axis(fSDE[2,4], title = "I_ext (pA)")
 
-for sol in sim
+for (i, sol) in enumerate(sim)
      println(sol.t[end])
      Time = LinRange(sol.t[1], sol.t[end], 2000)
-     lines!(ax1, Time, map(t -> sol(t)[2], Time))
-     lines!(ax2, Time, map(t -> sol(t)[3], Time))
-     lines!(ax3, Time, map(t -> sol(t)[4], Time))
-     lines!(ax4, Time, map(t -> sol(t)[5], Time))
-     lines!(ax5, Time, map(t -> sol(t)[6], Time))
-     lines!(ax6, Time, map(t -> sol(t)[7], Time))
-     lines!(ax7, Time, map(t -> sol(t)[8], Time))
-     lines!(ax8, Time, map(t -> sol(t)[9], Time))
-     lines!(ax9, Time, map(t -> sol(t)[10], Time))
-     lines!(ax10, Time, map(t -> sol(t)[11], Time))
-     lines!(ax11, Time, map(t -> sol(t)[1], Time))
+     x = initial_conditions[i]
+     lines!(ax1, Time, map(t -> sol(t)[2], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
+     lines!(ax2, Time, map(t -> sol(t)[3], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
+     lines!(ax3, Time, map(t -> sol(t)[4], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
+     lines!(ax4, Time, map(t -> sol(t)[5], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
+     lines!(ax5, Time, map(t -> sol(t)[6], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
+     lines!(ax6, Time, map(t -> sol(t)[7], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
+     lines!(ax7, Time, map(t -> sol(t)[8], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
+     lines!(ax8, Time, map(t -> sol(t)[9], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
+     lines!(ax9, Time, map(t -> sol(t)[10], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
+     lines!(ax10, Time, map(t -> sol(t)[11], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
+     lines!(ax11, Time, map(t -> sol(t)[1], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
 end
 display(fSDE)
