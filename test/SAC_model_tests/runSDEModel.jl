@@ -32,7 +32,7 @@ p0 = extract_p0(p0_dict)
 u0_dict = SAC_u0_dict()
 u0 = extract_u0(u0_dict)
 #Set up the problem
-prob_func(du, u, p, t) = SAC_ODE(du, u, p, t; stim_start = nothing, stim_stop = nothing)
+prob_func(du, u, p, t) = SAC_ODE(du, u, p, t)
 prob = SDEProblem(prob_func, noise1D, u0, tspan, p0)
 @time sol = solve(prob, SOSRI(), reltol = 2e-2, abstol = 2e-2, progress = true, progress_steps = 1)
 
@@ -71,8 +71,8 @@ n_traces = 30
 initial_conditions = LinRange(0.0, 0.1, n_traces)
 function prob_func(prob, i, repeat; idx = 4)
      pI = prob.p
-     pI[idx] = initial_conditions[i]
-     println(pI)
+     #pI[idx] = initial_conditions[i]
+     #println(pI)
      remake(prob, p = pI)
 end
 
@@ -81,7 +81,7 @@ ensemble_prob = EnsembleProblem(prob, prob_func = (prob, i, repeat) -> prob_func
 @time sim = solve(ensemble_prob, SOSRI(), EnsembleDistributed(), trajectories = n_traces, 
      progress = true, progress_steps = 1, reltol = 0.01, abstol = 0.01, maxiters = 1e7)
 
-#%
+#%%
 fSDE = Figure(size = (1800, 800))
 ax1 = Axis(fSDE[1,1], title = "Voltage (Vt)")
 ax2 = Axis(fSDE[2,1], title = "K Repol. (Nt)")
