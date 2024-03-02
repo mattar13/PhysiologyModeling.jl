@@ -178,7 +178,9 @@ function SAC_ODE_VC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0, hold = 
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
      ) = extract_p0(p)
      
-     if stim_start < t < stim_stop
+     if isnothing(stim_start) && isnothing(stim_stop)
+          @. dv = (VC-v)*k
+     elseif stim_start < t < stim_stop
           @. dv = (VC-v)*k
      else
           @. dv = (hold-v)*k
@@ -372,4 +374,6 @@ end
 DIFFUSION_NOISE(du, u, p, t) = du[:] .= 0.001
 
 noise2D(du, u, p, t) = du[:, end] .= p[4]
-noise1D(du, u, p, t) = du[end] = p[4]
+function noise1D(du, u, p, t) 
+     du[end] = p[4]
+end
