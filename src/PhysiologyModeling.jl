@@ -62,7 +62,7 @@ include("DynamicalAnalysis/phase_plane_analysis.jl")
 export phase_plane, find_nullclines
 
 include("DynamicalAnalysis/equilibria_analysis.jl")
-export find_fixed_points, equilibrium_stability
+export find_fixed_points, find_equilibria
 
 function __init__()
     @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
