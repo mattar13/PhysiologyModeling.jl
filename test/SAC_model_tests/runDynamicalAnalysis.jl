@@ -4,6 +4,89 @@ using Pkg; Pkg.activate("test") #Activate the testing environment
 using PhysiologyPlotting, GLMakie
 using BenchmarkTools
 using NLsolve
+using BifurcationKit
+
+#=============================================================================#
+#%% Dimensional Analysis 
+#    This is a 3D graph for which the phase planes are 2D. 
+#    This shows the shape of the diffeq model
+#    This section will result in a video showing the parameter Iapp change 
+#=============================================================================#
+
+tmin = 0.0
+tmax = 300.0
+dt = 0.1
+p0_dict = SAC_p0_dict(keyset = :dynamical_analysis)
+p0_dict["I_app"] = 0.0
+p0 = extract_p0(p0_dict)
+u0_dict = SAC_u0_dict()
+u0 = extract_u0(u0_dict)
+prob = ODEProblem(SAC_ODE, u0, (tmin, tmax), p0) #Create the problem
+
+#The goal is to find the real numbers where fODE(u, p) = 0.0
+function fODE(u, p) 
+     du = similar(u)
+     prob.f(du, u, p, 0.0)
+     du
+end
+
+#Create the bifurcation problem from the fODE using the lens of the first parameter I_app
+BifProb = BifurcationProblem(fODE, u0, p0, (@lens _[1]), 
+     record_from_solution = (x, p) -> (v = x[2], n = x[3], iapp = p[1])
+)
+
+#Set the optiopns
+p_min = -65.0
+p_max = 50.0
+opts_br = ContinuationPar(
+     p_min = p_min, p_max = p_max, #This is the parameter range we want to observe
+     max_steps = 10000, #Increase the number of steps does better at finding the unstable eqs
+     detect_bifurcation = 3 #Detect bi
+)
+#Continuation acts like solve and solves the eq fODE(u, p) = 0.0
+br = continuation(BifProb, PALC(), opts_br;	bothside = true, verbosity = 2)
+
+#Extract the v, n, and i from the 
+i_eq = map(i -> br.branch[i].iapp, 1:length(br))
+v_eq = map(i -> br.branch[i].v, 1:length(br))
+n_eq = map(i -> br.branch[i].n, 1:length(br))
+
+#Run 200 simulations for the chosen parameters
+n_traces = 200
+prng = LinRange(p_min, p_max, n_traces)
+efunc(prob, i, repeat) = OneVarEnsembleProb(prob, i, repeat, prng)
+ensemble_prob = EnsembleProblem(prob, prob_func = efunc)
+@time sim = solve(ensemble_prob, EnsembleDistributed(), trajectories = n_traces, progress = true, progress_steps = 1, maxiters = 1e7);
+
+#====================================Plot the solution====================================#
+fig = Figure(size = (800, 400)); #Make the figure
+ax1 = Axis3(fig[1:2, 1], xlabel = "Iapp (pA)", ylabel = "Vt", zlabel = "Nt"); #Make axis 3
+ax2 = Axis(fig[1,2], ylabel = "Vt (mV)"); #Make axis 1
+ax3 = Axis(fig[2,2], xlabel = "I applied (pA)", ylabel = "Nt"); #Make axis 2
+#Plot the bifurcation branches
+lines!(ax1, i_eq, v_eq, n_eq, linewidth = 1.0, color = :black)
+lines!(ax2, i_eq, v_eq, linewdith = 1.0, color = :black)
+lines!(ax3, i_eq, n_eq, linewidth = 1.0, color = :black)
+
+#Plot the 
+for i in br.specialpoint
+     label = "I_$(String(i.type)) = $(round(i.param, digits = 2)) pA"
+     scatter!(ax1, i.param, i.x[2], i.x[3])
+     scatter!(ax2, i.param, i.x[2], label = label)
+     scatter!(ax3, i.param, i.x[3])
+end
+fig[1:2,3] = Legend(fig, ax2, "Branchpoints", framevisible = false)
+
+Time = 200.0:dt:tmax
+for (i, sol) in enumerate(sim)
+     vt = map(t -> sol(t)[2], Time)
+     nt = map(t -> sol(t)[3], Time)
+     length(sol)
+     lines!(ax1, [prng[i]], vt, nt, color = :red, alpha = 0.5, depth_shhift = 0)
+     lines!(ax2, [prng[i]], vt, color = :red, alpha = 0.25, depth_shhift = 0)
+     lines!(ax3, [prng[i]], nt, color = :red, alpha = 0.25, depth_shhift = 0)
+end
+display(fig)
 
 #=============================================================================#
 #%% Phase plane analysis  
@@ -51,7 +134,7 @@ strength = sqrt.(vt_vector .^ 2 .+ nt_vector .^ 2) #extract the strength
 #Find the nullclines and fixed points
 vt_nc, nt_nc = find_nullclines(prob, vmap, nmap)
 fixed_points = find_fixed_points(prob, vmap, nmap, precision = 5)
-map(fp -> equilibrium_stability(prob, fp), fixed_points)
+map(fp -> find_equilibria(prob, fp), fixed_points)
 fixed_points_pt = Point2f.(map(pt -> (pt[2], pt[3]), fixed_points))
 
 la1 = lines!(axA1, Time, vt, color = :red, linewidth = 2.0)
@@ -113,51 +196,63 @@ record(fig2, "test/SAC_model_tests/PhasePlane.mp4", xrng, framerate = 10) do x
      fp1[1] = Point2f.(fixed_points)
 end
 
+
 #=============================================================================#
-#%% Dimensional Analysis 
+#%% Codimensional Analysis 
 #    This is a 3D graph for which the phase planes are 2D. 
 #    This shows the shape of the diffeq model
 #    This section will result in a video showing the parameter Iapp change 
 #=============================================================================#
-fig1 = Figure(size = (1600, 800))
-ga = fig1[1, 1] = GridLayout()
-axA1 = Axis(ga[1, 1], xlabel = "Time (ms)", ylabel = "Voltage (Vt)")
-axA2 = Axis(ga[2, 1], xlabel = "Time (ms)", ylabel = "Repol (Nt)")
 
-gb = fig1[1, 2] = GridLayout()
-axB1 = Axis3(gb[1,1], title = "K Repolarization (Nt)", xlabel = "I_app", ylabel = "Voltage. (Vt) ", zlabel = "K Repol. (N)")
-
-# Set some initial parameters
-u0_dict = SAC_u0_dict()
+tmin = 0.0
+tmax = 300.0
+dt = 0.1
 p0_dict = SAC_p0_dict(keyset = :dynamical_analysis)
-u0_dict["v"] = -65.0
-
-# After setting the inital parameters, extract them
-u0 = extract_u0(u0_dict)
+p0_dict["I_app"] = 0.0
 p0 = extract_p0(p0_dict)
-prob = ODEProblem(SAC_ODE, u0, (0.0, 300.0), p0) #Create the problem
+u0_dict = SAC_u0_dict()
+u0 = extract_u0(u0_dict)
+prob = ODEProblem(SAC_ODE, u0, (tmin, tmax), p0) #Create the problem
 
-#Set up the ensemble solution
-n_traces = 100 #Number of traces
-p_rng = LinRange(-20, 250, n_traces) #Set the parameter range
-efunc(prob, i, repeat) = OneVarEnsembleProb(prob, i, repeat, p_rng)
-ensemble_prob = EnsembleProblem(prob, prob_func = efunc)
+#The goal is to find the real numbers where fODE(u, p) = 0.0
+function fODE(u, p) 
+     du = similar(u)
+     prob.f(du, u, p, 0.0)
+     du
+end
 
-#Solve the ensemble solution
-@time sim = solve(ensemble_prob, EnsembleDistributed(), trajectories = n_traces, progress = true, progress_steps = 1, maxiters = 1e7);
+#Set the optiopns
+p_min = -65.0
+p_max = 50.0
+opts_br = ContinuationPar(
+     p_min = p_min, p_max = p_max, #This is the parameter range we want to observe
+     max_steps = 10000, #Increase the number of steps does better at finding the unstable eqs
+     detect_bifurcation = 3 #Detect bi
+)
+#Continuation acts like solve and solves the eq fODE(u, p) = 0.0
+br = continuation(BifProb, PALC(), opts_br;	bothside = true, verbosity = 2)
 
-# Plot the results
+#Extract the v, n, and i from the 
+i_eq = map(i -> br.branch[i].iapp, 1:length(br))
+v_eq = map(i -> br.branch[i].v, 1:length(br))
+
+#====================================Plot the solution====================================#
+fig = Figure(size = (800, 400)); #Make the figure
+ax1 = Axis(fig[1,1], ylabel = "Vt (mV)"); #Make axis 1
+#Plot the bifurcation branches
+lines!(ax1, i_eq, v_eq, linewdith = 1.0, color = :black)
+
+#Plot the 
+for i in br.specialpoint
+     label = "I_$(String(i.type)) = $(round(i.param, digits = 2)) pA"
+     scatter!(ax1, i.param, i.x[2], label = label)
+end
+fig[1,2] = Legend(fig, ax2, "Branchpoints", framevisible = false)
+
+Time = 200.0:dt:tmax
 for (i, sol) in enumerate(sim)
-     println(i)
-     x = p_rng[i]
-     dt = 0.01
-     Time = sol.t[1]:dt:sol.t[end]
      vt = map(t -> sol(t)[2], Time)
      nt = map(t -> sol(t)[3], Time)
-     ct = map(t -> sol(t)[6], Time)
-
-     lines!(axA1, Time, vt, colormap = :rainbow, color = [x], colorrange = (p_rng[1], p_rng[end]))
-     lines!(axA2, Time, nt, colormap = :rainbow, color = [x], colorrange = (p_rng[1], p_rng[end]))
-     lines!(axB1, [x], vt, nt, colormap = :rainbow, color = [x], colorrange = (p_rng[1], p_rng[end]))
+     lines!(ax1, [prng[i]], vt, color = :red, alpha = 0.25, depth_shhift = 0)
 end
-display(fig1)
+display(fig)
