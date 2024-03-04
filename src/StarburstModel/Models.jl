@@ -127,10 +127,10 @@ function SAC_ODE_IC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
-     #@. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
-     #@. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
-     @. da = (-α*(c^a_n)*a + (1-a))/τa     
-     @. db = (β * (1-a)^b_n * (1 - b) - b) / τb
+     @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
+     @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     #@. da = (-α*(c^a_n)*a + (1-a))/τa     
+     #@. db = (β * (1-a)^b_n * (1 - b) - b) / τb
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
      @. dW = -W / τw
@@ -178,7 +178,9 @@ function SAC_ODE_VC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0, hold = 
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
      ) = extract_p0(p)
      
-     if stim_start < t < stim_stop
+     if isnothing(stim_start) && isnothing(stim_stop)
+          @. dv = (VC-v)*k
+     elseif stim_start < t < stim_stop
           @. dv = (VC-v)*k
      else
           @. dv = (hold-v)*k
@@ -191,10 +193,10 @@ function SAC_ODE_VC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0, hold = 
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
-     #@. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
-     #@. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
-     @. da = (-α*(c^a_n)*a + (1-a))/τa     
-     @. db = (β * (1-a)^b_n * (1 - b) - b) / τb
+     @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
+     @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     #@. da = (-α*(c^a_n)*a + (1-a))/τa     
+     #@. db = (β * (1-a)^b_n * (1 - b) - b) / τb
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
      @. dW = -W / τw
@@ -337,10 +339,10 @@ function SAC_PDE(du, u, p, t, MAP)
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
-     #@. da = (-α*(c^a_n)*a + (1-a))/τa     
-     #@. db = (β * (1-a)^b_n * (1 - b) - b) / τb
      @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     #@. da = (-α*(c^a_n)*a + (1-a))/τa     
+     #@. db = (β * (1-a)^b_n * (1 - b) - b) / τb
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      ∇α(de, e, MAP, t) #This takes alot of allocations. 
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
@@ -373,4 +375,6 @@ end
 DIFFUSION_NOISE(du, u, p, t) = du[:] .= 0.001
 
 noise2D(du, u, p, t) = du[:, end] .= p[4]
-noise1D(du, u, p, t) = du[end] = p[4]
+function noise1D(du, u, p, t) 
+     du[end] = p[4]
+end

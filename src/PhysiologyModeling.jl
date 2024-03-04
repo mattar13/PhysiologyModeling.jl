@@ -56,13 +56,13 @@ export generate_ring_coordinates
 #This section deals with parameters and contions
 #Eventually PhysiologyPlotting will include some things we need to plot everything
 include("DynamicalAnalysis/ensemble_functions.jl")
-export OneVarEnsembleProb
+export OneVarEnsembleProb, InitialCond_Param_EnsembleProb
 
 include("DynamicalAnalysis/phase_plane_analysis.jl")
 export phase_plane, find_nullclines
 
 include("DynamicalAnalysis/equilibria_analysis.jl")
-export find_fixed_points, equilibrium_stability
+export find_fixed_points, find_equilibria
 
 function __init__()
     @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
