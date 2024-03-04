@@ -21,11 +21,12 @@ ax9 = Axis(fSDE[2,3], title = "GABA (It)")
 ax10 = Axis(fSDE[1,4], title = "Noise (Wt)")
 ax11 = Axis(fSDE[2,4], title = "I_ext (pA)")
 
-tspan = (0.0, 100e3)
+tspan = (0.0, 100.0)
 #Extract and modify parameters
 p0_dict = SAC_p0_dict()
 p0_dict["g_GABA"] = 0.0
 p0_dict["g_ACh"] = 0.0
+p0_dict["g_W"] = 0.2
 p0 = extract_p0(p0_dict)
 #Extract and modify initial conditions
 u0_dict = SAC_u0_dict()
