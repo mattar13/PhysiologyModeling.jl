@@ -9,30 +9,29 @@ CUDA.allowscalar(false)
 using SparseArrays
 using LinearAlgebra
 
-#%%
-
 #%% 1) determine the domains and spacing of cells. 
 domain_x = (xmin, xmax) = (0.0, 1.0)
 domain_y = (ymin, ymax) = (0.0, 1.0)
 dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
 
 #2) create a random distribution of cells and their radii
-n_cells = 10
-cells = zeros(n_cells, 2)
-cells[:, 1] .= LinRange(0.0, 1.0, n_cells)
+n_cells = 50
+#cells = zeros(n_cells, 2)
+#cells[:, 1] .= LinRange(0.0, 1.0, n_cells)
 #cells = generate_ring_coordinates(n_cells)
-#cells = rand(xmin:dx:xmax, ncells, 2)
+cells = rand(xmin:dx:xmax, n_cells, 2)
 xs = cells[:, 1]
 ys = cells[:, 2]
 
 #cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax = ymax)
 radii = fill(0.3, size(cells, 1)) #Switch this on to get constant radii
-dist_func1(d) = ring_circle_overlap_area(d; density = 1.0, r_inner = 0.1, r_outer = 0.2, r_circle = 0.2);
+dist_func1(d) = ring_circle_overlap_area(d; density = 0.1, r_inner = 0.1, r_outer = 0.2, r_circle = 0.2);
+cell_map = CellMap(cells, radii; distance_function = dist_func1);
 cell_map = cell_map |> make_GPU
 
 p0_dict = SAC_p0_dict()
-#p0_dict["g_ACh"] = 0.215
-#p0_dict["g_GABA"] = 0.0
+#p0_dict["g_ACh"] = 0.0#215
+p0_dict["g_GABA"] = 0.0
 p0 = extract_p0(p0_dict) 
 
 u0_dict= SAC_u0_dict(mode = :PDE, ncells = n_cells)
@@ -44,11 +43,12 @@ f_PDE(du, u, p, t) = SAC_PDE(du, u, p, t, cell_map)
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
 @time sol = solve(prob, 
      SOSRI(), #This seems to be the best solver option
+     reltol =  0.1, abstol = 0.1, 
      force_dtmin = true, 
      progress=true, progress_steps=1)
 #save("data.jld", "initial_cond", sol[end])
 
-#Start plotting
+#%% Start plotting
 CUDA.allowscalar(true) #allow GPU operations to be offloaded to CPU 
 Time = sol.t[1]:10:sol.t[end]
 vt = hcat(map(t -> sol(t)[:,2], Time)...)|>Array
