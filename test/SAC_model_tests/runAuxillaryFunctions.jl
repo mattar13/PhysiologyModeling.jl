@@ -12,13 +12,15 @@ f_DIST = Figure()
 ax_DIST = Axis(f_DIST[1,1], xlabel = "Distance from Soma (um)", ylabel = "NT Release (uM)")
 
 xs = 0.0:0.001:0.30
-dist_func1(d) = ring_circle_overlap_area(d; density = 1.0, r_inner = 0.1, r_outer = 0.2, r_circle = 0.2)
-dist_func2(d) = ring(d; max_strength = 0.1, max_dist = 0.18, slope = 0.025)
-δe1 = map(d -> dist_func1(d), xs)
-δe2 = map(d -> dist_func2(d), xs)
+for rIN in LinRange(0.01, 0.1, 30)
+     dist_func1(d) = ring_circle_overlap_area(d; density = 0.01, r_inner = rIN, r_outer = 0.18, r_circle = 0.18)
+     dist_func2(d) = ring(d; max_strength = 0.001, max_dist = 0.18, slope = 0.025)
+     δe1 = map(d -> dist_func1(d), xs)
+     δe2 = map(d -> dist_func2(d), xs)
 
-lines!(ax_DIST, xs, δe1)
-lines!(ax_DIST, xs, δe2)
+     lines!(ax_DIST, xs, δe1)
+     lines!(ax_DIST, xs, δe2)
+end
 
 display(f_DIST)
 save("test/SAC_model_tests/data/DistanceFunc.png", f_DIST)
