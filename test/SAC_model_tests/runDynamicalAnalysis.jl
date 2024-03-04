@@ -51,10 +51,12 @@ i_eq = map(i -> br.branch[i].iapp, 1:length(br))
 v_eq = map(i -> br.branch[i].v, 1:length(br))
 n_eq = map(i -> br.branch[i].n, 1:length(br))
 
+#Turn this and feed this into each point of the equilibrium
+ics = hcat(map(i -> br.sol[1].x, 1:length(br))...)
 #Run 200 simulations for the chosen parameters
 n_traces = length(i_eq)
-prng = i_eq
-efunc(prob, i, repeat) = OneVarEnsembleProb(prob, i, repeat, prng)
+prng = LinRange()
+efunc(prob, i, repeat) = InitialCond_Param_EnsembleProb(prob, i, repeat, ics, i_eq)
 ensemble_prob = EnsembleProblem(prob, prob_func = efunc)
 @time sim = solve(ensemble_prob, EnsembleDistributed(), trajectories = n_traces, progress = true, progress_steps = 1, maxiters = 1e7);
 
@@ -137,8 +139,11 @@ lb1 = lines!(axC3, v_trace, n_trace, color = :black, linewidth = 2.0, linestyle 
 
 
 #%% Animate this section of the model
-record(fig, "data/DynamicAnalysis.mp4", enumerate(sim), framerate = 10) do (i, sol)
+x_rng = 1:10:length(sim)
+println(pwd())
+record(fig, "test/SAC_model_tests/data/DynamicAnalysis.mp4", x_rng, framerate = 10) do i
      println(i)
+     sol = sim[i]
 
      phase_map = phase_plane(sol.prob, vmap, nmap) #return the phase map
      vt_vector = phase_map[:,:,1] #Extract the voltage vector
