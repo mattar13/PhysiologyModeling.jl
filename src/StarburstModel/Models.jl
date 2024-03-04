@@ -62,10 +62,10 @@ function SAC_ODE(du, u, p, t)
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
-     #@. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
-     #@. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
-     @. da = (-α*(c^a_n)*a + (1-a))/τa     
-     @. db = (β * (1-a)^b_n * (1 - b) - b) / τb
+     @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
+     @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     #@. da = (-α*(c^a_n)*a + (1-a))/τa     
+     #@. db = (β * (1-a)^b_n * (1 - b) - b) / τb
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
      @. dW = -W / τw
@@ -252,15 +252,16 @@ function SAC_ODE_INH_EXC(du, u, p, t)
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
-     #@. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
-     #@. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
-     @. da = (-α*(c^a_n)*a + (1-a))/τa     
-     @. db = (β * (1-a)^b_n * (1 - b) - b) / τb
+     @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
+     @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     #@. da = (-α*(c^a_n)*a + (1-a))/τa     
+     #@. db = (β * (1-a)^b_n * (1 - b) - b) / τb
      @. dgE = -gE
      @. dgI = -gI
      @. dW = -W / τw
      nothing
 end
+
 function SAC_ODE_Compartment(du, u, p, t; 
      gGAP = 0.01, 
      gK = [ 10.0, 8.125, 6.25, 4.375, 0.5], 
