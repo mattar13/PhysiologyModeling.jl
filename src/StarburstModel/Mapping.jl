@@ -25,6 +25,40 @@ function generate_ring_coordinates(n ;center = [0.0, 0.0], r = 0.05)
      return coordinates
 end
 
+"""
+    generateConcentricPoints(center::Tuple{Float64, Float64}, initial_points::Int, layers::Int, z::Int) -> Array{Tuple{Float64, Float64}}
+
+Generate points around a central point in concentric circles. Each subsequent layer has twice the number of points
+of the previous one, with `z` branches in the next concentric expanding circle.
+
+# Arguments
+- `center`: Central point (x, y) as a tuple.
+- `initial_points`: Number of points in the first layer.
+- `layers`: Number of concentric layers to generate.
+- `z`: Number of branches per point in the next layer.
+
+# Returns
+- A list of tuples, each representing the coordinates of a point.
+"""
+function generateConcentricPoints(center::Tuple{Float64, Float64}, initial_points::Int, layers::Int, z::Int)
+    points = []
+    radius_increment = 1.0  # Adjust as needed for spacing between layers
+
+    for layer in 1:layers
+        num_points = initial_points * 2^(layer - 1)
+        for point_idx in 1:num_points
+            angle = 2 * pi * (point_idx / num_points)
+            radius = layer * radius_increment
+            x = center[1] + radius * cos(angle)
+            y = center[2] + radius * sin(angle)
+            push!(points, (x, y))
+        end
+    end
+
+    return points
+end
+
+
 # Calculate Euclidean distance between two points
 function euclidean_distance(p1::Tuple{T,T}, p2::Tuple{T,T}) where T <: Real
      x1, y1 = p1
