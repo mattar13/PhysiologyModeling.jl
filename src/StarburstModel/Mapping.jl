@@ -40,24 +40,27 @@ of the previous one, with `z` branches in the next concentric expanding circle.
 # Returns
 - A list of tuples, each representing the coordinates of a point.
 """
-function generateConcentricPoints(center::Tuple{Float64, Float64}, initial_points::Int, layers::Int, z::Int)
-    points = []
-    radius_increment = 1.0  # Adjust as needed for spacing between layers
-
-    for layer in 1:layers
-        num_points = initial_points * 2^(layer - 1)
-        for point_idx in 1:num_points
-            angle = 2 * pi * (point_idx / num_points)
-            radius = layer * radius_increment
-            x = center[1] + radius * cos(angle)
-            y = center[2] + radius * sin(angle)
-            push!(points, (x, y))
-        end
-    end
-
-    return points
+function generate_circles(n, z, l; radius= 1.0)
+     all_points = []
+     idx = 1
+     
+     for branch in 1:z
+          for radial_line in 1:n
+               angle_radial = 2 * π * radial_line / n
+               end_x = cos(angle_radial) * radius
+               end_y = sin(angle_radial) * radius
+               push!(all_points, [end_x, end_y])
+          end
+     end
+     #radial_angles = LinRange(0π, 2π, n)
+     #     println(radial_angles)
+     #     end_x = cos.(radial_angles) .* radius
+     #     end_y = sin.(radial_angles) .* radius
+     #     println(end_x)
+     #     println(end_y)
+     #end
+     return all_points
 end
-
 
 # Calculate Euclidean distance between two points
 function euclidean_distance(p1::Tuple{T,T}, p2::Tuple{T,T}) where T <: Real
