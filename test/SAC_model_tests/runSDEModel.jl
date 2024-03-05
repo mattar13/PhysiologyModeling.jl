@@ -9,9 +9,6 @@ tspan = (0.0, 100.0)
 p0_dict = SAC_p0_dict()
 p0_dict["g_GABA"] = 0.0
 p0_dict["g_ACh"] = 0.0
-p0_dict["g_W"] = 0.075
-p0_dict["g_K"] = -80.0 #Try changing these
-p0_dict["g_leak"] = -65.0 #Try changing these
 p0 = extract_p0(p0_dict)
 #Extract and modify initial conditions
 u0_dict = SAC_u0_dict()

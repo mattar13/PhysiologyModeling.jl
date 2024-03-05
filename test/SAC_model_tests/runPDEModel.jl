@@ -9,28 +9,32 @@ CUDA.allowscalar(false)
 using SparseArrays
 using LinearAlgebra
 
+#%%=================================[Solving a SPDE for tspan]=================================#
+
 #%% 1) determine the domains and spacing of cells. 
-domain_x = (xmin, xmax) = (0.0, 1.0)
-domain_y = (ymin, ymax) = (0.0, 1.0)
+domain_x = (xmin, xmax) = (0.0, 2.0)
+domain_y = (ymin, ymax) = (0.0, 2.0)
 dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
 
 #2) create a random distribution of cells and their radii
-n_cells = 50
+n_cells = 100
 #cells = zeros(n_cells, 2)
 #cells[:, 1] .= LinRange(0.0, 1.0, n_cells)
 #cells = generate_ring_coordinates(n_cells)
+#cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax = ymax)
 cells = rand(xmin:dx:xmax, n_cells, 2)
 xs = cells[:, 1]
 ys = cells[:, 2]
 
-#cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax = ymax)
 radii = fill(0.3, size(cells, 1)) #Switch this on to get constant radii
 dist_func1(d) = ring_circle_overlap_area(d; density = 0.1, r_inner = 0.1, r_outer = 0.2, r_circle = 0.2);
-cell_map = CellMap(cells, radii; distance_function = dist_func1);
-cell_map = cell_map |> make_GPU
+cell_map_CPU = CellMap(cells, radii; distance_function = dist_func1);
+#make sure cells are connected, if not remove unconnected cells
+cell_map.strength_out
+
+cell_map = cell_map_CPU |> make_GPU
 
 p0_dict = SAC_p0_dict()
-#p0_dict["g_ACh"] = 0.0#215
 p0_dict["g_GABA"] = 0.0
 p0 = extract_p0(p0_dict) 
 
@@ -48,7 +52,6 @@ prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
      progress=true, progress_steps=1)
 #save("data.jld", "initial_cond", sol[end])
 
-#%% Start plotting
 CUDA.allowscalar(true) #allow GPU operations to be offloaded to CPU 
 Time = sol.t[1]:10:sol.t[end]
 vt = hcat(map(t -> sol(t)[:,2], Time)...)|>Array
@@ -62,15 +65,21 @@ et = hcat(map(t -> sol(t)[:,9], Time)...)|>Array
 it = hcat(map(t -> sol(t)[:,10], Time)...)|>Array
 Wt = hcat(map(t -> sol(t)[:,11], Time)...)|>Array
 
-#Create the plot
+#%%====================================[Plot the solution]====================================#
 fig1 = Figure(size = (400,800))
-ax1a = Axis(fig1[1,1], title = "Voltage")
-ax1b = Axis(fig1[2,1], title = "Voltage Traces")
-sctV = scatter!(ax1a, cells[:,1], cells[:,2], color = sol(0.0)[:,1]|>Array, colorrange = (minimum(vt), maximum(vt)), markersize = 20.0)
+ax1a = Axis(fig1[1,1], title = "CalciumImageing")
+ax1b = Axis(fig1[2,1], title = "Calcium ROIs")
+ax1c = Axis(fig1[3,1], title = "Voltage Traces")
+
+rowsize!(fig1.layout, 1, Relative(1/2)) #Make the cell plot larger
+sctV = scatter!(ax1a, cells[:,1], cells[:,2], color = sol(0.0)[:,6]|>Array, colorrange = (0.0, maximum(ct)), markersize = 20.0)
 for n in 1:n_cells
-     lines!(ax1b, Time, vt[n, :])
+     lines!(ax1b, Time, ct[n, :])
+     lines!(ax1c, Time, vt[n, :])
 end
-ticker = vlines!(ax1b, [0.0])
+tickerb = vlines!(ax1b, [0.0])
+tickerc = vlines!(ax1c, [0.0])
+
 display(fig1)
 
 n_frames = 1000
@@ -80,7 +89,8 @@ fps = round(Int64, (1/dt) * 1000)
 
 GLMakie.record(fig1, "test/SAC_model_tests/data/model_animation.mp4", animate_t, framerate = 8) do t
 	println(t)
-	v = sol(t)[:, 2] |> Array
-	sctV.color = v
-     ticker[1] = [t]
+	c = sol(t)[:, 6] |> Array
+	sctV.color = c
+     tickerb[1] = [t]
+     tickerc[1] = [t]
 end
