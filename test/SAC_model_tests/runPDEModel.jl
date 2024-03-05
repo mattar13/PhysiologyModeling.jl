@@ -12,12 +12,12 @@ using LinearAlgebra
 #%%=================================[Solving a SPDE for tspan]=================================#
 
 #%% 1) determine the domains and spacing of cells. 
-domain_x = (xmin, xmax) = (0.0, 2.0)
-domain_y = (ymin, ymax) = (0.0, 2.0)
-dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
+domain_x = (xmin, xmax) = (0.0, 3.0)
+domain_y = (ymin, ymax) = (0.0, 3.0)
+dx = dy = 0.04 #Mean distribution is 40-50 micron (WR taylor et al)
 
 #2) create a random distribution of cells and their radii
-n_cells = 100
+n_cells = 200
 #cells = zeros(n_cells, 2)
 #cells[:, 1] .= LinRange(0.0, 1.0, n_cells)
 #cells = generate_ring_coordinates(n_cells)
@@ -35,6 +35,7 @@ cell_map.strength_out
 cell_map = cell_map_CPU |> make_GPU
 
 p0_dict = SAC_p0_dict()
+p0_dict["g_ACh"] = 2.0
 p0_dict["g_GABA"] = 0.0
 p0 = extract_p0(p0_dict) 
 
@@ -67,9 +68,9 @@ Wt = hcat(map(t -> sol(t)[:,11], Time)...)|>Array
 
 #%%====================================[Plot the solution]====================================#
 fig1 = Figure(size = (400,800))
-ax1a = Axis(fig1[1,1], title = "CalciumImageing")
-ax1b = Axis(fig1[2,1], title = "Calcium ROIs")
-ax1c = Axis(fig1[3,1], title = "Voltage Traces")
+ax1a = Axis(fig1[1,1], title = "CalciumImageing", xlabel = "nx", ylabel = "ny")
+ax1b = Axis(fig1[2,1], title = "Calcium ROIs", xlabel = "time (ms)", ylabel = "Ct")
+ax1c = Axis(fig1[3,1], title = "Voltage Traces", xlabel = "time (ms)", ylabel = "Vt (mV)")
 
 rowsize!(fig1.layout, 1, Relative(1/2)) #Make the cell plot larger
 sctV = scatter!(ax1a, cells[:,1], cells[:,2], color = sol(0.0)[:,6]|>Array, colorrange = (0.0, maximum(ct)), markersize = 20.0)
