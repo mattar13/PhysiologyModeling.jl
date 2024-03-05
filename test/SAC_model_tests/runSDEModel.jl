@@ -3,10 +3,7 @@ using Pkg; Pkg.activate("test")
 using PhysiologyPlotting
 using GLMakie
 
-#%% Run the example after here
-
-
-
+#%%=================================[Solving a single SDE for tspan]=================================#
 tspan = (0.0, 100.0)
 #Extract and modify parameters
 p0_dict = SAC_p0_dict()
@@ -24,7 +21,7 @@ prob_func(du, u, p, t) = SAC_ODE(du, u, p, t)
 prob = SDEProblem(prob_func, noise1D, u0, tspan, p0)
 @time sol = solve(prob, SOSRI(), reltol = 2e-2, abstol = 2e-2, progress = true, progress_steps = 1)
 
-#====================================Plot the solution====================================#
+#====================================[Plot the solution]====================================#
 fSDE = Figure(size = (1800, 800))
 ax1 = Axis(fSDE[1,1], title = "Voltage (Vt)")
 ax2 = Axis(fSDE[2,1], title = "K Repol. (Nt)")
@@ -58,35 +55,37 @@ display(fSDE)
 save("test/SAC_model_tests/data/SDESol_Ek_leak.png", fSDE)
 
 
-#%% Run an ensemble solution
-tspan = (0.0, 60e3)
+#%%=================================[Running a series of SDE models over parameter space idx]=================================#
+idx = findfirst(keys_p0 .== "g_Ca")
+n_traces = 30
+param_rng = LinRange(4.0, 4.5, n_traces)
+
+#Specify the timespan
+tspan = (0.0, 100.0)
+#Extract and modify parameters
 p0_dict = SAC_p0_dict()
-#p0_dict["I_app"] = 10.0
 p0_dict["g_K"] = 4.4
 p0_dict["g_GABA"] = 0.0
 p0_dict["g_ACh"] = 0.0
-
 p0 = extract_p0(p0_dict)
+#Extract and modify initial conditions
 u0_dict = SAC_u0_dict()
 u0 = extract_u0(u0_dict)
-prob_func(du, u, p, t) = SAC_ODE(du, u, p, t)
-prob = SDEProblem(prob_func, noise1D, u0, tspan, p0)
-
-n_traces = 30
-initial_conditions = LinRange(4.0, 4.5, n_traces)
-function prob_func(prob, i, repeat; idx = 4)
+#Set up the problem
+fSAC(du, u, p, t) = SAC_ODE(du, u, p, t)
+prob = SDEProblem(fSAC, noise1D, u0, tspan, p0)
+function fSAC_ensemble(prob, i, repeat; idx = idx)
      pI = prob.p
-     pI[idx] = initial_conditions[i]
+     pI[idx] = param_rng[i]
      println(pI)
      remake(prob, p = pI) 
 end
 
-idx = findfirst(keys_p0 .== "g_Ca")
 ensemble_prob = EnsembleProblem(prob, prob_func = (prob, i, repeat) -> prob_func(prob, i, repeat; idx = idx))
 @time sim = solve(ensemble_prob, SOSRI(), EnsembleDistributed(), trajectories = n_traces, 
      progress = true, progress_steps = 1, reltol = 0.01, abstol = 0.01, maxiters = 1e7)
 
-#
+#====================================[Plot the solution]====================================#
 fSDE = Figure(size = (1800, 800))
 ax1 = Axis(fSDE[1,1], title = "Voltage (Vt)")
 ax2 = Axis(fSDE[2,1], title = "K Repol. (Nt)")
