@@ -13,6 +13,8 @@ function SAC_u0_dict(;mode = :ODE, ncells = 100)
           "b" => 7.714363674074932e-6,  #8  b(t) = 0.000 
           "e" => 0.04675168624810658,   #9  e(t) = 0.000 
           "i" => 0.03895973860120606,   #10 i(t) = 0.000 
+          "g" => 0.0, 
+          "q" => 1.0,
           "W" => 0.000                  #11 W(t) = 0.000 #Initial conditions
      )
      if mode == :PDE
@@ -83,8 +85,9 @@ function SAC_p0_dict(;keyset = :DEFAULT)
           "k_GABA"    => 0.1,
           "E_Cl"      => -65.0,
 
-          "g_glut"    => 1.0, 
-
+          "g_GLUT"    => 1.0, 
+          "k_GLUT"    => 1.0,
+          "E_GLUT"    => 1.0,
 
           "De"        => 0.01,
           "Di"        => 0.01,
@@ -104,7 +107,7 @@ function SAC_p0_dict(;keyset = :DEFAULT)
      if keyset == :DEFAULT
           return base_dict
      elseif keyset == :GLUTAMATE
-          println("Working on it")
+          return base_dict #I have opted for keeping all the dictionary entries the same
      elseif keyset == :DOPAMINE
 
      elseif keyset == :dynamical_analysis
@@ -228,11 +231,3 @@ function extract_u0(d::Dict{String, Float64}; mode = :ODE)
      end
      extract_dict(d, keys_u0)
 end
-
-vals_u0 = map(k -> SAC_u0_dict()[k], keys_u0)
-nt_u0 = NamedTuple{Symbol.(keys_u0) |> Tuple}(vals_u0)
-
-vals_p0 = map(k -> SAC_p0_dict()[k], keys_p0) 
-
-nt_p0 = NamedTuple{Symbol.(keys_p0) |> Tuple}(vals_p0)
-

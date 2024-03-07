@@ -38,7 +38,7 @@ function SAC_ODE(du, u, p, t)
           VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
           VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
-     ) = extract_p0(p)
+     ) = p
 
      @. dI_ext = I_app-I_ext
      @. dv = (ILeak(v, g_leak, E_leak) + 
@@ -98,7 +98,7 @@ function SAC_ODE_IC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
           VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
           VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
-     ) = extract_p0(p)
+     ) = p
 
      if stim_start < t < stim_stop
           stim_amp = I_app
@@ -163,7 +163,7 @@ function SAC_ODE_VC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0, hold = 
           VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
           VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
-     ) = extract_p0(p)
+     ) = p
      
      if isnothing(stim_start) && isnothing(stim_stop)
           @. dv = (VC-v)*k
@@ -232,7 +232,7 @@ function SAC_ODE_INH_EXC(du, u, p, t)
           VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh, #Many of these will go unused
           VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, #Many of these will go unused
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
-     ) = extract_p0(p)
+     ) = p
 
      @. dI_ext = I_app-I_ext
      @. dv = (ILeak(v, g_leak, E_leak) + ICa(v, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
@@ -291,13 +291,14 @@ function SAC_ODE_GLUT(du, u, p, t)
           a_n, b_n,
           g_GLUT, k_GLUT, E_GLUT,
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
-     ) = extract_p0(p)
+     ) = p
 
      @. dI_ext = I_app-I_ext
-     @. dv = (ILeak(v, g_leak, E_leak) + 
-          + ICa_mGluR2(v, p, g_Ca, V1, V2, E_Ca) 
+     @. dv = (
+          ILeak(v, g_leak, E_leak) + 
           + IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
-          + IGLUT(v, p, g_GLUT, k_GLUT, E_GLUT)
+          + ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca) 
+          + IGLUT(v, q, g_GLUT, k_GLUT, E_GLUT)
           + I_ext + W) / C_m
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
@@ -367,7 +368,7 @@ function SAC_PDE(du, u, p, t, MAP)
           VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
           VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
-     ) = extract_p0(p)
+     ) = p
 
      @. dI_ext = I_app
      @. dv = (ILeak(v, g_leak, E_leak) + 
