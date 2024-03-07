@@ -289,26 +289,26 @@ function SAC_ODE_GLUT(du, u, p, t)
           α, τa, 
           β, τb, 
           a_n, b_n,
-          VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh, #Many of these will go unused
-          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, #Many of these will go unused
+          g_GLUT, k_GLUT, E_GLUT,
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
      ) = extract_p0(p)
 
      @. dI_ext = I_app-I_ext
-     @. dv = (ILeak(v, g_leak, E_leak) + ICa(v, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
-          + -gE*(v-E_ACh) #The conductance will be determined
-          + -gI*(v-E_Cl) #The conductance will be determined
+     @. dv = (ILeak(v, g_leak, E_leak) + 
+          + ICa_mGluR2(v, p, g_Ca, V1, V2, E_Ca) 
+          + IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
+          + IGLUT(v, p, g_GLUT, k_GLUT, E_GLUT)
           + I_ext + W) / C_m
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
-     @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
-     @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     @. da = (α * c^a_n * (1 - a) - a) / τa
+     @. db = (β * a^b_n * (1 - b) - b) / τb
      #@. da = (-α*(c^a_n)*a + (1-a))/τa     
      #@. db = (β * (1-a)^b_n * (1 - b) - b) / τb
      @. dg = -g
-     @. dp = p
+     @. dq = 0.0
      @. dW = -W / τw
      nothing
 end

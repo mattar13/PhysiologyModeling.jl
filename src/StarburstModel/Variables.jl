@@ -1,3 +1,6 @@
+extract_dict(d::Dict{String, Float64}, keys) = map(k -> d[k], keys)
+extract_dict(d::Dict{String, Vector{Float64}}, keys) = hcat(map(k -> d[k], keys)...)
+
 function SAC_u0_dict(;mode = :ODE, ncells = 100) 
      u0_dict = Dict(
           "I_ext" => 0.0,               #1  I_ext(t) = 0.00 This is the added current
@@ -20,6 +23,9 @@ function SAC_u0_dict(;mode = :ODE, ncells = 100)
           return u0_dict_vector
      elseif mode == :ODE
           return u0_dict
+     elseif mode == :GLUT
+          u0_dict["g"] = 0.0
+          u0_dict["q"] = 0.0 #Modulatory g-protein deactivating gCa
      end
 end
 
@@ -27,24 +33,29 @@ function SAC_p0_dict(;keyset = :DEFAULT)
      base_dict = Dict(
           "I_app"     => 0.0,
           "VC"        => 0.0, #For voltage clamp
+
           "C_m"       => 13.6,
           "g_W"       => 0.075,
           "τw"        => 800.0,
-          "τw"        => 800.0,
+
           "g_leak"    => 2.0,
           "E_leak"    => -70.0,
+
           "g_K"       => 4.0,
           "V3"        => -25.0,
           "V4"        => 7.0,
           "E_K"       => -90.0,
           "τn"        => 5.0,
+
           "g_Ca"      => 8.5,
           "V1"        => -20.0,
           "V2"        => 20.0,
           "E_Ca"      => 50.0,
           "τc"        => 2000.0,
+
           "g_Na"      => 2.0,
           "E_Na"      => 55.0,
+
           "g_TREK"    => 4.0,
           
           "C_0"       => 0.088,
@@ -71,6 +82,9 @@ function SAC_p0_dict(;keyset = :DEFAULT)
           "g_GABA"    => 0.9,
           "k_GABA"    => 0.1,
           "E_Cl"      => -65.0,
+
+          "g_glut"    => 1.0, 
+
 
           "De"        => 0.01,
           "Di"        => 0.01,
@@ -160,31 +174,63 @@ function SAC_p0_dict(;keyset = :DEFAULT)
      end
 end
 
-keys_u0 = ["I_ext", "v", "n", "m", "h", "c", "a", "b", "e", "i", "W"]
-GAP_keys_u0 = ["v", "n", "m", "h", "c", "a", "b", "W"] #This parameter set is for gap junctions only
+function extract_p0(d::Dict{String, Float64}; mode = :ODE)
+     if mode == :ODE || mode == :PDE
+          keys_p0 = [
+               "I_app", "VC",
+               "C_m", "g_W", "τw", 
+               "g_leak", "E_leak", 
+               "g_K", "V3", "V4", "E_K", "τn", 
+               "g_Ca", "V1", "V2","E_Ca", "τc",
+               "g_Na", "E_Na", 
+               "g_TREK",
+               
+               "C_0", "λ" , "δ",  
+               "α", "τa", 
+               "β", "τb", 
+               "a_n", "b_n",
+
+               "VSe", "V0e", "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
+               "VSi", "V0i", "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
+
+               "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18"
+          ]  
+     elseif mode == :GLUTAMATE
+          keys_p0 = [
+               "I_app", "VC",
+               "C_m", "g_W", "τw", 
+               "g_leak", "E_leak", 
+               "g_K", "V3", "V4", "E_K", "τn", 
+               "g_Ca", "V1", "V2","E_Ca", "τc",
+               "g_Na", "E_Na", 
+               "g_TREK",
+               
+               "C_0", "λ" , "δ",  
+               "α", "τa", 
+               "β", "τb", 
+               "a_n", "b_n",
+               "g_GLUT", "k_GLUT", "E_GLUT",
+
+               "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18"
+          ]  
+     end
+     extract_dict(d, keys_p0)
+end
+
+function extract_u0(d::Dict{String, Float64}; mode = :ODE)
+     if mode == :ODE || mode == :PDE
+          keys_u0 = ["I_ext", "v", "n", "m", "h", "c", "a", "b", "e", "i", "W"]
+     elseif mode == :GLUTAMATE
+          keys_u0 = ["I_ext", "v", "n", "m", "h", "c", "a", "b", "g", "q", "W"]
+     elseif mode == :GAP
+          keys_u0 = ["v", "n", "m", "h", "c", "a", "b", "W"] #This parameter set is for gap junctions only
+     elseif mode == :KEYS
+     end
+     extract_dict(d, keys_u0)
+end
 
 vals_u0 = map(k -> SAC_u0_dict()[k], keys_u0)
 nt_u0 = NamedTuple{Symbol.(keys_u0) |> Tuple}(vals_u0)
-
-keys_p0 = [
-     "I_app", "VC",
-     "C_m", "g_W", "τw", 
-     "g_leak", "E_leak", 
-     "g_K", "V3", "V4", "E_K", "τn", 
-     "g_Ca", "V1", "V2","E_Ca", "τc",
-     "g_Na", "E_Na", 
-     "g_TREK",
-     
-     "C_0", "λ" , "δ",  
-     "α", "τa", 
-     "β", "τb", 
-     "a_n", "b_n",
-
-     "VSe", "V0e", "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
-     "VSi", "V0i", "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
-
-     "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18"
-]
 
 vals_p0 = map(k -> SAC_p0_dict()[k], keys_p0) 
 
