@@ -14,7 +14,7 @@ function SAC_u0_dict(;mode = :ODE, ncells = 100)
           "e" => 0.04675168624810658,   #9  e(t) = 0.000 
           "i" => 0.03895973860120606,   #10 i(t) = 0.000 
           "g" => 0.0, 
-          "q" => 1.0,
+          "q" => 0.0,
           "W" => 0.000                  #11 W(t) = 0.000 #Initial conditions
      )
      if mode == :PDE
@@ -106,10 +106,6 @@ function SAC_p0_dict(;keyset = :DEFAULT)
      )
      if keyset == :DEFAULT
           return base_dict
-     elseif keyset == :GLUTAMATE
-          return base_dict #I have opted for keeping all the dictionary entries the same
-     elseif keyset == :DOPAMINE
-
      elseif keyset == :dynamical_analysis
           return Dict(
                "I_app"     => 0.0,
@@ -196,24 +192,8 @@ function extract_p0(d::Dict{String, Float64}; mode = :ODE)
                "VSe", "V0e", "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
                "VSi", "V0i", "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
 
-               "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18"
-          ]  
-     elseif mode == :GLUTAMATE
-          keys_p0 = [
-               "I_app", "VC",
-               "C_m", "g_W", "τw", 
-               "g_leak", "E_leak", 
-               "g_K", "V3", "V4", "E_K", "τn", 
-               "g_Ca", "V1", "V2","E_Ca", "τc",
-               "g_Na", "E_Na", 
-               "g_TREK",
-               
-               "C_0", "λ" , "δ",  
-               "α", "τa", 
-               "β", "τb", 
-               "a_n", "b_n",
                "g_GLUT", "k_GLUT", "E_GLUT",
-
+               
                "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18"
           ]  
      end
@@ -222,7 +202,7 @@ end
 
 function extract_u0(d::Dict{String, Float64}; mode = :ODE)
      if mode == :ODE || mode == :PDE
-          keys_u0 = ["I_ext", "v", "n", "m", "h", "c", "a", "b", "e", "i", "W"]
+          keys_u0 = ["I_ext", "v", "n", "m", "h", "c", "a", "b", "e", "i", "g", "q", "W"]
      elseif mode == :GLUTAMATE
           keys_u0 = ["I_ext", "v", "n", "m", "h", "c", "a", "b", "g", "q", "W"]
      elseif mode == :GAP
