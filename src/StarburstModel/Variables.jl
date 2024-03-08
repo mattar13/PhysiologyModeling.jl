@@ -75,7 +75,7 @@ function SAC_p0_dict(;keyset = :DEFAULT)
           "V0e"       => -40.0,
           "τACh"      => 540.0,
           "g_ACh"     => 0.215,
-          "k_ACh"     => 0.1,
+          "k_ACh"     => 0.1, #Half maximal concentration is 100 uM
           "E_ACh"     => 0.0,
           "ρi"        => 5.0,
           "VSi"       => 0.2,
@@ -85,9 +85,14 @@ function SAC_p0_dict(;keyset = :DEFAULT)
           "k_GABA"    => 0.1,
           "E_Cl"      => -65.0,
 
-          "g_GLUT"    => 1.0, 
-          "k_GLUT"    => 1.0,
-          "E_GLUT"    => 1.0,
+          #These parameters were estimated from Smith and Howe et al. 
+          "g_GLUT"    => 0.15, #Single channel conductance is 4-15pS. Assuming 100 channels per cell. value is in nS
+          "k_GLUT"    => 0.007, #halfmax activation occurs at 7 uM
+          "E_GLUT"    => 0.0, #NMDA receptors are non-selective
+          
+          "g_n"       => 2.0, #number of glutamate moleculaes needed to activte the g protein response
+          "γg"        => 6.18, #rate of Gq activation by G protein 
+          "τq"        => 500.0, #time needed for Gq to return to baseline
 
           "De"        => 0.01,
           "Di"        => 0.01,
@@ -192,8 +197,10 @@ function extract_p0(d::Dict{String, Float64}; mode = :ODE)
                "VSe", "V0e", "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
                "VSi", "V0i", "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
 
-               "g_GLUT", "k_GLUT", "E_GLUT",
+               "g_GLUT", "k_GLUT", "E_GLUT", 
                
+               "γg", "g_n", "τq",
+
                "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18"
           ]  
      end
