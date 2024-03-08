@@ -9,15 +9,18 @@ CUDA.allowscalar(false)
 using SparseArrays
 using LinearAlgebra
 
+#Try importing some other solver methods
+import .PhysiologyModeling.DifferentialEquations: ImplicitRKMil, SKenCarp
 #%%=================================[Solving a SPDE for tspan]=================================#
 
 #%% 1) determine the domains and spacing of cells. 
-domain_x = (xmin, xmax) = (0.0, 3.0)
-domain_y = (ymin, ymax) = (0.0, 3.0)
-dx = dy = 0.04 #Mean distribution is 40-50 micron (WR taylor et al)
+domain_x = (xmin, xmax) = (0.0, 5.0) #This is a simulation for a retina 5mm in diameter
+domain_y = (ymin, ymax) = (0.0, 5.0)
+dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
 
 #2) create a random distribution of cells and their radii
-n_cells = 200
+#The density of SACs in the retina is around 1200 per mm2. So if we have 5mm2 1200 * 5 = 6000
+n_cells = 600 #Really pushing the model
 #cells = zeros(n_cells, 2)
 #cells[:, 1] .= LinRange(0.0, 1.0, n_cells)
 #cells = generate_ring_coordinates(n_cells)
@@ -26,11 +29,11 @@ cells = rand(xmin:dx:xmax, n_cells, 2)
 xs = cells[:, 1]
 ys = cells[:, 2]
 
-radii = fill(0.3, size(cells, 1)) #Switch this on to get constant radii
+radii = fill(0.2, size(cells, 1)) #Switch this on to get constant radii
 dist_func1(d) = ring_circle_overlap_area(d; density = 0.1, r_inner = 0.1, r_outer = 0.2, r_circle = 0.2);
 cell_map_CPU = CellMap(cells, radii; distance_function = dist_func1);
 #make sure cells are connected, if not remove unconnected cells
-cell_map.strength_out
+cell_map_CPU.strength_out
 
 cell_map = cell_map_CPU |> make_GPU
 
@@ -47,9 +50,9 @@ tspan = (0.0, 60e3)
 f_PDE(du, u, p, t) = SAC_PDE(du, u, p, t, cell_map)
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
 @time sol = solve(prob, 
-     SOSRI(), #This seems to be the best solver option
-     reltol =  0.1, abstol = 0.1, 
-     force_dtmin = true, 
+     #SOSRI(), #This seems to be the best solver option
+     SOSRA(),
+     reltol =  2e-2, abstol = 2e-2, 
      progress=true, progress_steps=1)
 #save("data.jld", "initial_cond", sol[end])
 
@@ -68,7 +71,7 @@ Wt = hcat(map(t -> sol(t)[:,11], Time)...)|>Array
 
 #%%====================================[Plot the solution]====================================#
 fig1 = Figure(size = (400,800))
-ax1a = Axis(fig1[1,1], title = "CalciumImageing", xlabel = "nx", ylabel = "ny")
+ax1a = Axis(fig1[1,1], title = "Calcium Imageing", xlabel = "nx", ylabel = "ny")
 ax1b = Axis(fig1[2,1], title = "Calcium ROIs", xlabel = "time (ms)", ylabel = "Ct")
 ax1c = Axis(fig1[3,1], title = "Voltage Traces", xlabel = "time (ms)", ylabel = "Vt (mV)")
 
