@@ -297,8 +297,8 @@ function SAC_ODE_GLUT(du, u, p, t)
      @. dv = (
           ILeak(v, g_leak, E_leak) + 
           + IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
-          + ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca) 
-          + IGLUT(v, q, g_GLUT, k_GLUT, E_GLUT)
+          + ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca) #This is the presence of a 
+          + IGLUT(v, g, g_GLUT, k_GLUT, E_GLUT) #These are ionic glutamate channels
           + I_ext + W) / C_m
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m

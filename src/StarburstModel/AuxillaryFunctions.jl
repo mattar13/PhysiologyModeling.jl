@@ -22,5 +22,5 @@
 @inline INa(v::T, m::T, h::T, g_Na::Float64, E_Na::Float64) where T = -g_Na * m^3 * h * (v - E_Na)
 
 #==================================================[Equations for Glutamate dynamics]==================================================#
-@inline ICa_mGluR2(v::T, q::T, g_Ca::Float64, V1::Float64, V2::Float64, E_Ca::Float64) where T = -g_Ca * M∞(v, V1, V2) * q * (v - E_Ca)
+@inline ICa_mGluR2(v::T, q::T, g_Ca::Float64, V1::Float64, V2::Float64, E_Ca::Float64) where T = -g_Ca * M∞(v, V1, V2) * (1.0-q) * (v - E_Ca)
 @inline IGLUT(v::T, g::T, g_GLUT::Float64, k_GLUT::Float64, E_GLUT::Float64) where T = -g_GLUT * ħe(g, k_GLUT) * (v - E_GLUT)
