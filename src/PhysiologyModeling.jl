@@ -29,6 +29,7 @@ export Experiment
 export extract_p0, extract_u0, extract_dict
 
 include("StarburstModel/AuxillaryFunctions.jl")
+export gauss_pulse #generating a pulse of glutamate
 
 include("StarburstModel/Variables.jl")
 export SAC_u0_dict, SAC_p0_dict
