@@ -25,42 +25,53 @@ function generate_ring_coordinates(n ;center = [0.0, 0.0], r = 0.05)
      return coordinates
 end
 
-"""
-    generateConcentricPoints(center::Tuple{Float64, Float64}, initial_points::Int, layers::Int, z::Int) -> Array{Tuple{Float64, Float64}}
-
-Generate points around a central point in concentric circles. Each subsequent layer has twice the number of points
-of the previous one, with `z` branches in the next concentric expanding circle.
-
-# Arguments
-- `center`: Central point (x, y) as a tuple.
-- `initial_points`: Number of points in the first layer.
-- `layers`: Number of concentric layers to generate.
-- `z`: Number of branches per point in the next layer.
-
-# Returns
-- A list of tuples, each representing the coordinates of a point.
-"""
-function generate_circles(n, z, l; radius= 1.0)
-     all_points = []
-     idx = 1
-     
-     for branch in 1:z
-          for radial_line in 1:n
-               angle_radial = 2 * π * radial_line / n
-               end_x = cos(angle_radial) * radius
-               end_y = sin(angle_radial) * radius
-               push!(all_points, [end_x, end_y])
-          end
+function create_branches(radial_lines, branches, layers; 
+     origin = (0.0, 0.0), radius = 0.05, branch_distance = 0.1)
+     #determine angles for the inner spokes
+     x0, y0 = origin
+     branch_xs = Float64[0.0,]
+     branch_ys = Float64[0.0,]
+     connections = []
+     point_index = 2
+     for radial_line in 1:radial_lines
+         angle = 2 * π * (radial_line / radial_lines) # Start from the root
+ 
+         #Next we need to increase for layers
+         parent_indices = 1
+         for layer in 1:layers
+             #println("Layer $layer")
+             if layer == 1
+                 x = x0 + radius * cos(angle) * layer
+                 y = y0 + radius * sin(angle) * layer
+                 push!(branch_xs, round(x, digits = 5))
+                 push!(branch_ys, round(y, digits = 5))
+                 push!(connections, (parent_indices, point_index)) #connect all the 
+                 parent_indices = point_index
+                 point_index += 1
+             else
+                 for branch in LinRange(-branch_distance, branch_distance, branches^(layer-1))
+                     x = (x0 + radius * cos(angle+branch) * layer)
+                     y = (y0 + radius * sin(angle+branch) * layer)
+                     push!(branch_xs, round(x, digits = 5))
+                     push!(branch_ys, round(y, digits = 5))
+                     push!(connections, (parent_indices, point_index))
+                     point_index += 1
+                 end
+                 parent_indices = point_index
+             end
+         end
      end
-     #radial_angles = LinRange(0π, 2π, n)
-     #     println(radial_angles)
-     #     end_x = cos.(radial_angles) .* radius
-     #     end_y = sin.(radial_angles) .* radius
-     #     println(end_x)
-     #     println(end_y)
-     #end
-     return all_points
-end
+     # Create sparse matrix
+     rows = map(c -> c[1], connections)
+     cols = map(c -> c[2], connections)
+     data = ones(length(connections))
+     max_index = maximum([rows; cols])
+     connection_matrix = sparse(rows, cols, data, max_index, max_index)
+     
+      
+     branch_xs, branch_ys, connection_matrix
+ end
+ 
 
 # Calculate Euclidean distance between two points
 function euclidean_distance(p1::Tuple{T,T}, p2::Tuple{T,T}) where T <: Real
