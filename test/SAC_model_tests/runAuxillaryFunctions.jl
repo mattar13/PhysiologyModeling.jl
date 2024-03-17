@@ -7,6 +7,15 @@ using PhysiologyPlotting
 using GLMakie
 using SparseArrays
 
+
+#%% 
+f = Figure()
+ax1 = Axis(f[1,1])
+tseries = 0.0:0.1:100.0
+lines!(ax1, tseries, gauss_pulse.(tseries, t0 = 10.0))
+display(f)
+
+
 #%%
 f_DIST = Figure()
 ax_DIST = Axis(f_DIST[1,1], xlabel = "Distance from Soma (um)", ylabel = "NT Release (uM)")

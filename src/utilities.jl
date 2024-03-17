@@ -1,4 +1,3 @@
-
 #This is a useful function for expanding the 
 function extend_dims(A,which_dim)
      s = [size(A)...]
@@ -17,13 +16,3 @@ function Experiment(sol::SciMLBase.AbstractSciMLSolution;
      #Enter the Header here
      Experiment(sol.t, sol_arr)
 end
-
-extract_dict(d::Dict{String, Float64}, keys) = map(k -> d[k], keys)
-extract_dict(d::Dict{String, Vector{Float64}}, keys) = hcat(map(k -> d[k], keys)...)
-
-extract_p0(d::Dict{String, Float64})  = extract_dict(d, keys_p0)
-extract_p0(d::NamedTuple) = d
-extract_p0(d) = d
-
-extract_u0(d::Dict{String, Float64}) = extract_dict(d, keys_u0)
-extract_u0(d::Dict{String, Vector{Float64}}) = extract_dict(d, keys_u0)
