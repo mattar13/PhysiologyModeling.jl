@@ -52,7 +52,8 @@ prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
      force_dtmin = true, 
      progress=true, progress_steps=1)
 #save("data.jld", "initial_cond", sol[end])
-
+println(sol)#So we can check if the solution succeeded
+ 
 CUDA.allowscalar(true) #allow GPU operations to be offloaded to CPU 
 Time = sol.t[1]:10:sol.t[end]
 vt = hcat(map(t -> sol(t)[:,2], Time)...)|>Array
