@@ -43,7 +43,8 @@ function SAC_ODE(du, u, p, t)
           VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           g_GLUT, k_GLUT, E_GLUT, 
           γg, g_n, τq,
-          V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
+          V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, 
+          stim_start, stim_stop
      ) = p
 
      @. dI_ext = I_app-I_ext
@@ -111,7 +112,8 @@ function SAC_ODE_IC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
           VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
           VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           g_GLUT, k_GLUT, E_GLUT,
-          V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
+          V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, 
+          stim_start, stim_stop
      ) = p
 
      if stim_start < t < stim_stop
@@ -183,7 +185,8 @@ function SAC_ODE_VC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0, hold = 
           a_n, b_n,
           VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
           VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
-          V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
+          V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, 
+          stim_start, stim_stop
      ) = p
      
      if isnothing(stim_start) && isnothing(stim_stop)
@@ -333,9 +336,10 @@ function SAC_PDE(du, u, p, t, MAP)
           VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           g_GLUT, k_GLUT, E_GLUT, 
           γg, g_n, τq,
-          V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18
+          V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, 
+          stim_start, stim_stop
      ) = p
-
+     
      @. dI_ext = I_app-I_ext
      @. dv = (ILeak(v, g_leak, E_leak) + 
           + ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)

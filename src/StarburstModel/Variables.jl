@@ -107,7 +107,9 @@ function SAC_p0_dict(;keyset = :DEFAULT)
           "V15"       => 20.0,
           "V16"       => 1.0,
           "V17"       => -35.0,
-          "V18"       => 10.0
+          "V18"       => 10.0, 
+          "stim_start" => -Inf, #Set it to this to always be on
+          "stim_stop" => Inf
      )
      if keyset == :DEFAULT
           return base_dict
@@ -142,10 +144,11 @@ function extract_p0(d::Dict{String, Float64}; mode = :ODE)
                
                "γg", "g_n", "τq",
 
-               "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18"
+               "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18",
+               "stim_start", "stim_stop"
           ]  
+          return extract_dict(d, keys_p0)
      end
-     extract_dict(d, keys_p0)
 end
 
 function extract_u0(d::Dict{String, Float64}; mode = :ODE)
@@ -182,7 +185,8 @@ function par_idx(par::String)
           
           "γg", "g_n", "τq",
 
-          "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18"
+          "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18",
+          "stim_start", "stim_stop"
      ]  
      findfirst(keys_p0 .== par)
 end
