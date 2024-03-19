@@ -33,10 +33,8 @@ export gauss_pulse #generating a pulse of glutamate
 
 include("StarburstModel/Variables.jl")
 export SAC_u0_dict, SAC_p0_dict
-export keys_u0, keys_p0
-export vals_u0, vals_p0
-export nt_u0, nt_p0
-export reset_p0_dict, reset_u0_dict
+export extract_u0, extract_p0
+export par_idx
 
 include("StarburstModel/Models.jl")
 export SAC_ODE, SAC_ODE_NT_CLAMP

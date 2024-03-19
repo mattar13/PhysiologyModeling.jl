@@ -159,3 +159,30 @@ function extract_u0(d::Dict{String, Float64}; mode = :ODE)
      end
      extract_dict(d, keys_u0)
 end
+
+function par_idx(par::String)
+     keys_p0 = [
+          "I_app", "VC",
+          "C_m", "g_W", "τw", 
+          "g_leak", "E_leak", 
+          "g_K", "V3", "V4", "E_K", "τn", 
+          "g_Ca", "V1", "V2","E_Ca", "τc",
+          "g_Na", "E_Na", 
+          "g_TREK",
+          
+          "C_0", "λ" , "δ",  
+          "α", "τa", 
+          "β", "τb", 
+          "a_n", "b_n",
+
+          "VSe", "V0e", "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
+          "VSi", "V0i", "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
+
+          "g_GLUT", "k_GLUT", "E_GLUT", 
+          
+          "γg", "g_n", "τq",
+
+          "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18"
+     ]  
+     findfirst(keys_p0 .== par)
+end
