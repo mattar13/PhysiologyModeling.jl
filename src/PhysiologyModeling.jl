@@ -51,7 +51,9 @@ export even_map
 export CellMap
 export ring_circle_overlap_area
 export make_GPU
-export generate_ring_coordinates
+export generate_ring_coordinates, coencentric_rings
+export create_connection_matrix
+export create_dendrogram
 
 #This section deals with parameters and contions
 #Eventually PhysiologyPlotting will include some things we need to plot everything

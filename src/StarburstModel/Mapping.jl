@@ -25,53 +25,64 @@ function generate_ring_coordinates(n ;center = [0.0, 0.0], r = 0.05)
      return coordinates
 end
 
-function create_branches(radial_lines, branches, layers; 
+function create_dendrogram(radial_lines, branches, layers; 
      origin = (0.0, 0.0), radius = 0.05, branch_distance = 0.1)
      #determine angles for the inner spokes
      x0, y0 = origin
-     branch_xs = Float64[0.0,]
-     branch_ys = Float64[0.0,]
-     connections = []
+     branch_xs = Float64[origin[1],]
+     branch_ys = Float64[origin[2],]
+     connections = Tuple[] 
      point_index = 2
-     for radial_line in 1:radial_lines
-         angle = 2 * π * (radial_line / radial_lines) # Start from the root
- 
-         #Next we need to increase for layers
-         parent_indices = 1
-         for layer in 1:layers
-             #println("Layer $layer")
-             if layer == 1
-                 x = x0 + radius * cos(angle) * layer
-                 y = y0 + radius * sin(angle) * layer
-                 push!(branch_xs, round(x, digits = 5))
-                 push!(branch_ys, round(y, digits = 5))
-                 push!(connections, (parent_indices, point_index)) #connect all the 
-                 parent_indices = point_index
-                 point_index += 1
-             else
-                 for branch in LinRange(-branch_distance, branch_distance, branches^(layer-1))
-                     x = (x0 + radius * cos(angle+branch) * layer)
-                     y = (y0 + radius * sin(angle+branch) * layer)
-                     push!(branch_xs, round(x, digits = 5))
-                     push!(branch_ys, round(y, digits = 5))
-                     push!(connections, (parent_indices, point_index))
-                     point_index += 1
-                 end
-                 parent_indices = point_index
-             end
-         end
+     #Next we need to increase for layers
+     parent_indices = [1]
+     children_indices = []
+     for layer in 1:layers
+          #println("Layer $layer")
+          rand_branches = 0#rand(0:4)
+          parent_connections = repeat(parent_indices, inner = branches+rand_branches)
+          for radial_line in 1:radial_lines
+               angle = 2 * π * (radial_line / radial_lines) # Start from the root
+               if layer == 1
+                    x = x0 + radius * cos(angle) * layer
+                    y = y0 + radius * sin(angle) * layer
+                    push!(branch_xs, round(x, digits = 5))
+                    push!(branch_ys, round(y, digits = 5))
+                    push!(connections, (parent_indices[1], point_index)) #connect all the 
+                    push!(children_indices, point_index)
+                    point_index += 1
+               else
+                    n_children = branches^(layer-1) #add a random factor 
+                    n_children += rand_branches
+                    #println("Number of branches: $n_children")
+                    #println("Number of children $(length(parent_connections))")
+                    for branch in LinRange(-branch_distance, branch_distance, n_children)
+                         #println("All the parents $parent_connections")
+                         x = (x0 + radius * cos(angle+branch) * layer)
+                         y = (y0 + radius * sin(angle+branch) * layer)
+                         push!(branch_xs, round(x, digits = 5))
+                         push!(branch_ys, round(y, digits = 5))
+                         push!(connections, (popfirst!(parent_connections), point_index))
+                         push!(children_indices, point_index)
+                         point_index += 1
+                    end
+               end
+          end
+          #println("parent: $parent_indices")
+          #println("children: $children_indices")
+          parent_indices = children_indices
+          children_indices = []
      end
-     # Create sparse matrix
+     branch_xs, branch_ys, connections
+end
+ 
+function create_connection_matrix(connections::AbstractArray{Tuple})
      rows = map(c -> c[1], connections)
      cols = map(c -> c[2], connections)
      data = ones(length(connections))
      max_index = maximum([rows; cols])
      connection_matrix = sparse(rows, cols, data, max_index, max_index)
-     
-      
-     branch_xs, branch_ys, connection_matrix
- end
- 
+end
+
 
 # Calculate Euclidean distance between two points
 function euclidean_distance(p1::Tuple{T,T}, p2::Tuple{T,T}) where T <: Real
@@ -242,4 +253,4 @@ function rasterize(map::CellMap; dx = 0.2, dy = 0.2)
 end
 
 #Some utility functions for CellMap
-size(cell_map::CellMap) = length(cell_map.xs)
+size(cell_map::CellMap) = length(cell_map.xs) 
