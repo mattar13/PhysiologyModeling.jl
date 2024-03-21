@@ -49,7 +49,6 @@ function calculate_dendrogram_distance(xs::Vector{T}, ys::Vector{T}, old_connect
           xj = xs[y_idx]
           yj = ys[y_idx]
           dist = euclidean_distance([xi, yi], [xj, yj])
-          println(dist)
           push!(connection_list, (x_idx, y_idx, dist))
      end
      connection_list
@@ -114,7 +113,7 @@ function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::T) where 
      for i in 1:n_xpoints
           cell_distances = [euclidean_distance([xs[i], ys[i]], [xs[j], ys[j]]) for j in 1:n_ypoints]
           within_radius_indices = findall(d -> d <= radii, cell_distances)
-          println(within_radius_indices)
+          #println(within_radius_indices)
           for (idx, neighbor) in enumerate(within_radius_indices)
                push!(connections, (i, neighbor, cell_distances[idx]))
           end
@@ -129,7 +128,7 @@ function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::Vector{T}
      for i in 1:n_xpoints
           cell_distances = [euclidean_distance([xs[i], ys[i]], [xs[j], ys[j]]) for j in 1:n_ypoints]
           within_radius_indices = findall(d -> d <= radii[i], cell_distances)
-          println(within_radius_indices)
+          #println(within_radius_indices)
           for (idx, neighbor) in enumerate(within_radius_indices)
                push!(connections, (i, neighbor, cell_distances[idx]))
           end
@@ -140,8 +139,8 @@ end
 function connection_matrix(connections_list::AbstractArray{Tuple})
      rows = map(c -> c[1], connections_list)
      cols = map(c -> c[2], connections_list)
-     println(maximum(rows))
-     println(maximum(cols))
+     #println(maximum(rows))
+     #println(maximum(cols))
      data = map(c -> c[3], connections_list)
      connections = sparse(rows, cols, data, length(rows)+1, length(rows)+1)
      #dropzeros!(connections)
