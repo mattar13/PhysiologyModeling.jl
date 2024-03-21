@@ -44,16 +44,19 @@ function calculate_dendrogram_distance(xs::Vector{T}, ys::Vector{T}, old_connect
      connection_list = Tuple[]
      for connection in old_connection_list
           x_idx, y_idx = connection
-          xcoord = xs[x_idx]
-          ycoord = ys[y_idx]
-          dist = euclidean_distance(xcoord, ycoord)
+          xi = xs[x_idx]
+          yi = ys[x_idx]
+          xj = xs[y_idx]
+          yj = ys[y_idx]
+          dist = euclidean_distance([xi, yi], [xj, yj])
+          println(dist)
           push!(connection_list, (x_idx, y_idx, dist))
      end
      connection_list
 end
 
 function create_dendrogram_map(radial_lines, branches, layers; 
-     origin = (0.0, 0.0), radius = 0.05, branch_distance = 0.1)
+     origin = (0.0, 0.0), radius = 0.05/layers, branch_distance = 0.65)
      #determine angles for the inner spokes
      x0, y0 = origin
      branch_xs = Float64[origin[1],]
@@ -137,8 +140,10 @@ end
 function connection_matrix(connections_list::AbstractArray{Tuple})
      rows = map(c -> c[1], connections_list)
      cols = map(c -> c[2], connections_list)
+     println(maximum(rows))
+     println(maximum(cols))
      data = map(c -> c[3], connections_list)
-     connections = sparse(rows, cols, data)
+     connections = sparse(rows, cols, data, length(rows)+1, length(rows)+1)
      #dropzeros!(connections)
      return connections
 end
@@ -222,7 +227,7 @@ function CellMap(xs::Vector{T}, ys::Vector{T}, connections::SparseMatrixCSC{T, I
      rows, cols, values = findnz(connections)
 
      new_values = map(x -> distance_function(x), values)
-     strength = sparse(rows, cols, new_values)
+     strength = sparse(rows, cols, new_values, length(rows)+1, length(cols)+1)
      strength_out = -sum(strength, dims=1) |> vec #should we do dims 1 or dims 2
 
      return CellMap(xs, ys, connections, strength, strength_out)
