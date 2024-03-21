@@ -33,7 +33,7 @@ u0 = u0 |> CuArray{Float32}
 # 3) Define the problem
 tspan = (0.0, 20e3)
 
-f_PDE(du, u, p, t) = SAC_GAP(du, u, p, t, cell_map_GPU; gGAP = 10.0)
+f_PDE(du, u, p, t) = SAC_GAP(du, u, p, t, cell_map_GPU; gGAP = 0.01)
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
 @time sol = solve(prob, 
     #SOSRI(), #This seems to be the best solver option
@@ -83,13 +83,12 @@ tickerc = vlines!(ax1c, [0.0])
 
 display(fig1)
 
-#%%
 n_frames = 1000
 animate_t = LinRange(0.0, sol.t[end], n_frames)
 dt = animate_t[2] - animate_t[1]
 fps = round(Int64, (1/dt) * 1000)
 
-GLMakie.record(fig1, "test/SAC_model_tests/data/model_animation.mp4", animate_t, framerate = 8) do t
+GLMakie.record(fig1, "test/SAC_model_tests/data/branch_model_animation.mp4", animate_t, framerate = 8) do t
 	println(t)
 	c = sol(t)[:, 2] |> Array
 	sctV.color = c
