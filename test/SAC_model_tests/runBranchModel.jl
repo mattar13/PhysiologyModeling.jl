@@ -8,9 +8,9 @@ using SparseArrays
 #This uses all of the same auxillary equations
 cells = zeros(3, 2)
 
-xs, ys, conns = create_dendrogram(4, 2, 5, radius = 0.01, branch_distance = 0.65)
+xs, ys, conns = create_dendrogram(6, 2, 5, radius = 0.01, branch_distance = 0.4)
 xs .+= rand(length(xs))/1000
-xs .+= rand(length(ys))/1000
+xs .+= rand(length(ys))/100
 connection_matrix = create_connection_matrix(conns)
 rows, cols = findnz(connection_matrix)
 
