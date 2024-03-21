@@ -111,34 +111,36 @@ function SAC_ODE_IC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
           a_n, b_n,
           VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
           VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
-          g_GLUT, k_GLUT, E_GLUT,
+          g_GLUT, k_GLUT, E_GLUT, 
+          γg, g_n, τq,
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, 
           stim_start, stim_stop
      ) = p
-
+     
      if stim_start < t < stim_stop
           stim_amp = I_app
      else
           stim_amp = 0.0
      end
-     @. dI_ext = stim_amp - I_ext
+
+     @. dI_ext = (stim_amp-I_ext)/0.001
      @. dv = (ILeak(v, g_leak, E_leak) + 
           + ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)
           + ITREK(v, b, g_TREK, E_K) 
           + IACh(v, e, g_ACh, k_ACh, E_ACh) 
           + IGABA(v, i, g_GABA, k_GABA, E_Cl) 
           + IGLUT(v, g, g_GLUT, k_GLUT, E_GLUT) #These are ionic glutamate channels
-          + I_app + W) / C_m          
+          + stim_amp + W) / C_m #Unless we are doing IC, this has to stay this way
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
-     @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
+     @. dc = (C_0 + δ * (ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
      @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
      @. dg = 0.0
-     @. dq = 0.0
+     @. dq = (γg*g^g_n * (1-q) - q) / τq
      @. dW = -W / τw
      nothing
 end
@@ -185,33 +187,35 @@ function SAC_ODE_VC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0, hold = 
           a_n, b_n,
           VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
           VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
+          g_GLUT, k_GLUT, E_GLUT, 
+          γg, g_n, τq,
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, 
           stim_start, stim_stop
      ) = p
      
-     if isnothing(stim_start) && isnothing(stim_stop)
-          @. dv = (VC-v)*k
-     elseif stim_start < t < stim_stop
+     if stim_start < t < stim_stop
           @. dv = (VC-v)*k
      else
           @. dv = (hold-v)*k
      end
      @. dI_ext = (ILeak(v, g_leak, E_leak) + 
-          ICa(v, g_Ca, V1, V2, E_Ca) + 
-          IK(v, n, g_K, E_K) + ITREK(v, b, g_TREK, E_K) + INa(v, m, h, g_Na, E_Na) +
-          IACh(v, e, g_ACh, k_ACh, E_ACh) + IGABA(v, i, g_GABA, k_GABA, E_Cl) + W) - I_ext
+          + ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)
+          + ITREK(v, b, g_TREK, E_K) 
+          + IACh(v, e, g_ACh, k_ACh, E_ACh) 
+          + IGABA(v, i, g_GABA, k_GABA, E_Cl) 
+          + IGLUT(v, g, g_GLUT, k_GLUT, E_GLUT) #These are ionic glutamate channels
+     ) - I_ext
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
-     @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
+     @. dc = (C_0 + δ * (ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
      @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
-     #@. da = (-α*(c^a_n)*a + (1-a))/τa     
-     #@. db = (β * (1-a)^b_n * (1 - b) - b) / τb
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
+     @. dg = 0.0
+     @. dq = (γg*g^g_n * (1-q) - q) / τq
      @. dW = -W / τw
-
      nothing
 end
 
@@ -339,7 +343,7 @@ function SAC_PDE(du, u, p, t, MAP)
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, 
           stim_start, stim_stop
      ) = p
-     
+
      @. dI_ext = I_app-I_ext
      @. dv = (ILeak(v, g_leak, E_leak) + 
           + ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)

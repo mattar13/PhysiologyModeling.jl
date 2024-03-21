@@ -1,17 +1,32 @@
 import Base.size
-# Generate random points
-function even_map(;xmin=0.0, dx=0.1, xmax=1.0, ymin=0.0, dy=0.1, ymax=1.0)
+
+mutable struct CellMap{T}
+	xs::Vector{T}
+	ys::Vector{T}
+	connections::SparseMatrixCSC{T, Int64}
+     strength::SparseMatrixCSC{T, Int64}
+     strength_out::Vector{T}
+end
+
+# [Map generating functions] ________________________________________________________________________________________________________________________________________#
+"""
+     create_even_map([kwargs...])
+
+This function creates a evenly spaced map of cells
+"""
+function create_even_map(;xmin=0.0, dx=0.1, xmax=1.0, ymin=0.0, dy=0.1, ymax=1.0)
      cells = vec([(i, j) for i in xmin:dx:xmax, j in ymin:dy:ymax])
      xs = map(c->c[1], cells)
      ys = map(c->c[2], cells)
-     return  [xs ys]
+     xs, ys
 end
 
-function random_map(n_points; rng_min = 0.0, rng_dt = 0.1, rng_max = 1.0)
-     return rand(rng_min:rng_ft, n_points, 2) 
+function create_random_map(n_points; rng_min = 0.0, rng_dt = 0.1, rng_max = 1.0)
+     map = rand(rng_min:rng_dt:rng_max, n_points, 2) 
+     map[:, 1], map[:,2]
 end
 
-function generate_ring_coordinates(n ;center = [0.0, 0.0], r = 0.05)
+function create_ring_map(n ;center = [0.0, 0.0], r = 0.05)
      cx, cy = center
      coordinates = zeros(n, 2)
      
@@ -25,7 +40,7 @@ function generate_ring_coordinates(n ;center = [0.0, 0.0], r = 0.05)
      return coordinates
 end
 
-function create_dendrogram(radial_lines, branches, layers; 
+function create_dendrogram_map(radial_lines, branches, layers; 
      origin = (0.0, 0.0), radius = 0.05, branch_distance = 0.1)
      #determine angles for the inner spokes
      x0, y0 = origin
@@ -74,49 +89,22 @@ function create_dendrogram(radial_lines, branches, layers;
      end
      branch_xs, branch_ys, connections
 end
- 
-function create_connection_matrix(connections::AbstractArray{Tuple})
-     rows = map(c -> c[1], connections)
-     cols = map(c -> c[2], connections)
-     data = ones(length(connections))
-     max_index = maximum([rows; cols])
-     connection_matrix = sparse(rows, cols, data, max_index, max_index)
-end
 
-
-# Calculate Euclidean distance between two points
-function euclidean_distance(p1::Tuple{T,T}, p2::Tuple{T,T}) where T <: Real
-     x1, y1 = p1
-     x2, y2 = p2
-     return sqrt((x2 - x1)^2 + (y2 - y1)^2)
-end
-
-function euclidean_distance(p1, p2)
-     return sqrt(sum((p1 .- p2) .^ 2))
-end
-
-"""
-Will return either 1 for if the point has one edge, or 2 if it has 2
-"""
-function isboundary(point::Tuple{T, T}, domain_x::Tuple{T, T}, domain_y::Tuple{T, T}) where T <: Real
-	x, y = point
-	bx = Int64(domain_x[1] == x || x == domain_x[2])
-	by = Int64(domain_y[1] == y || y == domain_y[2])
-	return bx + by
-end
-
-function find_neighbors_radius(points, radii)
-     n_points = size(points, 1)
-     neighbors = Vector{Vector{Int}}(undef, n_points)
-     for i in 1:n_points
-          cell_distances = [euclidean_distance(points[i, :], points[j, :]) for j in 1:n_points]
+# [Connection generation functions] ___________________________________________________________________________________________________________________________-#
+function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::Vector{T}) where T <: Real
+     connections = Tuple[]  
+     n_xpoints = size(xs, 1)
+     n_ypoints = size(ys, 1)
+     for i in 1:n_xpoints
+          cell_distances = [euclidean_distance([xs[i], ys[i]], [xs[j], ys[j]]) for j in 1:n_ypoints]
           within_radius_indices = findall(d -> d <= radii[i], cell_distances)
-          neighbors[i] = within_radius_indices
+          for (idx, neighbor) in enumerate(within_radius_indices)
+               push!(connections, (i, neighbor))
+          end
      end
-     neighbors
+     connections
 end
 
-# Create a sparse matrix to represent the connections
 function create_sparse_matrix(neighbors::Vector{Vector{Int64}}, points::Matrix{T}) where T <: Real
      n_points = length(neighbors)
      I = Int[]
@@ -147,6 +135,27 @@ function create_sparse_matrix(neighbors::Vector{Vector{Int64}}, points::Vector{T
      return sparse(I, J, V)
 end
 
+function create_connection_matrix(connections::AbstractArray{Tuple})
+     rows = map(c -> c[1], connections)
+     cols = map(c -> c[2], connections)
+     data = ones(length(connections))
+     max_index = maximum([rows; cols])
+     sparse(rows, cols, data, max_index, max_index)
+end
+
+# [Distance calculations] __________________________________________________________________________________________________________________#
+
+# Calculate Euclidean distance between two points
+function euclidean_distance(p1::Tuple{T,T}, p2::Tuple{T,T}) where T <: Real
+     x1, y1 = p1
+     x2, y2 = p2
+     return sqrt((x2 - x1)^2 + (y2 - y1)^2)
+end
+
+function euclidean_distance(p1, p2)
+     return sqrt(sum((p1 .- p2) .^ 2))
+end
+
 function return_connected_indices(cells, connections)
      indices = Vector{Vector{Int64}}()
      n = size(cells, 1);
@@ -158,19 +167,11 @@ function return_connected_indices(cells, connections)
      return indices
 end
 
-mutable struct CellMap{T}
-	xs::Vector{T}
-	ys::Vector{T}
-     radius::Vector{T}
-	connections::SparseMatrixCSC{T, Int64}
-     strength::SparseMatrixCSC{T, Int64}
-     strength_out::Vector{T}
-end
+
 
 #These are the distance functions we can use to calculate the strength
 #This is our non-linear distance function
 ring(d; max_strength = 0.05, max_dist = 0.15, slope = 0.01) = max_strength * exp(-((d - max_dist)^2) / (2 * slope^2))
-
 
 function circle_overlap_area(d, r1, r2)
      if d >= r1 + r2
@@ -188,10 +189,7 @@ function circle_overlap_area(d, r1, r2)
      end
 end
 
-function ring_circle_overlap_area(d; 
-     density = 1.0, 
-     r_inner = 0.1, r_outer = 0.2, r_circle = 0.2
-)
+function ring_circle_overlap_area(d; density = 1.0, r_inner = 0.1, r_outer = 0.2, r_circle = 0.2 )
      # Area of overlap between outer circle of the ring and the circle
      outer_overlap = circle_overlap_area(d, r_outer, r_circle)
 
@@ -214,6 +212,7 @@ function ring_circle_overlap_area(p1::Tuple{T, T}, p2::Tuple{T, T}; density = 1.
      return density*max(0.0, outer_overlap - inner_overlap)
 end
 
+# [Constructor functions] _____________________________________________________________________________________________________________________________#
 function CellMap(cells::Matrix{T}, radii::Vector{T}; 
      distance_function = ring_circle_overlap_area
 ) where T <: Real
@@ -228,8 +227,11 @@ function CellMap(cells::Matrix{T}, radii::Vector{T};
      strength = sparse(rows, cols, new_values)
      strength_out = -sum(strength, dims=2) |> vec #Preallocate the diffusion out for more efficient calculations
 
-     return CellMap(cells[:, 1], cells[:,2], radii, connections, strength, strength_out)
+     return CellMap(cells[:, 1], cells[:,2], connections, strength, strength_out)
 end
+
+# [Some utility functions for CellMap] ____________________________________________________________________________________________________________#
+size(cell_map::CellMap) = length(cell_map.xs) 
 
 function map_points(cell_map::CellMap)
      hcat(cell_map.xs, cell_map.ys)
@@ -251,6 +253,3 @@ function rasterize(map::CellMap; dx = 0.2, dy = 0.2)
      
      return x_map, y_map, grid
 end
-
-#Some utility functions for CellMap
-size(cell_map::CellMap) = length(cell_map.xs) 

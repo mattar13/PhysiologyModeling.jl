@@ -25,4 +25,4 @@
 @inline ICa_mGluR2(v::T, q::T, g_Ca::Float64, V1::Float64, V2::Float64, E_Ca::Float64) where T = -g_Ca * M∞(v, V1, V2) * (1.0-q) * (v - E_Ca)
 @inline IGLUT(v::T, g::T, g_GLUT::Float64, k_GLUT::Float64, E_GLUT::Float64) where T = -g_GLUT * ħe(g, k_GLUT) * (v - E_GLUT)
 
-gauss_pulse(t; t0::Float64  = 25.0, spread::Float64 = 5.0, peak_amp::Float64 = 1.0) = peak_amp * exp(-(t0-t)^2/((2*spread)^2))
+gauss_pulse(t; t0::Float64  = 25.0, spread::Float64 = 500.0, peak_amp::Float64 = 1.0) = peak_amp * exp(-(t0-t)^2/((2*spread)^2))
