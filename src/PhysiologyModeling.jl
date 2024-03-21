@@ -39,12 +39,12 @@ export par_idx
 include("StarburstModel/Models.jl")
 export SAC_ODE, SAC_ODE_NT_CLAMP
 export SAC_ODE_IC, SAC_ODE_VC
-export SAC_ODE_GLUT
 export ∇α, DIFFUSION_MODEL, DIFFUSION_NOISE
 export SAC_PDE, SAC_PDE_STIM 
 export SAC_GAP #Make a model for a gap junction
 export SAC_ODE_Compartment
 export noise1D, noise2D
+export SAC_TEST
 
 include("StarburstModel/Mapping.jl")
 export CellMap
@@ -52,10 +52,11 @@ export create_even_map, create_random_map
 export create_ring_map, create_dendrogram_map
 
 export connect_neighbors_radius
+export connection_matrix
+
+export linDist
 export ring_circle_overlap_area
 export make_GPU
-export generate_ring_coordinates, coencentric_rings
-export create_connection_matrix
 
 #This section deals with parameters and contions
 #Eventually PhysiologyPlotting will include some things we need to plot everything

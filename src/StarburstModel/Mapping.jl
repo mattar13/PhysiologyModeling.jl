@@ -40,8 +40,22 @@ function create_ring_map(n ;center = [0.0, 0.0], r = 0.05)
      return coordinates
 end
 
+function calculate_dendrogram_distance(xs::Vector{T}, ys::Vector{T}, old_connection_list) where T <: Real
+     connection_list = Tuple[]
+     for connection in old_connection_list
+          x_idx, y_idx = connection
+          xi = xs[x_idx]
+          yi = ys[x_idx]
+          xj = xs[y_idx]
+          yj = ys[y_idx]
+          dist = euclidean_distance([xi, yi], [xj, yj])
+          push!(connection_list, (x_idx, y_idx, dist))
+     end
+     connection_list
+end
+
 function create_dendrogram_map(radial_lines, branches, layers; 
-     origin = (0.0, 0.0), radius = 0.05, branch_distance = 0.1)
+     origin = (0.0, 0.0), radius = 0.05/layers, branch_distance = 0.65)
      #determine angles for the inner spokes
      x0, y0 = origin
      branch_xs = Float64[origin[1],]
@@ -87,10 +101,26 @@ function create_dendrogram_map(radial_lines, branches, layers;
           parent_indices = children_indices
           children_indices = []
      end
+     connections = calculate_dendrogram_distance(branch_xs, branch_ys, connections)
      branch_xs, branch_ys, connections
 end
 
 # [Connection generation functions] ___________________________________________________________________________________________________________________________-#
+function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::T) where T <: Real
+     connections = Tuple[]  
+     n_xpoints = size(xs, 1)
+     n_ypoints = size(ys, 1)
+     for i in 1:n_xpoints
+          cell_distances = [euclidean_distance([xs[i], ys[i]], [xs[j], ys[j]]) for j in 1:n_ypoints]
+          within_radius_indices = findall(d -> d <= radii, cell_distances)
+          #println(within_radius_indices)
+          for (idx, neighbor) in enumerate(within_radius_indices)
+               push!(connections, (i, neighbor, cell_distances[idx]))
+          end
+     end
+     connections
+end
+
 function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::Vector{T}) where T <: Real
      connections = Tuple[]  
      n_xpoints = size(xs, 1)
@@ -98,50 +128,27 @@ function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::Vector{T}
      for i in 1:n_xpoints
           cell_distances = [euclidean_distance([xs[i], ys[i]], [xs[j], ys[j]]) for j in 1:n_ypoints]
           within_radius_indices = findall(d -> d <= radii[i], cell_distances)
+          #println(within_radius_indices)
           for (idx, neighbor) in enumerate(within_radius_indices)
-               push!(connections, (i, neighbor))
+               push!(connections, (i, neighbor, cell_distances[idx]))
           end
      end
      connections
 end
 
-function create_sparse_matrix(neighbors::Vector{Vector{Int64}}, points::Matrix{T}) where T <: Real
-     n_points = length(neighbors)
-     I = Int[]
-     J = Int[]
-     V = Float64[]
-     for i in 1:n_points
-         for j in neighbors[i]
-             push!(I, i)
-             push!(J, j)
-             push!(V, euclidean_distance(points[i, :], points[j, :]))
-         end
-     end
-     return sparse(I, J, V)
+function connection_matrix(connections_list::AbstractArray{Tuple})
+     rows = map(c -> c[1], connections_list)
+     cols = map(c -> c[2], connections_list)
+     #println(maximum(rows))
+     #println(maximum(cols))
+     data = map(c -> c[3], connections_list)
+     connections = sparse(rows, cols, data, length(rows)+1, length(rows)+1)
+     #dropzeros!(connections)
+     return connections
 end
 
-function create_sparse_matrix(neighbors::Vector{Vector{Int64}}, points::Vector{Tuple{T,T}}) where T <: Real
-     n_points = length(neighbors)
-     I = Int[]
-     J = Int[]
-     V = Float64[]
-     for i in 1:n_points
-          for j in neighbors[i]
-               push!(I, i)
-               push!(J, j)
-               push!(V, euclidean_distance(points[i], points[j]))
-          end
-     end
-     return sparse(I, J, V)
-end
+connection_matrix(xs, ys, connections) = (xs, ys, connection_matrix(connections))
 
-function create_connection_matrix(connections::AbstractArray{Tuple})
-     rows = map(c -> c[1], connections)
-     cols = map(c -> c[2], connections)
-     data = ones(length(connections))
-     max_index = maximum([rows; cols])
-     sparse(rows, cols, data, max_index, max_index)
-end
 
 # [Distance calculations] __________________________________________________________________________________________________________________#
 
@@ -167,9 +174,7 @@ function return_connected_indices(cells, connections)
      return indices
 end
 
-
-
-#These are the distance functions we can use to calculate the strength
+linDist(x; m = 1.0, b = 0.0) = m*x + b 
 #This is our non-linear distance function
 ring(d; max_strength = 0.05, max_dist = 0.15, slope = 0.01) = max_strength * exp(-((d - max_dist)^2) / (2 * slope^2))
 
@@ -213,21 +218,18 @@ function ring_circle_overlap_area(p1::Tuple{T, T}, p2::Tuple{T, T}; density = 1.
 end
 
 # [Constructor functions] _____________________________________________________________________________________________________________________________#
-function CellMap(cells::Matrix{T}, radii::Vector{T}; 
+function CellMap(xs::Vector{T}, ys::Vector{T}, connections::SparseMatrixCSC{T, Int64}; 
      distance_function = ring_circle_overlap_area
 ) where T <: Real
-     neighbors = find_neighbors_radius(cells, radii)    
-     connections = create_sparse_matrix(neighbors, cells)
-     dropzeros!(connections)
 
      #Determine the strength of the connection via a distance function
      rows, cols, values = findnz(connections)
 
      new_values = map(x -> distance_function(x), values)
-     strength = sparse(rows, cols, new_values)
-     strength_out = -sum(strength, dims=2) |> vec #Preallocate the diffusion out for more efficient calculations
+     strength = sparse(rows, cols, new_values, length(rows)+1, length(cols)+1)
+     strength_out = -sum(strength, dims=1) |> vec #should we do dims 1 or dims 2
 
-     return CellMap(cells[:, 1], cells[:,2], connections, strength, strength_out)
+     return CellMap(xs, ys, connections, strength, strength_out)
 end
 
 # [Some utility functions for CellMap] ____________________________________________________________________________________________________________#

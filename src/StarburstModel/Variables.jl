@@ -1,7 +1,7 @@
 extract_dict(d::Dict{String, Float64}, keys) = map(k -> d[k], keys)
 extract_dict(d::Dict{String, Vector{Float64}}, keys) = hcat(map(k -> d[k], keys)...)
 
-function SAC_u0_dict(;mode = :ODE, ncells = 100) 
+function SAC_u0_dict(;mode = :ODE, n_cells = 1) 
      u0_dict = Dict(
           "I_ext" => 0.0,               #1  I_ext(t) = 0.00 This is the added current
           "v" =>  -64.23420980876107,   #2  v(t) = -63.6 
@@ -17,10 +17,10 @@ function SAC_u0_dict(;mode = :ODE, ncells = 100)
           "q" => 0.0,
           "W" => 0.000                  #11 W(t) = 0.000 #Initial conditions
      )
-     if mode == :PDE
+     if n_cells > 1
           u0_dict_vector = Dict{String, Vector{Float64}}()
           for (k,v) in u0_dict
-               u0_dict_vector[k] = fill(v, ncells)
+               u0_dict_vector[k] = fill(v, n_cells)
           end
           return u0_dict_vector
      elseif mode == :ODE
@@ -121,8 +121,8 @@ function SAC_p0_dict(;keyset = :DEFAULT)
      end
 end
 
-function extract_p0(d::Dict{String, Float64}; mode = :ODE)
-     if mode == :ODE || mode == :PDE
+function extract_p0(d::Dict{String, T}; mode = :ODE) where T
+     if mode == :ODE
           keys_p0 = [
                "I_app", "VC",
                "C_m", "g_W", "τw", 
@@ -147,11 +147,36 @@ function extract_p0(d::Dict{String, Float64}; mode = :ODE)
                "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18",
                "stim_start", "stim_stop"
           ]  
-          return extract_dict(d, keys_p0)
+     elseif mode == :PDE
+          keys_p0 = [
+               "I_app", "VC",
+               "C_m", "g_W", "τw", 
+               "g_leak", "E_leak", 
+               "g_K", "V3", "V4", "E_K", "τn", 
+               "g_Ca", "V1", "V2","E_Ca", "τc",
+               "g_Na", "E_Na", 
+               "g_TREK",
+               
+               "C_0", "λ" , "δ",  
+               "α", "τa", 
+               "β", "τb", 
+               "a_n", "b_n",
+
+               "VSe", "V0e", "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
+               "VSi", "V0i", "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
+
+               "g_GLUT", "k_GLUT", "E_GLUT", 
+               
+               "γg", "g_n", "τq",
+
+               "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18",
+               "stim_start", "stim_stop"
+          ]  
      end
+     return extract_dict(d, keys_p0)
 end
 
-function extract_u0(d::Dict{String, Float64}; mode = :ODE)
+function extract_u0(d::Dict{String, T}; mode = :ODE) where T
      if mode == :ODE || mode == :PDE
           keys_u0 = ["I_ext", "v", "n", "m", "h", "c", "a", "b", "e", "i", "g", "q", "W"]
      elseif mode == :GLUTAMATE
