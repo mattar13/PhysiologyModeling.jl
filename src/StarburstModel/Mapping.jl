@@ -91,13 +91,14 @@ function create_dendrogram_map(radial_lines, branches, layers;
 end
 
 # [Connection generation functions] ___________________________________________________________________________________________________________________________-#
-function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::Vector{T}) where T <: Real
+function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::T) where T <: Real
      connections = Tuple[]  
      n_xpoints = size(xs, 1)
      n_ypoints = size(ys, 1)
      for i in 1:n_xpoints
           cell_distances = [euclidean_distance([xs[i], ys[i]], [xs[j], ys[j]]) for j in 1:n_ypoints]
-          within_radius_indices = findall(d -> d <= radii[i], cell_distances)
+          within_radius_indices = findall(d -> d <= radii, cell_distances)
+          println(within_radius_indices)
           for (idx, neighbor) in enumerate(within_radius_indices)
                push!(connections, (i, neighbor))
           end
@@ -105,37 +106,23 @@ function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::Vector{T}
      connections
 end
 
-function create_sparse_matrix(neighbors::Vector{Vector{Int64}}, points::Matrix{T}) where T <: Real
-     n_points = length(neighbors)
-     I = Int[]
-     J = Int[]
-     V = Float64[]
-     for i in 1:n_points
-         for j in neighbors[i]
-             push!(I, i)
-             push!(J, j)
-             push!(V, euclidean_distance(points[i, :], points[j, :]))
-         end
-     end
-     return sparse(I, J, V)
-end
-
-function create_sparse_matrix(neighbors::Vector{Vector{Int64}}, points::Vector{Tuple{T,T}}) where T <: Real
-     n_points = length(neighbors)
-     I = Int[]
-     J = Int[]
-     V = Float64[]
-     for i in 1:n_points
-          for j in neighbors[i]
-               push!(I, i)
-               push!(J, j)
-               push!(V, euclidean_distance(points[i], points[j]))
+function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::Vector{T}) where T <: Real
+     connections = Tuple[]  
+     n_xpoints = size(xs, 1)
+     n_ypoints = size(ys, 1)
+     for i in 1:n_xpoints
+          cell_distances = [euclidean_distance([xs[i], ys[i]], [xs[j], ys[j]]) for j in 1:n_ypoints]
+          within_radius_indices = findall(d -> d <= radii[i], cell_distances)
+          println(within_radius_indices)
+          for (idx, neighbor) in enumerate(within_radius_indices)
+               push!(connections, (i, neighbor))
           end
      end
-     return sparse(I, J, V)
+     connections
 end
 
-function create_connection_matrix(connections::AbstractArray{Tuple})
+
+function connect_matrix(connections::AbstractArray{Tuple})
      rows = map(c -> c[1], connections)
      cols = map(c -> c[2], connections)
      data = ones(length(connections))
@@ -167,9 +154,6 @@ function return_connected_indices(cells, connections)
      return indices
 end
 
-
-
-#These are the distance functions we can use to calculate the strength
 #This is our non-linear distance function
 ring(d; max_strength = 0.05, max_dist = 0.15, slope = 0.01) = max_strength * exp(-((d - max_dist)^2) / (2 * slope^2))
 
@@ -213,11 +197,9 @@ function ring_circle_overlap_area(p1::Tuple{T, T}, p2::Tuple{T, T}; density = 1.
 end
 
 # [Constructor functions] _____________________________________________________________________________________________________________________________#
-function CellMap(cells::Matrix{T}, radii::Vector{T}; 
+function CellMap(xs, ys, connections; 
      distance_function = ring_circle_overlap_area
 ) where T <: Real
-     neighbors = find_neighbors_radius(cells, radii)    
-     connections = create_sparse_matrix(neighbors, cells)
      dropzeros!(connections)
 
      #Determine the strength of the connection via a distance function
@@ -227,7 +209,7 @@ function CellMap(cells::Matrix{T}, radii::Vector{T};
      strength = sparse(rows, cols, new_values)
      strength_out = -sum(strength, dims=2) |> vec #Preallocate the diffusion out for more efficient calculations
 
-     return CellMap(cells[:, 1], cells[:,2], connections, strength, strength_out)
+     return CellMap(xs, ys, connections, strength, strength_out)
 end
 
 # [Some utility functions for CellMap] ____________________________________________________________________________________________________________#
