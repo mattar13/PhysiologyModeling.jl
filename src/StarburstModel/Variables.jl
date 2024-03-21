@@ -121,7 +121,7 @@ function SAC_p0_dict(;keyset = :DEFAULT)
      end
 end
 
-function extract_p0(d::Dict{String, Float64}; mode = :ODE)
+function extract_p0(d::Dict{String, T}; mode = :ODE) where T
      if mode == :ODE
           keys_p0 = [
                "I_app", "VC",

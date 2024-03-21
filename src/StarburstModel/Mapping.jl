@@ -223,7 +223,7 @@ function CellMap(xs::Vector{T}, ys::Vector{T}, connections::SparseMatrixCSC{T, I
 
      new_values = map(x -> distance_function(x), values)
      strength = sparse(rows, cols, new_values)
-     strength_out = -sum(strength, dims=2) |> vec #Preallocate the diffusion out for more efficient calculations
+     strength_out = -sum(strength, dims=1) |> vec #should we do dims 1 or dims 2
 
      return CellMap(xs, ys, connections, strength, strength_out)
 end
