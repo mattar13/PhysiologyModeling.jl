@@ -62,7 +62,7 @@ function create_dendrogram_map(radial_lines, branches, layers;
                     y = y0 + radius * sin(angle) * layer
                     push!(branch_xs, round(x, digits = 5))
                     push!(branch_ys, round(y, digits = 5))
-                    push!(connections, (parent_indices[1], point_index)) #connect all the 
+                    push!(connections, (parent_indices[1], point_index, 1.0)) #connect all the 
                     push!(children_indices, point_index)
                     point_index += 1
                else
@@ -72,11 +72,13 @@ function create_dendrogram_map(radial_lines, branches, layers;
                     #println("Number of children $(length(parent_connections))")
                     for branch in LinRange(-branch_distance, branch_distance, n_children)
                          #println("All the parents $parent_connections")
+                         parent_connection = popfirst!(parent_connections)
+
                          x = (x0 + radius * cos(angle+branch) * layer)
                          y = (y0 + radius * sin(angle+branch) * layer)
                          push!(branch_xs, round(x, digits = 5))
                          push!(branch_ys, round(y, digits = 5))
-                         push!(connections, (popfirst!(parent_connections), point_index))
+                         push!(connections, (parent_connection, point_index, 1.0))
                          push!(children_indices, point_index)
                          point_index += 1
                     end
@@ -132,6 +134,7 @@ function connection_matrix(connections_list::AbstractArray{Tuple})
 end
 
 connection_matrix(xs, ys, connections) = (xs, ys, connection_matrix(connections))
+
 
 # [Distance calculations] __________________________________________________________________________________________________________________#
 

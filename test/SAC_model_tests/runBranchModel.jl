@@ -6,13 +6,13 @@ using SparseArrays
 
 #%%=[Run branch generation]__________________________________________________________________________________#
 
-xs, ys, conns = create_dendrogram_map(4, 2, 5, radius = 0.01, branch_distance = 0.65)
+xs, ys, connection_list = create_dendrogram_map(4, 2, 5, radius = 0.01, branch_distance = 0.65)
+connection_list
 xs .+= rand(length(xs))/1000
 xs .+= rand(length(ys))/100
-connection_matrix = create_connection_matrix(conns)
-
+connections = connection_matrix(connection_list)
 #%% [Plot the solution]____________________________________________________________________________________________________________#
-rows, cols = findnz(connection_matrix)
+rows, cols = findnz(connections)
 
 fig = Figure()
 ax1 = Axis(fig[1,1])
@@ -23,6 +23,3 @@ for (r, c) in zip(rows, cols)
     lines!(ax1, [xs[r], xs[c]], [ys[r], ys[c]], color = :black)
 end
 display(fig)
-
-a = [1,2,3,4]
-repeat(a, inner = 2)
