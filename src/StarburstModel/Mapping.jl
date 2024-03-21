@@ -40,6 +40,18 @@ function create_ring_map(n ;center = [0.0, 0.0], r = 0.05)
      return coordinates
 end
 
+function calculate_dendrogram_distance(xs::Vector{T}, ys::Vector{T}, old_connection_list) where T <: Real
+     connection_list = Tuple[]
+     for connection in old_connection_list
+          x_idx, y_idx, old_val = connection
+          xcoord = xs[x_idx]
+          ycoord = ys[y_idx]
+          dist = euclidean_distance(xcoord, ycoord)
+          push!(x_idx, y_idx, dist)
+     end
+     return connection_list
+end
+
 function create_dendrogram_map(radial_lines, branches, layers; 
      origin = (0.0, 0.0), radius = 0.05, branch_distance = 0.1)
      #determine angles for the inner spokes
@@ -60,6 +72,8 @@ function create_dendrogram_map(radial_lines, branches, layers;
                if layer == 1
                     x = x0 + radius * cos(angle) * layer
                     y = y0 + radius * sin(angle) * layer
+                    println(x)
+                    println(y)
                     push!(branch_xs, round(x, digits = 5))
                     push!(branch_ys, round(y, digits = 5))
                     push!(connections, (parent_indices[1], point_index, 1.0)) #connect all the 
@@ -69,7 +83,7 @@ function create_dendrogram_map(radial_lines, branches, layers;
                     n_children = branches^(layer-1) #add a random factor 
                     n_children += rand_branches
                     #println("Number of branches: $n_children")
-                    #println("Number of children $(length(parent_connections))")
+                    #println("Number of children: $(length(parent_connections))")
                     for branch in LinRange(-branch_distance, branch_distance, n_children)
                          #println("All the parents $parent_connections")
                          parent_connection = popfirst!(parent_connections)
@@ -91,6 +105,8 @@ function create_dendrogram_map(radial_lines, branches, layers;
      end
      branch_xs, branch_ys, connections
 end
+
+
 
 # [Connection generation functions] ___________________________________________________________________________________________________________________________-#
 function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::T) where T <: Real
