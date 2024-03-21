@@ -100,7 +100,7 @@ function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::T) where 
           within_radius_indices = findall(d -> d <= radii, cell_distances)
           println(within_radius_indices)
           for (idx, neighbor) in enumerate(within_radius_indices)
-               push!(connections, (i, neighbor))
+               push!(connections, (i, neighbor, cell_distances[idx]))
           end
      end
      connections
@@ -115,20 +115,23 @@ function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::Vector{T}
           within_radius_indices = findall(d -> d <= radii[i], cell_distances)
           println(within_radius_indices)
           for (idx, neighbor) in enumerate(within_radius_indices)
-               push!(connections, (i, neighbor))
+               push!(connections, (i, neighbor, cell_distances[idx]))
           end
      end
      connections
 end
 
-
-function connect_matrix(connections::AbstractArray{Tuple})
-     rows = map(c -> c[1], connections)
-     cols = map(c -> c[2], connections)
-     data = ones(length(connections))
+function connection_matrix(connections_list::AbstractArray{Tuple})
+     rows = map(c -> c[1], connections_list)
+     cols = map(c -> c[2], connections_list)
+     data = map(c -> c[3], connections_list)
      max_index = maximum([rows; cols])
-     sparse(rows, cols, data, max_index, max_index)
+     connections = sparse(rows, cols, data, max_index, max_index)
+     dropzeros!(connections)
+     return connections
 end
+
+connection_matrix(xs, ys, connections) = (xs, ys, connection_matrix(connections))
 
 # [Distance calculations] __________________________________________________________________________________________________________________#
 
@@ -197,10 +200,9 @@ function ring_circle_overlap_area(p1::Tuple{T, T}, p2::Tuple{T, T}; density = 1.
 end
 
 # [Constructor functions] _____________________________________________________________________________________________________________________________#
-function CellMap(xs, ys, connections; 
+function CellMap(xs::Vector{T}, ys::Vector{T}, connections::SparseMatrixCSC{T, Int64}; 
      distance_function = ring_circle_overlap_area
 ) where T <: Real
-     dropzeros!(connections)
 
      #Determine the strength of the connection via a distance function
      rows, cols, values = findnz(connections)
