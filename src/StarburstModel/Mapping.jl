@@ -43,13 +43,13 @@ end
 function calculate_dendrogram_distance(xs::Vector{T}, ys::Vector{T}, old_connection_list) where T <: Real
      connection_list = Tuple[]
      for connection in old_connection_list
-          x_idx, y_idx, old_val = connection
+          x_idx, y_idx = connection
           xcoord = xs[x_idx]
           ycoord = ys[y_idx]
           dist = euclidean_distance(xcoord, ycoord)
-          push!(x_idx, y_idx, dist)
+          push!(connection_list, (x_idx, y_idx, dist))
      end
-     return connection_list
+     connection_list
 end
 
 function create_dendrogram_map(radial_lines, branches, layers; 
@@ -72,27 +72,23 @@ function create_dendrogram_map(radial_lines, branches, layers;
                if layer == 1
                     x = x0 + radius * cos(angle) * layer
                     y = y0 + radius * sin(angle) * layer
-                    println(x)
-                    println(y)
                     push!(branch_xs, round(x, digits = 5))
                     push!(branch_ys, round(y, digits = 5))
-                    push!(connections, (parent_indices[1], point_index, 1.0)) #connect all the 
+                    push!(connections, (parent_indices[1], point_index)) #connect all the 
                     push!(children_indices, point_index)
                     point_index += 1
                else
                     n_children = branches^(layer-1) #add a random factor 
                     n_children += rand_branches
                     #println("Number of branches: $n_children")
-                    #println("Number of children: $(length(parent_connections))")
+                    #println("Number of children $(length(parent_connections))")
                     for branch in LinRange(-branch_distance, branch_distance, n_children)
                          #println("All the parents $parent_connections")
-                         parent_connection = popfirst!(parent_connections)
-
                          x = (x0 + radius * cos(angle+branch) * layer)
                          y = (y0 + radius * sin(angle+branch) * layer)
                          push!(branch_xs, round(x, digits = 5))
                          push!(branch_ys, round(y, digits = 5))
-                         push!(connections, (parent_connection, point_index, 1.0))
+                         push!(connections, (popfirst!(parent_connections), point_index))
                          push!(children_indices, point_index)
                          point_index += 1
                     end
@@ -103,10 +99,9 @@ function create_dendrogram_map(radial_lines, branches, layers;
           parent_indices = children_indices
           children_indices = []
      end
+     connections = calculate_dendrogram_distance(branch_xs, branch_ys, connections)
      branch_xs, branch_ys, connections
 end
-
-
 
 # [Connection generation functions] ___________________________________________________________________________________________________________________________-#
 function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::T) where T <: Real
@@ -143,9 +138,8 @@ function connection_matrix(connections_list::AbstractArray{Tuple})
      rows = map(c -> c[1], connections_list)
      cols = map(c -> c[2], connections_list)
      data = map(c -> c[3], connections_list)
-     max_index = maximum([rows; cols])
-     connections = sparse(rows, cols, data, max_index, max_index)
-     dropzeros!(connections)
+     connections = sparse(rows, cols, data)
+     #dropzeros!(connections)
      return connections
 end
 
@@ -176,6 +170,7 @@ function return_connected_indices(cells, connections)
      return indices
 end
 
+linDist(x; m = 1.0, b = 0.0) = m*x + b 
 #This is our non-linear distance function
 ring(d; max_strength = 0.05, max_dist = 0.15, slope = 0.01) = max_strength * exp(-((d - max_dist)^2) / (2 * slope^2))
 
