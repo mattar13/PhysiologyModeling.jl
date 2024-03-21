@@ -1,8 +1,7 @@
 using Revise
-using ElectroPhysiology
-using PhysiologyModeling
-import PhysiologyModeling: CVODE_BDF, ring
-using Pkg; Pkg.activate("test") #Activate the testing environment
+using Pkg; Pkg.activate(".")
+using ElectroPhysiology, PhysiologyModeling
+Pkg.activate("test") #Activate the testing environment
 using PhysiologyPlotting, GLMakie
 using CUDA
 CUDA.allowscalar(false)
@@ -10,6 +9,7 @@ using SparseArrays
 using LinearAlgebra
 
 #Try importing some other solver methods
+import .PhysiologyModeling: CVODE_BDF, ring
 import .PhysiologyModeling.DifferentialEquations: ImplicitRKMil, SKenCarp
 #%%=================================[Solving a SPDE for tspan]=================================#
 
@@ -21,20 +21,29 @@ dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
 #2) create a random distribution of cells and their radii
 #The density of SACs in the retina is around 1200 per mm2. So if we have 5mm2 1200 * 5 = 6000
 n_cells = 600 #Really pushing the model
-#cells = zeros(n_cells, 2)
-#cells[:, 1] .= LinRange(0.0, 1.0, n_cells)
-#cells = generate_ring_coordinates(n_cells)
-#cells = even_map(xmin = xmin, dx = dx, xmax = xmax, ymin = ymin, dy = dy, ymax = ymax)
-cells = rand(xmin:dx:xmax, n_cells, 2)
-xs = cells[:, 1]
-ys = cells[:, 2]
+xs, ys = create_random_map(n_cells, rng_dt = 0.01)
+radii = fill(0.2, size(xs, 1)) #Switch this on to get constant radii
+connections = connect_neighbors_radius(xs, ys, radii)
+connection_matrix = create_connection_matrix(connections)
 
-radii = fill(0.2, size(cells, 1)) #Switch this on to get constant radii
+rows, cols = findnz(connection_matrix)
+points = hcat(xs, ys)
+
+fig = Figure()
+ax1 = Axis(fig[1,1])
+scatter!(ax1, xs, ys, colormap = :viridis, color = 1:length(xs))
+for (r, c) in zip(rows, cols)
+    #println(r)
+    #println(c)
+    lines!(ax1, [xs[r], xs[c]], [ys[r], ys[c]], color = :black)
+end
+display(fig)
+
+#%%
+
 dist_func1(d) = ring_circle_overlap_area(d; density = 0.1, r_inner = 0.1, r_outer = 0.2, r_circle = 0.2);
 cell_map_CPU = CellMap(cells, radii; distance_function = dist_func1);
 #make sure cells are connected, if not remove unconnected cells
-cell_map_CPU.strength_out
-
 cell_map = cell_map_CPU |> make_GPU
 
 p0_dict = SAC_p0_dict()

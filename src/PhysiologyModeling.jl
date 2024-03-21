@@ -47,13 +47,15 @@ export SAC_ODE_Compartment
 export noise1D, noise2D
 
 include("StarburstModel/Mapping.jl")
-export even_map
 export CellMap
+export create_even_map, create_random_map
+export create_ring_map, create_dendrogram_map
+
+export connect_neighbors_radius
 export ring_circle_overlap_area
 export make_GPU
 export generate_ring_coordinates, coencentric_rings
 export create_connection_matrix
-export create_dendrogram
 
 #This section deals with parameters and contions
 #Eventually PhysiologyPlotting will include some things we need to plot everything
