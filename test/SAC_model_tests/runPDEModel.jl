@@ -11,18 +11,11 @@ using LinearAlgebra
 #Try importing some other solver methods
 import .PhysiologyModeling: CVODE_BDF, ring
 import .PhysiologyModeling.DifferentialEquations: ImplicitRKMil, SKenCarp
-<<<<<<< HEAD
-#%%=================================[Solving a SPDE for tspan]=================================#
-#1) determine the domains and spacing of cells. 
-domain_x = (xmin, xmax) = (0.0, 5.0) #This is a simulation for a retina 5mm in diameter
-domain_y = (ymin, ymax) = (0.0, 5.0)
-=======
 #%%=[Run branch generation]__________________________________________________________________________________#
 
 #1) determine the domains and spacing of cells. 
 domain_x = (xmin, xmax) = (0.0, 1.0) #This is a simulation for a retina 5mm in diameter
 domain_y = (ymin, ymax) = (0.0, 1.0)
->>>>>>> 4ae2d47bfe3be7b91ca8d67b01e272714ff8f412
 dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
 
 #2) create a random distribution of cells and their radii
