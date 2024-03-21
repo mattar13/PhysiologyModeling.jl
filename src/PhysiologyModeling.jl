@@ -39,12 +39,12 @@ export par_idx
 include("StarburstModel/Models.jl")
 export SAC_ODE, SAC_ODE_NT_CLAMP
 export SAC_ODE_IC, SAC_ODE_VC
-export SAC_ODE_GLUT
 export ∇α, DIFFUSION_MODEL, DIFFUSION_NOISE
 export SAC_PDE, SAC_PDE_STIM 
 export SAC_GAP #Make a model for a gap junction
 export SAC_ODE_Compartment
 export noise1D, noise2D
+export SAC_TEST
 
 include("StarburstModel/Mapping.jl")
 export CellMap
