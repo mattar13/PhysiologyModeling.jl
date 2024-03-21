@@ -1,29 +1,31 @@
+using Pkg; Pkg.activate(".")
 using Revise
 using ElectroPhysiology
 using PhysiologyModeling
 using DiffEqCallbacks
-using Pkg; Pkg.activate("test")
+Pkg.activate("test")
 using PhysiologyPlotting
 using GLMakie
 
-#%%=================================[Solving a single SDE for tspan]=================================#
-tspan = (0.0, 100e3)
+#%% [Solving a single SDE for tspan]_______________________________________________________________________________________________#
+tspan = (0.0, 1000.0)
 #Extract and modify parameters
 p0_dict = SAC_p0_dict()
 p0_dict["g_GABA"] = 0.0
 p0_dict["g_ACh"] = 0.0
-p0_dict["g_GLUT"] = 0.0 #This ensures the 
+#Set the stimulus parameters
+p0_dict["I_app"] = 10.0
+p0_dict["stim_start"] = 200.0
+p0_dict["stim_stop"] = 300.0
 p0 = extract_p0(p0_dict)
 #Extract and modify initial conditions
 u0_dict = SAC_u0_dict()
-u0_dict["g"] = 0.5
 u0 = extract_u0(u0_dict)
 #Set up the problem
-prob_func(du, u, p, t) = SAC_ODE(du, u, p, t)
-prob = SDEProblem(prob_func, noise1D, u0, tspan, p0)
+prob = SDEProblem(SAC_ODE_IC, noise1D, u0, tspan, p0)
 @time sol = solve(prob, SOSRI(), reltol = 2e-2, abstol = 2e-2, progress = true, progress_steps = 1)
 
-#====================================[Plot the solution]====================================#
+# [Plot the solution]_________________________________________________________________________________________________________#
 fSDE = Figure(size = (1800, 800))
 ax1 = Axis(fSDE[1,1], title = "Voltage (Vt)")
 ax2 = Axis(fSDE[2,1], title = "K Repol. (Nt)")
@@ -58,40 +60,44 @@ lines!(ax12, Time, map(t -> sol(t)[13], Time))
 lines!(ax13, Time, map(t -> sol(t)[1], Time))
 
 display(fSDE)
-save("test/SAC_model_tests/data/SDESol_Ek_leak.png", fSDE)
+#save("test/SAC_model_tests/data/SDESol.png", fSDE)
 
-
-#%%=================================[Running a series of SDE models over parameter space idx]=================================#
-idx = findfirst(keys_p0 .== "g_Ca")
-n_traces = 30
-param_rng = LinRange(4.0, 4.5, n_traces)
+#%% [Running a series of SDE models over parameter space idx]_______________________________________________________________________________________#
 
 #Specify the timespan
-tspan = (0.0, 100.0)
+tspan = (0.0, 3e3)
 #Extract and modify parameters
 p0_dict = SAC_p0_dict()
-p0_dict["g_K"] = 4.4
+p0_dict["stim_start"] = 200.0
+p0_dict["VC"] = -10.0
+p0_dict["stim_stop"] = 500.0
+
 p0_dict["g_GABA"] = 0.0
 p0_dict["g_ACh"] = 0.0
 p0 = extract_p0(p0_dict)
+
 #Extract and modify initial conditions
 u0_dict = SAC_u0_dict()
 u0 = extract_u0(u0_dict)
+
 #Set up the problem
-fSAC(du, u, p, t) = SAC_ODE(du, u, p, t)
+idx = par_idx("VC")
+n_traces = 10
+param_rng = LinRange(-90, -10, n_traces)
+
+fSAC(du, u, p, t) = SAC_ODE_VC(du, u, p, t)
 prob = SDEProblem(fSAC, noise1D, u0, tspan, p0)
 function fSAC_ensemble(prob, i, repeat; idx = idx)
      pI = prob.p
      pI[idx] = param_rng[i]
-     println(pI)
      remake(prob, p = pI) 
 end
 
-ensemble_prob = EnsembleProblem(prob, prob_func = (prob, i, repeat) -> prob_func(prob, i, repeat; idx = idx))
+ensemble_prob = EnsembleProblem(prob, prob_func = fSAC_ensemble)
 @time sim = solve(ensemble_prob, SOSRI(), EnsembleDistributed(), trajectories = n_traces, 
      progress = true, progress_steps = 1, reltol = 0.01, abstol = 0.01, maxiters = 1e7)
 
-#====================================[Plot the solution]====================================#
+# [Plot the solution]_____________________________________________________________________________________#
 fSDE = Figure(size = (1800, 800))
 ax1 = Axis(fSDE[1,1], title = "Voltage (Vt)")
 ax2 = Axis(fSDE[2,1], title = "K Repol. (Nt)")
@@ -104,38 +110,44 @@ ax7 = Axis(fSDE[3,2], title = "TREK (Bt)")
 
 ax8 = Axis(fSDE[1,3], title = "ACh (Et)")
 ax9 = Axis(fSDE[2,3], title = "GABA (It)")
+ax10 = Axis(fSDE[3,3], title = "Glutamate (Gt)")
+ax11 = Axis(fSDE[4,3], title = "Gq (Qt)")
 
-ax10 = Axis(fSDE[1,4], title = "Noise (Wt)")
-ax11 = Axis(fSDE[2,4], title = "I_ext (pA)")
-Colorbar(fSDE[5,1], limits = (initial_conditions[1], initial_conditions[end]), colormap = :viridis,
+ax12 = Axis(fSDE[1,4], title = "Noise (Wt)")
+ax13 = Axis(fSDE[2,4], title = "I_ext (pA)")
+
+Colorbar(fSDE[5,1], limits = (param_rng[1], param_rng[end]), colormap = :viridis,
     vertical = false)
 for (i, sol) in enumerate(sim)
      println(sol.t[end])
      Time = LinRange(sol.t[1], sol.t[end], 2000)
-     x = initial_conditions[i]
-     ln1 = lines!(ax1, Time, map(t -> sol(t)[2], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
-     lines!(ax2, Time, map(t -> sol(t)[3], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
-     lines!(ax3, Time, map(t -> sol(t)[4], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
-     lines!(ax4, Time, map(t -> sol(t)[5], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
-     lines!(ax5, Time, map(t -> sol(t)[6], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
-     lines!(ax6, Time, map(t -> sol(t)[7], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
-     lines!(ax7, Time, map(t -> sol(t)[8], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
-     lines!(ax8, Time, map(t -> sol(t)[9], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
-     lines!(ax9, Time, map(t -> sol(t)[10], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
-     lines!(ax10, Time, map(t -> sol(t)[11], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
-     lines!(ax11, Time, map(t -> sol(t)[1], Time), color = x, colormap = :viridis, colorrange = (initial_conditions[1], initial_conditions[end]))
+     x = param_rng[i]
+     Time = sol.t
+     ln1 = lines!(ax1, Time, map(t -> sol(t)[2], Time), color = x, colormap = :viridis, colorrange = (param_rng[1], param_rng[end]))
+     lines!(ax2, Time, map(t -> sol(t)[3], Time), color = x, colormap = :viridis, colorrange = (param_rng[1], param_rng[end]))
+     lines!(ax3, Time, map(t -> sol(t)[4], Time), color = x, colormap = :viridis, colorrange = (param_rng[1], param_rng[end]))
+     lines!(ax4, Time, map(t -> sol(t)[5], Time), color = x, colormap = :viridis, colorrange = (param_rng[1], param_rng[end]))
+     lines!(ax5, Time, map(t -> sol(t)[6], Time), color = x, colormap = :viridis, colorrange = (param_rng[1], param_rng[end]))
+     lines!(ax6, Time, map(t -> sol(t)[7], Time), color = x, colormap = :viridis, colorrange = (param_rng[1], param_rng[end]))
+     lines!(ax7, Time, map(t -> sol(t)[8], Time), color = x, colormap = :viridis, colorrange = (param_rng[1], param_rng[end]))
+     lines!(ax8, Time, map(t -> sol(t)[9], Time), color = x, colormap = :viridis, colorrange = (param_rng[1], param_rng[end]))
+     lines!(ax9, Time, map(t -> sol(t)[10], Time), color = x, colormap = :viridis, colorrange = (param_rng[1], param_rng[end]))
+     lines!(ax10, Time, map(t -> sol(t)[11], Time), color = x, colormap = :viridis, colorrange = (param_rng[1], param_rng[end]))
+     lines!(ax11, Time, map(t -> sol(t)[12], Time), color = x, colormap = :viridis, colorrange = (param_rng[1], param_rng[end]))
+     lines!(ax12, Time, map(t -> sol(t)[13], Time), color = x, colormap = :viridis, colorrange = (param_rng[1], param_rng[end]))
+     lines!(ax13, Time, map(t -> sol(t)[1], Time), color = x, colormap = :viridis, colorrange = (param_rng[1], param_rng[end]))
 end
 
 display(fSDE)
 
-#%%=================================[Solving a single SDE by adding mGluR6 into the equation]=================================#
+#%% [Solving a single SDE by adding mGluR6 into the equation]______________________________________________________________________#
 tspan = (0.0, 10e3)
 dt = 1.0
-
 tseries = tspan[1]:dt:tspan[2]
-#create a glutamate pulse
+
 #Extract and modify parameters
 p0_dict = SAC_p0_dict()
+p0_dict["VC"] = -65.0
 p0_dict["g_GABA"] = 0.0
 p0_dict["g_ACh"] = 0.0
 p0 = extract_p0(p0_dict)
@@ -145,15 +157,21 @@ u0_dict["g"] = 0.0
 u0 = extract_u0(u0_dict)
 
 #create a callback for the glutamate pulse
-affect!(integrator) = integrator.u[11] = gauss_pulse(integrator.t; t0 = 8000.0, spread = 500.0) + gauss_pulse(integrator.t; t0 = 2000.0, spread = 500.0)
+function affect!(integrator; t1 = 0.0, dtpulse = 2500.0, tend = 10e3)
+     gt = 0.0
+     for t0 in t1:dtpulse:tend
+          gt += gauss_pulse(integrator.t; t0 = t0, peak_amp = 0.05)
+     end
+     integrator.u[11] = gt
+end
 cb = PresetTimeCallback(tseries, affect!)
 
 #Set up the problem
-prob_func(du, u, p, t) = SAC_ODE(du, u, p, t)
+prob_func(du, u, p, t) = SAC_ODE_VC(du, u, p, t)
 prob = SDEProblem(prob_func, noise1D, u0, tspan, p0)
 @time sol = solve(prob, SOSRI(), tstops = tseries, callback = cb, reltol = 2e-2, abstol = 2e-2, progress = true, progress_steps = 1)
 
-# ====================================[Plot the solution]====================================#
+# [Plot the solution]_______________________________________________________________________________________________________________#
 fSDE = Figure(size = (1800, 800))
 ax1 = Axis(fSDE[1,1], title = "Voltage (Vt)")
 ax2 = Axis(fSDE[2,1], title = "K Repol. (Nt)")

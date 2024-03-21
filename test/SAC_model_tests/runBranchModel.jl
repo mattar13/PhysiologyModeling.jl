@@ -4,14 +4,14 @@ using Pkg; Pkg.activate("test") #Activate the testing environment
 using PhysiologyPlotting, GLMakie
 using SparseArrays
 
-#%%=[Run branch generation]=========#
-#This uses all of the same auxillary equations
-cells = zeros(3, 2)
+#%%=[Run branch generation]__________________________________________________________________________________#
 
-xs, ys, conns = create_dendrogram(4, 2, 5, radius = 0.01, branch_distance = 0.65)
+xs, ys, conns = create_dendrogram_map(4, 2, 5, radius = 0.01, branch_distance = 0.65)
 xs .+= rand(length(xs))/1000
 xs .+= rand(length(ys))/1000
 connection_matrix = create_connection_matrix(conns)
+
+#%% [Plot the solution]____________________________________________________________________________________________________________#
 rows, cols = findnz(connection_matrix)
 
 fig = Figure()
