@@ -54,6 +54,7 @@ export create_ring_map, create_dendrogram_map
 export connect_neighbors_radius
 export connection_matrix
 
+export linDist
 export ring_circle_overlap_area
 export make_GPU
 
