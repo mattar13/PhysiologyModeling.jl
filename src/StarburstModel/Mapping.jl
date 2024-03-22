@@ -139,8 +139,6 @@ end
 function connection_matrix(connections_list::AbstractArray{Tuple})
      rows = map(c -> c[1], connections_list)
      cols = map(c -> c[2], connections_list)
-     #println(maximum(rows))
-     #println(maximum(cols))
      data = map(c -> c[3], connections_list)
      connections = sparse(rows, cols, data, length(rows)+1, length(rows)+1)
      #dropzeros!(connections)
