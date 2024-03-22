@@ -14,8 +14,8 @@ import .PhysiologyModeling.DifferentialEquations: ImplicitRKMil, SKenCarp
 #%%=[Run branch generation]__________________________________________________________________________________#
 
 #1) determine the domains and spacing of cells. 
-domain_x = (xmin, xmax) = (0.0, 1.0) #This is a simulation for a retina 5mm in diameter
-domain_y = (ymin, ymax) = (0.0, 1.0)
+domain_x = (xmin, xmax) = (0.0, 5.0) #This is a simulation for a retina 5mm in diameter
+domain_y = (ymin, ymax) = (0.0, 5.0)
 dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
 
 #2) create a random distribution of cells and their radii
