@@ -20,7 +20,7 @@ dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
 
 #2) create a random distribution of cells and their radii
 #The density of SACs in the retina is around 1200 per mm2. So if we have 5mm2 1200 * 5 = 6000
-n_cells = 600 #Really pushing the model
+n_cells = 300 #Really pushing the model
 xs = rand(xmin:dx:xmax, n_cells)
 ys = rand(ymin:dy:ymax, n_cells)
 connection_list = connect_neighbors_radius(xs, ys, 0.2)
@@ -31,7 +31,7 @@ cell_map_CPU.strength
 
 #%% only run GPU on big computer
 cell_map = cell_map_CPU |> make_GPU
-
+cell_map.strength_out
 #%% [run the model]____________________________________________________________________________#
 p0_dict = SAC_p0_dict()
 p0_dict["g_GABA"] = 0.0
@@ -50,7 +50,6 @@ prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
      reltol =  2e-2, abstol = 2e-2, 
      progress=true, progress_steps=1)
 #save("data.jld", "initial_cond", sol[end])
-println(sol)#So we can check if the solution succeeded
  
 CUDA.allowscalar(true) #allow GPU operations to be offloaded to CPU 
 Time = sol.t[1]:10:sol.t[end]
@@ -72,7 +71,7 @@ ax1b = Axis(fig1[2,1], title = "Calcium ROIs", xlabel = "time (ms)", ylabel = "C
 ax1c = Axis(fig1[3,1], title = "Voltage Traces", xlabel = "time (ms)", ylabel = "Vt (mV)")
 
 rowsize!(fig1.layout, 1, Relative(1/2)) #Make the cell plot larger
-sctV = scatter!(ax1a, cells[:,1], cells[:,2], color = sol(0.0)[:,6]|>Array, colorrange = (0.0, maximum(ct)), markersize = 20.0)
+sctV = scatter!(ax1a, xs, ys, color = sol(0.0)[:,6]|>Array, colorrange = (0.0, maximum(ct)), markersize = 20.0)
 for n in 1:n_cells
      lines!(ax1b, Time, ct[n, :])
      lines!(ax1c, Time, vt[n, :])
