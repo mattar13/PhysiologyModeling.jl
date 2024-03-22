@@ -24,17 +24,14 @@ n_cells = 100 #Really pushing the model
 xs = rand(xmin:dx:xmax, n_cells)
 ys = rand(ymin:dy:ymax, n_cells)
 connection_list = connect_neighbors_radius(xs, ys, 0.2)
-connections = connection_list |> connection_matrix
-maximum(xs)
-maximum(ys)
+connections = connection_matrix(connection_list, m = length(xs), n = length(ys))
+connections
 dist_func1(d) = ring_circle_overlap_area(d; density = 0.1, r_inner = 0.1, r_outer = 0.2, r_circle = 0.2);
 cell_map_CPU = CellMap(xs, ys, connections; distance_function = dist_func1);
 cell_map_CPU.strength
 
 #%% only run GPU on big computer
 cell_map = cell_map_CPU |> make_GPU
-cell_map.strength_out
-cell_map.strength
 
 #%% [run the model]____________________________________________________________________________#
 p0_dict = SAC_p0_dict()

@@ -146,8 +146,6 @@ function connection_matrix(connections_list::AbstractArray{Tuple}; m = nothing, 
      if isnothing(n)
           n = maximum(cols)
      end
-     println(m)
-     println(n)
      connections = sparse(rows, cols, data, m, n)
      return connections
 end
@@ -229,9 +227,8 @@ function CellMap(xs::Vector{T}, ys::Vector{T}, connections::SparseMatrixCSC{T, I
 
      #Determine the strength of the connection via a distance function
      rows, cols, values = findnz(connections)
-
      new_values = map(x -> distance_function(x), values)
-     strength = sparse(rows, cols, new_values, length(rows)+1, length(cols)+1)
+     strength = sparse(rows, cols, new_values, length(xs), length(ys))
      strength_out = -sum(strength, dims=1) |> vec #should we do dims 1 or dims 2
 
      return CellMap(xs, ys, connections, strength, strength_out)
