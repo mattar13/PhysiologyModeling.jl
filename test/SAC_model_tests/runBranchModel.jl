@@ -11,13 +11,13 @@ using LinearAlgebra
 #%%=[Run branch generation]__________________________________________________________________________________#
 radial = 4
 branches = 2
-layers = 2
+layers = 5
 xs, ys, connection_list = create_dendrogram_map(radial, branches, layers)
 #xs .+= rand(length(xs))/1000
 #ys .+= rand(length(ys))/1000
-connection_list
-connections = connection_matrix(connection_list)
+connections = connection_matrix(connection_list, m = length(xs), n = length(ys))
 cell_map = CellMap(xs, ys, connections);
+#%% Only do if there is GPU
 cell_map_GPU = cell_map |> make_GPU
 
 #%% [run the model]____________________________________________________________________________#

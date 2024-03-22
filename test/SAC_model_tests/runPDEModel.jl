@@ -23,9 +23,14 @@ dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
 n_cells = 100 #Really pushing the model
 xs = rand(xmin:dx:xmax, n_cells)
 ys = rand(ymin:dy:ymax, n_cells)
-connections = connect_neighbors_radius(xs, ys, 0.2) |> connection_matrix
+connection_list = connect_neighbors_radius(xs, ys, 0.2)
+connections = connection_list |> connection_matrix
+maximum(xs)
+maximum(ys)
 dist_func1(d) = ring_circle_overlap_area(d; density = 0.1, r_inner = 0.1, r_outer = 0.2, r_circle = 0.2);
 cell_map_CPU = CellMap(xs, ys, connections; distance_function = dist_func1);
+cell_map_CPU.strength
+
 #make sure cells are connected, if not remove unconnected cells
 cell_map = cell_map_CPU |> make_GPU
 
