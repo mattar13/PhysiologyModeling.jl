@@ -11,7 +11,7 @@ using LinearAlgebra
 #Try importing some other solver methods
 import .PhysiologyModeling: CVODE_BDF, ring
 import .PhysiologyModeling.DifferentialEquations: ImplicitRKMil, SKenCarp
-#%%=[Create the cell maps]__________________________________________________________________________________#
+#%% [Create the cell maps]__________________________________________________________________________________#
 
 #1) determine the domains and spacing of cells. 
 domain_x = (xmin, xmax) = (0.0, 5.0) #This is a simulation for a retina 5mm in diameter
@@ -29,13 +29,13 @@ cell_map_CPU = CellMap(xs, ys, connections; distance_function = dist_func1);
 #make sure cells are connected, if not remove unconnected cells
 cell_map = cell_map_CPU |> make_GPU
 
-# [run the model]____________________________________________________________________________#
+#%% [run the model]____________________________________________________________________________#
 p0_dict = SAC_p0_dict()
 p0_dict["g_ACh"] = 2.0
 p0_dict["g_GABA"] = 0.0
 p0 = extract_p0(p0_dict) 
 
-u0_dict= SAC_u0_dict(mode = :PDE, ncells = n_cells)
+u0_dict= SAC_u0_dict(mode = :PDE, n_cells = n_cells)
 u0 = extract_u0(u0_dict) |> CuArray{Float32}
 
 #3) Define the problem
