@@ -32,7 +32,7 @@ u0 = extract_u0(u0_dict)
 u0[1,2] = 100.0
 u0 = u0 |> CuArray{Float32}
 # 3) Define the problem
-tspan = (0.0, 20e3)
+tspan = (0.0, 300e3)
 
 f_PDE(du, u, p, t) = SAC_GAP(du, u, p, t, cell_map_GPU; gGAP = 0.01)
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
