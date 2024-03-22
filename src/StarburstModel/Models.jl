@@ -234,7 +234,7 @@ function DIFFUSION_MODEL(du, u, p, t; active_cell = 221, growth_rate = 0.5)
      #We should go through and decay the edges 
 end
 
-function SAC_PDE(du, u, p, t, MAP) 
+function SAC_PDE(du, u, p, t, E_MAP, I_MAP) 
      I_ext = view(u, :, 1)
      v = view(u, :, 2)
      n = view(u, :, 3)
@@ -297,8 +297,10 @@ function SAC_PDE(du, u, p, t, MAP)
      @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
-     ∇α(de, e, MAP, t)
+     ∇α(de, e, E_MAP, t)
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
+     ∇α(di, i, I_MAP, t)
+
      @. dg = 0.0
      @. dq = (γg*g^g_n * (1-q) - q) / τq
      @. dW = -W / τw
