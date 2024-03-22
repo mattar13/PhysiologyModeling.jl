@@ -35,6 +35,7 @@ cell_map.strength_out
 #%% [run the model]____________________________________________________________________________#
 p0_dict = SAC_p0_dict()
 p0_dict["g_GABA"] = 0.0
+p0_dict["g_ACh"] = 2.0
 p0 = extract_p0(p0_dict) 
 
 u0_dict= SAC_u0_dict(mode = :PDE, n_cells = n_cells)
