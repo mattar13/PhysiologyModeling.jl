@@ -40,7 +40,7 @@ u0 = extract_u0(u0_dict) |> CuArray{Float32}
 
 #3) Define the problem
 tspan = (0.0, 60e3)
-f_PDE(du, u, p, t) = SAC_PDE(du, u, p, t, cell_map)
+f_PDE(du, u, p, t) = SAC_PDE(du, u, p, t, cell_map, cell_map) #for now diffusion is the same in both directions
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
 @time sol = solve(prob, 
      #SOSRI(), #This seems to be the best solver option
