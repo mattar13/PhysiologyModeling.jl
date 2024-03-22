@@ -29,10 +29,10 @@ dist_func1(d) = ring_circle_overlap_area(d; density = 0.1, r_inner = 0.1, r_oute
 cell_map_CPU = CellMap(xs, ys, connections; distance_function = dist_func1);
 cell_map_CPU.strength
 
-#%% only run GPU on big computer
+#only run GPU on big computer
 cell_map = cell_map_CPU |> make_GPU
-cell_map.strength_out
-#%% [run the model]____________________________________________________________________________#
+
+#[run the model]____________________________________________________________________________#
 p0_dict = SAC_p0_dict()
 p0_dict["g_GABA"] = 0.0
 p0_dict["g_ACh"] = 2.0
@@ -65,7 +65,7 @@ et = hcat(map(t -> sol(t)[:,9], Time)...)|>Array
 it = hcat(map(t -> sol(t)[:,10], Time)...)|>Array
 Wt = hcat(map(t -> sol(t)[:,11], Time)...)|>Array
 
-#%%====================================[Plot the solution]====================================#
+#====================================[Plot the solution]====================================#
 fig1 = Figure(size = (400,800))
 ax1a = Axis(fig1[1,1], title = "Calcium Imageing", xlabel = "nx", ylabel = "ny")
 ax1b = Axis(fig1[2,1], title = "Calcium ROIs", xlabel = "time (ms)", ylabel = "Ct")
