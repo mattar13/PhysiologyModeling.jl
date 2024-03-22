@@ -31,7 +31,7 @@ dist_func1(d) = ring_circle_overlap_area(d; density = 0.1, r_inner = 0.1, r_oute
 cell_map_CPU = CellMap(xs, ys, connections; distance_function = dist_func1);
 cell_map_CPU.strength
 
-#make sure cells are connected, if not remove unconnected cells
+#%% only run GPU on big computer
 cell_map = cell_map_CPU |> make_GPU
 
 #%% [run the model]____________________________________________________________________________#

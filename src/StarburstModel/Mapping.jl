@@ -142,9 +142,12 @@ function connection_matrix(connections_list::AbstractArray{Tuple}; m = nothing, 
      data = map(c -> c[3], connections_list)
      if isnothing(m)
           m = maximum(rows)
-     elseif isnothing(n)
+     end
+     if isnothing(n)
           n = maximum(cols)
      end
+     println(m)
+     println(n)
      connections = sparse(rows, cols, data, m, n)
      return connections
 end
