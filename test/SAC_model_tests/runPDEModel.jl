@@ -33,10 +33,11 @@ cell_map_CPU.strength
 
 #%% only run GPU on big computer
 cell_map = cell_map_CPU |> make_GPU
+cell_map.strength_out
+cell_map.strength
 
 #%% [run the model]____________________________________________________________________________#
 p0_dict = SAC_p0_dict()
-p0_dict["g_ACh"] = 2.0
 p0_dict["g_GABA"] = 0.0
 p0 = extract_p0(p0_dict) 
 
