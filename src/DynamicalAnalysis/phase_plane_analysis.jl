@@ -6,7 +6,7 @@ function meshgrid(x_range::AbstractVector, y_range::AbstractVector)
 end
 
 function phase_plane(prob::SciMLBase.AbstractSciMLProblem, xmap::AbstractVector, ymap::AbstractVector; 
-    x_idx = 2,  y_idx = 3,
+    x_idx = 1,  y_idx = 2,
 )
     phase_map = zeros(size(xmap,1), size(ymap,1), 2)
     
