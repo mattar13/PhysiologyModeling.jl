@@ -117,6 +117,7 @@ function SAC_p0_dict(;keyset = :DEFAULT)
           base_dict["g_TREK"] = 0.0
           base_dict["g_ACh"] = 0.0
           base_dict["g_GABA"] = 0.0
+          base_dict["g_GLUT"] = 0.0
           return base_dict
      end
 end
@@ -179,11 +180,10 @@ end
 function extract_u0(d::Dict{String, T}; mode = :ODE) where T
      if mode == :ODE || mode == :PDE
           keys_u0 = ["I_ext", "v", "n", "m", "h", "c", "a", "b", "e", "i", "g", "q", "W"]
-     elseif mode == :GLUTAMATE
-          keys_u0 = ["I_ext", "v", "n", "m", "h", "c", "a", "b", "g", "q", "W"]
-     elseif mode == :GAP
-          keys_u0 = ["v", "n", "m", "h", "c", "a", "b", "W"] #This parameter set is for gap junctions only
      elseif mode == :KEYS
+
+     elseif mode == :DynamicalAnalysis
+          keys_u0 = ["v", "n", "m", "h", "c", "a", "b"] #This parameter set is for gap junctions only
      end
      extract_dict(d, keys_u0)
 end

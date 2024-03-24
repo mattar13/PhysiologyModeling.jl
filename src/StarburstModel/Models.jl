@@ -49,7 +49,8 @@ function SAC_ODE(du, u, p, t)
 
      @. dI_ext = I_app-I_ext
      @. dv = (ILeak(v, g_leak, E_leak) + 
-          + ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)
+          + ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q)
+          + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)
           + ITREK(v, b, g_TREK, E_K) 
           + IACh(v, e, g_ACh, k_ACh, E_ACh) 
           + IGABA(v, i, g_GABA, k_GABA, E_Cl) 
@@ -58,7 +59,7 @@ function SAC_ODE(du, u, p, t)
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
-     @. dc = (C_0 + δ * (ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
+     @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q)) - λ * c) / τc
      @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
@@ -386,4 +387,56 @@ DIFFUSION_NOISE(du, u, p, t) = du[:] .= 0.001
 noise2D(du, u, p, t) = du[:, end] .= p[4]
 function noise1D(du, u, p, t) 
      du[end] = p[4]
+end
+
+
+function DynamicODE(du, u, p, t)
+     #Try making functions for differential equations
+     v = view(u, 1)
+     n = view(u, 2)
+     m = view(u, 3)
+     h = view(u, 4)
+     c = view(u, 5)
+     a = view(u, 6)
+     b = view(u, 7)
+
+     dv = view(du, 1)
+     dn = view(du, 2)
+     dm = view(du, 3)
+     dh = view(du, 4)
+     dc = view(du, 5)
+     da = view(du, 6)
+     db = view(du, 7)
+
+     (I_app, VC,
+          C_m, g_W, τw, 
+          g_leak, E_leak, 
+          g_K, V3, V4, E_K, τn, 
+          g_Ca, V1, V2,E_Ca, τc,
+          g_Na, E_Na, 
+          g_TREK,
+          C_0, λ , δ,  
+          α, τa, 
+          β, τb, 
+          a_n, b_n,
+          VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
+          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
+          g_GLUT, k_GLUT, E_GLUT, 
+          γg, g_n, τq,
+          V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, 
+          stim_start, stim_stop
+     ) = p
+
+     @. dv = (ILeak(v, g_leak, E_leak) + 
+          + ICa(v, g_Ca, V1, V2, E_Ca)
+          + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)
+          + ITREK(v, b, g_TREK, E_K) 
+          + I_app) / C_m #Unless we are doing IC, this has to stay this way
+     @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
+     @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
+     @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
+     @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
+     @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
+     @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     nothing
 end
