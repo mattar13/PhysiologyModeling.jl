@@ -389,7 +389,11 @@ function noise1D(du, u, p, t)
      du[end] = p[4]
 end
 
+"""
+We have to remove the two variables that don't change
 
+
+"""
 function DynamicODE(du, u, p, t)
      #Try making functions for differential equations
      v = view(u, 1)
