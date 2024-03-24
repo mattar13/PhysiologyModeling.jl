@@ -1,9 +1,10 @@
 using Revise
+using Pkg; Pkg.activate(".")
 using ElectroPhysiology, PhysiologyModeling
-using Pkg; Pkg.activate("test") #Activate the testing environment
+Pkg.activate("test") #Activate the testing environment
 using PhysiologyPlotting, GLMakie
 using BenchmarkTools
-using NLsolve
+using NLsolve 
 using BifurcationKit
 
 #=============================================================================#
@@ -20,8 +21,8 @@ p0_dict = SAC_p0_dict(keyset = :dynamical_analysis)
 p0_dict["I_app"] = 0.0
 p0 = extract_p0(p0_dict)
 u0_dict = SAC_u0_dict()
-u0 = extract_u0(u0_dict)
-prob = ODEProblem(SAC_ODE, u0, (tmin, tmax), p0) #Create the problem
+u0 = extract_u0(u0_dict, mode = :DynamicalAnalysis)
+prob = ODEProblem(DynamicODE, u0, (tmin, tmax), p0) #Create the problem
 
 #The goal is to find the real numbers where fODE(u, p) = 0.0
 function fODE(u, p) 
@@ -32,19 +33,19 @@ end
 
 #Create the bifurcation problem from the fODE using the lens of the first parameter I_app
 BifProb = BifurcationProblem(fODE, u0, p0, (@lens _[1]), 
-     record_from_solution = (x, p) -> (v = x[2], n = x[3], iapp = p[1])
+     record_from_solution = (x, p) -> (v = x[1], n = x[2], iapp = p[1])
 )
 
 #Set the optiopns
 p_min = -65.0
-p_max = 50.0
+p_max = 200.0
 opts_br = ContinuationPar(
      p_min = p_min, p_max = p_max, #This is the parameter range we want to observe
      max_steps = 10000, #Increase the number of steps does better at finding the unstable eqs
      detect_bifurcation = 3 #Detect bi
 )
 #Continuation acts like solve and solves the eq fODE(u, p) = 0.0
-br = continuation(BifProb, PALC(), opts_br;	bothside = true, verbosity = 2)
+br = continuation(BifProb, PALC(), opts_br; bothside = true, verbosity = 2)
 
 #Extract the v, n, and i from the 
 i_eq = map(i -> br.branch[i].iapp, 1:length(br))
@@ -55,7 +56,7 @@ n_eq = map(i -> br.branch[i].n, 1:length(br))
 ics = hcat(map(i -> br.sol[1].x, 1:length(br))...)
 #Run 200 simulations for the chosen parameters
 n_traces = length(i_eq)
-prng = LinRange()
+prng = LinRange(p_min, p_max, n_traces)
 efunc(prob, i, repeat) = InitialCond_Param_EnsembleProb(prob, i, repeat, ics, i_eq)
 ensemble_prob = EnsembleProblem(prob, prob_func = efunc)
 @time sim = solve(ensemble_prob, EnsembleDistributed(), trajectories = n_traces, progress = true, progress_steps = 1, maxiters = 1e7);
@@ -73,15 +74,15 @@ nmap = LinRange(-0.1, 1.1, ny) #Set the nmap
 
 #Contained within the ensemble simulation is the necessary models for phase plane analysis
 sol = sim[1]
-phase_map = phase_plane(sol.prob, vmap, nmap) #return the phase map
+phase_map = phase_plane(sol.prob, vmap, nmap, x_idx = 1, y_idx = 2) #return the phase map
 vt_vector = phase_map[:,:,1] #Extract the voltage vector
 nt_vector = phase_map[:,:,2] #Extract the repol vector
 strength = sqrt.(vt_vector .^ 2 .+ nt_vector .^ 2) #extract the strength
 #Find the nullclines
 vt_nc, nt_nc = find_nullclines(prob, vmap, nmap)
 Time = sol.t[1]:dt:sol.t[end]
-v_trace = map(t -> sol(t)[2], Time)
-n_trace = map(t -> sol(t)[3], Time)
+v_trace = map(t -> sol(t)[1], Time)
+n_trace = map(t -> sol(t)[2], Time)
 
 fp = br.branch[1]
 v_br = fp.v
@@ -116,11 +117,11 @@ lines!(axA3, i_eq, n_eq, linewidth = 1.0, color = :black)
 #Plot the branch points
 for i in br.specialpoint
      label = "I_$(String(i.type)) = $(round(i.param, digits = 2)) pA"
-     scatter!(axA1, i.param, i.x[2], i.x[3])
-     scatter!(axA2, i.param, i.x[2], label = label)
-     scatter!(axA3, i.param, i.x[3])
+     scatter!(axA1, i.param, i.x[1], i.x[2])
+     scatter!(axA2, i.param, i.x[1], label = label)
+     scatter!(axA3, i.param, i.x[2])
 end
-fig[1,2] = Legend(fig, ax2, "Branchpoints", framevisible = false)
+fig[1,2] = Legend(fig, axA2, "Branchpoints", framevisible = false)
 
 vfield1 = heatmap!(axB1, vmap, nmap, vt_vector, alpha = 0.5)
 nfield2 = heatmap!(axB2, vmap, nmap, nt_vector, alpha = 0.5)
@@ -152,8 +153,8 @@ record(fig, "test/SAC_model_tests/data/DynamicAnalysis.mp4", x_rng, framerate = 
      #Find the nullclines
      vt_nc, nt_nc = find_nullclines(sol.prob, vmap, nmap)
      Time = sol.t[1]:dt:sol.t[end]
-     v_trace = map(t -> sol(t)[2], Time)
-     n_trace = map(t -> sol(t)[3], Time)
+     v_trace = map(t -> sol(t)[1], Time)
+     n_trace = map(t -> sol(t)[2], Time)
 
      fp = br.branch[i]
      #= If there is a certain criteria, we want to plot this section
@@ -172,14 +173,11 @@ record(fig, "test/SAC_model_tests/data/DynamicAnalysis.mp4", x_rng, framerate = 
      nNC_PhaseNt[2] = nt_nc
      vNC_PhaseVt[2] = vt_nc
      phase_trace[1] = v_trace; phase_trace[2] = n_trace
-
-
 end
-
 
 #=============================================================================#
 #%% Codimensional Analysis 
-#    This is a 3D graph for which the phase planes are 2D. 
+ #    This is a 3D graph for which the phase planes are 2D. 
 #    This shows the shape of the diffeq model
 #    This section will result in a video showing the parameter Iapp change 
 #=============================================================================#
