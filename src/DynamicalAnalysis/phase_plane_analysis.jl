@@ -27,7 +27,7 @@ end
 
 ## In order to do this, we probably need to have xmap and ymap
 function find_nullclines(prob::SciMLBase.AbstractSciMLProblem, xmap::AbstractVector, ymap::AbstractVector; 
-    x_idx = 2, y_idx = 3, yic = 0.0
+    x_idx = 1, y_idx = 2, yic = 0.0
 )
 
     # Initialize containers for nullclines
