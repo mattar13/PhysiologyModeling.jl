@@ -45,6 +45,7 @@ export SAC_GAP #Make a model for a gap junction
 export SAC_ODE_Compartment
 export noise1D, noise2D
 export SAC_TEST
+export DynamicODE
 
 include("StarburstModel/Mapping.jl")
 export CellMap
