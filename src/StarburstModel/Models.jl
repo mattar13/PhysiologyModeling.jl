@@ -394,7 +394,7 @@ We have to remove the two variables that don't change
 
 
 """
-function DynamicODE(du, u, p, t)
+function DynamicSAC(du, u, p, t)
      #Try making functions for differential equations
      v = view(u, 1)
      n = view(u, 2)
