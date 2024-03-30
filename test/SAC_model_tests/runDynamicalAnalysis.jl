@@ -2,9 +2,7 @@ using Revise
 using Pkg; Pkg.activate(".")
 using ElectroPhysiology, PhysiologyModeling
 Pkg.activate("test") #Activate the testing environment
-using PhysiologyPlotting, GLMakie
-using BenchmarkTools
-using NLsolve 
+using PhysiologyPlotting, GLMakie 
 using BifurcationKit
 
 #=============================================================================#
@@ -46,18 +44,22 @@ opts_br = ContinuationPar(
 )
 #Continuation acts like solve and solves the eq fODE(u, p) = 0.0
 br = continuation(BifProb, PALC(), opts_br; bothside = true, verbosity = 2)
+br |> typeof |> fieldnames
 
-#Extract the v, n, and i from the 
 i_eq = map(i -> br.branch[i].iapp, 1:length(br))
-v_eq = map(i -> br.branch[i].v, 1:length(br))
-n_eq = map(i -> br.branch[i].n, 1:length(br))
+sorted_idxs = 1:length(i_eq)
+
+#Extract the v, n, and i from the continuation
+v_eq = map(i -> br.branch[i].v, sorted_idxs)
+n_eq = map(i -> br.branch[i].n, sorted_idxs)
 
 #Turn this and feed this into each point of the equilibrium
-ics = hcat(map(i -> br.sol[1].x, 1:length(br))...)
+ics = hcat(map(i -> br.sol[1].x, sorted_idxs)...)
+ 
 #Run 200 simulations for the chosen parameters
 n_traces = length(i_eq)
 prng = LinRange(p_min, p_max, n_traces)
-efunc(prob, i, repeat) = InitialCond_Param_EnsembleProb(prob, i, repeat, ics, i_eq)
+efunc(prob, i, repeat) = InitialCond_Param_EnsembleProb(prob, i, repeat, ics, prng)
 ensemble_prob = EnsembleProblem(prob, prob_func = efunc)
 @time sim = solve(ensemble_prob, EnsembleDistributed(), trajectories = n_traces, progress = true, progress_steps = 1, maxiters = 1e7);
 
@@ -68,12 +70,13 @@ ensemble_prob = EnsembleProblem(prob, prob_func = efunc)
 #=============================================================================#
 
 #Set the phase plane and nullcline parameters
-nx = ny = 50 #Set the space over which to check the model
+x = ny = 50 #Set the space over which to check the model
 vmap = LinRange(-110.0, 10.0, nx) #Set the voltage map
 nmap = LinRange(-0.1, 1.1, ny) #Set the nmap
 
 #Contained within the ensemble simulation is the necessary models for phase plane analysis
 sol = sim[1]
+sol.prob.p
 phase_map = phase_plane(sol.prob, vmap, nmap, x_idx = 1, y_idx = 2) #return the phase map
 vt_vector = phase_map[:,:,1] #Extract the voltage vector
 nt_vector = phase_map[:,:,2] #Extract the repol vector
@@ -84,6 +87,7 @@ Time = sol.t[1]:dt:sol.t[end]
 v_trace = map(t -> sol(t)[1], Time)
 n_trace = map(t -> sol(t)[2], Time)
 
+br.branch
 fp = br.branch[1]
 v_br = fp.v
 n_br = fp.n
@@ -93,6 +97,7 @@ fig = Figure(size = (800, 800)); #Make the figure
 g1 = fig[1,1] = GridLayout()
 display(fig)
 
+#Make the layout of the plot
 axA1 = Axis3(g1[1:2, 1], xlabel = "Iapp (pA)", ylabel = "V_eq (mV)", zlabel = "N_eq"); #Make axis 3
 axA2 = Axis(g1[1,2], limits = (-65.0, 50.0, -110.0, 10.0), ylabel = "V_eq (mV)"); #Make axis 1
 axA3 = Axis(g1[2,2], limits = (-65.0, 50.0, -0.1, 1.1), xlabel = "I applied (pA)", ylabel = "N_eq"); #Make axis 2
@@ -109,12 +114,12 @@ axC2 = Axis(g3[2, 1], limits = (0.0, 300.0, -0.1, 1.1), xlabel = "Time (ms)", yl
 g3b = fig[3,2] = GridLayout()
 axC3 = Axis(g3b[1, 1], limits = (-110.0, 10.0, -0.1, 1.1), xlabel = "Voltage (mV)", ylabel = "Nt")
 
-#Plot the bifurcation branches
+#Plot the bifurcation branches first
 lines!(axA1, i_eq, v_eq, n_eq, linewidth = 1.0, color = :black)
 lines!(axA2, i_eq, v_eq, linewdith = 1.0, color = :black)
 lines!(axA3, i_eq, n_eq, linewidth = 1.0, color = :black)
 
-#Plot the branch points
+#Plot the branching points
 for i in br.specialpoint
      label = "I_$(String(i.type)) = $(round(i.param, digits = 2)) pA"
      scatter!(axA1, i.param, i.x[1], i.x[2])
@@ -123,29 +128,31 @@ for i in br.specialpoint
 end
 fig[1,2] = Legend(fig, axA2, "Branchpoints", framevisible = false)
 
+#Plot the vector fields of Vt and Nt
 vfield1 = heatmap!(axB1, vmap, nmap, vt_vector, alpha = 0.5)
 nfield2 = heatmap!(axB2, vmap, nmap, nt_vector, alpha = 0.5)
 phase3 = heatmap!(axB3, vmap, nmap, strength, alpha = 0.5)
 
+#Plot the nullclines
 nNC1 = lines!(axB1, vmap, nt_nc, color = :red, linewidth = 2.0)
 vNC2 = lines!(axB2, vmap, vt_nc, color = :blue, linewidth = 2.0)
 nNC_PhaseNt = lines!(axB3, vmap, nt_nc, color = :red, linewidth = 2.0)
 vNC_PhaseVt = lines!(axB3, vmap, vt_nc, color = :blue, linewidth = 2.0)
 phase_trace = lines!(axB3, v_trace, n_trace, color = :black, linewidth = 2.0, linestyle = :dashdot)
 
+#Plot the fixed points
 fp1 = scatter!(axB3, v_eq[1], n_eq[1], markersize = 10.0)
-lTR1 = lines!(axC1, Time, v_trace, color = :red, linewidth = 2.0)
+la1 = lines!(axC1, Time, v_trace, color = :red, linewidth = 2.0)
 la2 = lines!(axC2, Time, n_trace, color = :blue, linewidth = 2.0)
 lb1 = lines!(axC3, v_trace, n_trace, color = :black, linewidth = 2.0, linestyle = :dashdot)
 
-
-#%% Animate this section of the model
+# Animate this section of the model
 x_rng = 1:10:length(sim)
-println(pwd())
+
 record(fig, "test/SAC_model_tests/data/DynamicAnalysis.mp4", x_rng, framerate = 10) do i
      println(i)
      sol = sim[i]
-
+     println(sol.prob.p[1])
      phase_map = phase_plane(sol.prob, vmap, nmap) #return the phase map
      vt_vector = phase_map[:,:,1] #Extract the voltage vector
      nt_vector = phase_map[:,:,2] #Extract the repol vector
@@ -162,7 +169,7 @@ record(fig, "test/SAC_model_tests/data/DynamicAnalysis.mp4", x_rng, framerate = 
      lines!(axA2, [prng[i]], v_trace, color = :red, alpha = 0.25, depth_shhift = 0)
      lines!(axA3, [prng[i]], n_trace, color = :red, alpha = 0.25, depth_shhift = 0)
      =#
-     axC1.title = "I_clamp = $(round(prng[i], digits = 2)) pA"
+     axC1.title = "I_clamp = $(round(i_eq[i], digits = 2)) pA"
 
      vfield1[3] = vt_vector
      nfield2[3] = nt_vector
@@ -173,6 +180,9 @@ record(fig, "test/SAC_model_tests/data/DynamicAnalysis.mp4", x_rng, framerate = 
      nNC_PhaseNt[2] = nt_nc
      vNC_PhaseVt[2] = vt_nc
      phase_trace[1] = v_trace; phase_trace[2] = n_trace
+     la1[2] = v_trace
+     la2[2] = n_trace
+     lb1[1] = v_trace; lb1[2] = n_trace
 end
 
 #=============================================================================#
@@ -190,7 +200,7 @@ p0_dict["I_app"] = 0.0
 p0 = extract_p0(p0_dict)
 u0_dict = SAC_u0_dict()
 u0 = extract_u0(u0_dict)
-prob = ODEProblem(SAC_ODE, u0, (tmin, tmax), p0) #Create the problem
+prob = ODEProblem(DynamicODE, u0, (tmin, tmax), p0) #Create the problem
 
 #The goal is to find the real numbers where fODE(u, p) = 0.0
 function fODE(u, p) 
@@ -213,24 +223,30 @@ br = continuation(BifProb, PALC(), opts_br;	bothside = true, verbosity = 2)
 #Extract the v, n, and i from the 
 i_eq = map(i -> br.branch[i].iapp, 1:length(br))
 v_eq = map(i -> br.branch[i].v, 1:length(br))
+n_eq = map(i -> br.branch[i].n, 1:length(br))
 
 #====================================Plot the solution====================================#
-fig = Figure(size = (800, 400)); #Make the figure
-ax1 = Axis(fig[1,1], ylabel = "v_trace (mV)"); #Make axis 1
-#Plot the bifurcation branches
-lines!(ax1, i_eq, v_eq, linewdith = 1.0, color = :black)
+fig = Figure(size = (800, 800)); #Make the figure
+g1 = fig[1,1] = GridLayout()
+display(fig)
 
-#Plot the 
+#Make the layout of the plot
+axA1 = Axis3(g1[1:2, 1], xlabel = "Iapp (pA)", ylabel = "V_eq (mV)", zlabel = "N_eq"); #Make axis 3
+axA2 = Axis(g1[1,2], limits = (-65.0, 50.0, -110.0, 10.0), ylabel = "V_eq (mV)"); #Make axis 1
+axA3 = Axis(g1[2,2], limits = (-65.0, 50.0, -0.1, 1.1), xlabel = "I applied (pA)", ylabel = "N_eq"); #Make axis 2
+
+#Plot the bifurcation branches first
+lines!(axA1, i_eq, v_eq, n_eq, linewidth = 1.0, color = :black)
+lines!(axA2, i_eq, v_eq, linewdith = 1.0, color = :black)
+lines!(axA3, i_eq, n_eq, linewidth = 1.0, color = :black)
+
+#Plot the branching points
 for i in br.specialpoint
      label = "I_$(String(i.type)) = $(round(i.param, digits = 2)) pA"
-     scatter!(ax1, i.param, i.x[2], label = label)
+     scatter!(axA1, i.param, i.x[1], i.x[2])
+     scatter!(axA2, i.param, i.x[1], label = label)
+     scatter!(axA3, i.param, i.x[2])
 end
-fig[1,2] = Legend(fig, ax2, "Branchpoints", framevisible = false)
+fig[1,2] = Legend(fig, axA2, "Branchpoints", framevisible = false)
 
-Time = 200.0:dt:tmax
-for (i, sol) in enumerate(sim)
-     v_trace = map(t -> sol(t)[2], Time)
-     n_trace = map(t -> sol(t)[3], Time)
-     lines!(ax1, [prng[i]], v_trace, color = :red, alpha = 0.25, depth_shhift = 0)
-end
 display(fig)
