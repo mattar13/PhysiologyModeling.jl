@@ -1,4 +1,4 @@
- function OneVarEnsembleProb(prob, i, repeat, params)
+ function OneVarEnsembleProb(prob, i, repeat, params; idx = 1)
      pI = prob.p
      pI[idx] = params[i]
      remake(prob, p = pI)
