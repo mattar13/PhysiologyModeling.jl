@@ -70,20 +70,20 @@ function __init__()
         export DIFFUSION_MODEL_GPU
     end
 
-    @require DynamicalSystems = "61744808-ddfa-5f27-97ff-6e42cc95d634" begin
-        println("Dynamical functions loaded")
-        #put the exports under here
-        @require BifurcationKit = "0f109fa4-8a5d-4b75-95aa-f515264e7665" begin
-            println("BifurcationKit loaded")
-
-            include("DynamicalAnalysis/ensemble_functions.jl")
-            export OneVarEnsembleProb, InitialCond_Param_EnsembleProb
-
-            include("DynamicalAnalysis/phase_plane_analysis.jl")
-            export phase_plane, find_nullclines
-
-            include("DynamicalAnalysis/equilibria_analysis.jl")
-            export find_fixed_points, find_equilibria
+    #put the exports under here
+    @require BifurcationKit = "0f109fa4-8a5d-4b75-95aa-f515264e7665" begin
+        println("BifurcationKit loaded")
+        
+        include("DynamicalAnalysis/ensemble_functions.jl")
+        export OneVarEnsembleProb, InitialCond_Param_EnsembleProb
+        
+        include("DynamicalAnalysis/phase_plane_analysis.jl")
+        export phase_plane, find_nullclines
+        
+        include("DynamicalAnalysis/equilibria_analysis.jl")
+        export find_fixed_points, find_equilibria
+        @require DynamicalSystems = "61744808-ddfa-5f27-97ff-6e42cc95d634" begin
+            println("Dynamical functions loaded")
         end
     end
 end

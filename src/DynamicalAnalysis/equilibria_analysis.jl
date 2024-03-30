@@ -1,8 +1,8 @@
 #We have to ensure the points we pick are realistic
 function find_fixed_points(prob::SciMLBase.AbstractSciMLProblem, xmap::AbstractVector, ymap::AbstractVector; 
-    x_idx = 2, y_idx = 3, 
-    precision = 3,
-    verbose = false
+        x_idx = 2, y_idx = 3, 
+        precision = 3,
+        verbose = false
     )
     xlims = (xmap[1], xmap[end])
     ylims = (ymap[1], ymap[end])
