@@ -62,11 +62,6 @@ export make_GPU
 
 #Eventually PhysiologyPlotting will include some things we need to plot everything
 
-
-#Move these eventually to a requires block
-using DynamicalSystems #This is necessary for doing phase plane and fixedpoint analysis
-using BifurcationKit #This is necessary for doing 
-
 function __init__()
     @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
         println("GPU mode enabled")
@@ -81,6 +76,7 @@ function __init__()
         #put the exports under here
         @require BifurcationKit = "0f109fa4-8a5d-4b75-95aa-f515264e7665" begin
             println("BifurcationKit loaded")
+
             include("DynamicalAnalysis/ensemble_functions.jl")
             export OneVarEnsembleProb, InitialCond_Param_EnsembleProb
 
