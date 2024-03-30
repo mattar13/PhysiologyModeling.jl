@@ -9,6 +9,7 @@ using ForwardDiff, NLsolve
 using DifferentialEquations
 using DiffEqCallbacks #This is necessary for inserting conductances into the model
 
+
 using Logging: global_logger
 using TerminalLoggers: TerminalLogger
 
@@ -59,16 +60,12 @@ export linDist
 export ring_circle_overlap_area
 export make_GPU
 
-#This section deals with parameters and contions
 #Eventually PhysiologyPlotting will include some things we need to plot everything
-include("DynamicalAnalysis/ensemble_functions.jl")
-export OneVarEnsembleProb, InitialCond_Param_EnsembleProb
 
-include("DynamicalAnalysis/phase_plane_analysis.jl")
-export phase_plane, find_nullclines
 
-include("DynamicalAnalysis/equilibria_analysis.jl")
-export find_fixed_points, find_equilibria
+#Move these eventually to a requires block
+using DynamicalSystems #This is necessary for doing phase plane and fixedpoint analysis
+using BifurcationKit #This is necessary for doing 
 
 function __init__()
     @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
@@ -77,6 +74,22 @@ function __init__()
         include("make_GPU.jl")
         export make_GPU, CellMap_GPU, SAC_PDE_GPU 
         export DIFFUSION_MODEL_GPU
+    end
+
+    @require DynamicalSystems = "61744808-ddfa-5f27-97ff-6e42cc95d634" begin
+        println("Dynamical functions loaded")
+        #put the exports under here
+        @require BifurcationKit = "0f109fa4-8a5d-4b75-95aa-f515264e7665" begin
+            println("BifurcationKit loaded")
+            include("DynamicalAnalysis/ensemble_functions.jl")
+            export OneVarEnsembleProb, InitialCond_Param_EnsembleProb
+
+            include("DynamicalAnalysis/phase_plane_analysis.jl")
+            export phase_plane, find_nullclines
+
+            include("DynamicalAnalysis/equilibria_analysis.jl")
+            export find_fixed_points, find_equilibria
+        end
     end
 end
 
