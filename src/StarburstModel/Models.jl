@@ -126,12 +126,13 @@ function SAC_ODE_IC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
 
      @. dI_ext = (stim_amp-I_ext)/0.001
      @. dv = (ILeak(v, g_leak, E_leak) + 
-          + ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)
+          + ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q)
+          + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)
           + ITREK(v, b, g_TREK, E_K) 
           + IACh(v, e, g_ACh, k_ACh, E_ACh) 
           + IGABA(v, i, g_GABA, k_GABA, E_Cl) 
           + IGLUT(v, g, g_GLUT, k_GLUT, E_GLUT) #These are ionic glutamate channels
-          + stim_amp + W) / C_m #Unless we are doing IC, this has to stay this way
+          + I_app + W) / C_m #Unless we are doing IC, this has to stay this way
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
@@ -200,7 +201,9 @@ function SAC_ODE_VC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0, hold = 
           @. dv = (hold-v)*k
      end
      @. dI_ext = (ILeak(v, g_leak, E_leak) + 
-          + ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)
+          + ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q) 
+          + IK(v, n, g_K, E_K) 
+          + INa(v, m, h, g_Na, E_Na)
           + ITREK(v, b, g_TREK, E_K) 
           + IACh(v, e, g_ACh, k_ACh, E_ACh) 
           + IGABA(v, i, g_GABA, k_GABA, E_Cl) 
@@ -285,7 +288,8 @@ function SAC_PDE(du, u, p, t, E_MAP, I_MAP)
 
      @. dI_ext = I_app-I_ext
      @. dv = (ILeak(v, g_leak, E_leak) + 
-          + ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)
+          + ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q)
+          + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)
           + ITREK(v, b, g_TREK, E_K) 
           + IACh(v, e, g_ACh, k_ACh, E_ACh) 
           + IGABA(v, i, g_GABA, k_GABA, E_Cl) 
@@ -358,7 +362,8 @@ function SAC_GAP(du, u, p, t, MAP; gGAP = 0.1)
 
      @. dI_ext = I_app-I_ext #I am going to selfishly use this. Can figure this out later
      @. dv = (ILeak(v, g_leak, E_leak) + 
-          + ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca) + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)
+          + ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q)
+          + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)
           + ITREK(v, b, g_TREK, E_K) 
           + IACh(v, e, g_ACh, k_ACh, E_ACh) 
           + IGABA(v, i, g_GABA, k_GABA, E_Cl) 
