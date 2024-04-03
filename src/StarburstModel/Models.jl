@@ -136,7 +136,7 @@ function SAC_ODE_IC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
-     @. dc = (C_0 + δ * (ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
+     @. dc = (C_0 + δ * (ICa(v,  g_Ca, V1, V2, E_Ca)*(1.0-q)) - λ * c) / τc
      @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
@@ -212,7 +212,7 @@ function SAC_ODE_VC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0, hold = 
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
-     @. dc = (C_0 + δ * (ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
+     @. dc = (C_0 + δ * (ICa(v,  g_Ca, V1, V2, E_Ca)*(1.0-q)) - λ * c) / τc
      @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
@@ -298,7 +298,7 @@ function SAC_PDE(du, u, p, t, E_MAP, I_MAP)
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
-     @. dc = (C_0 + δ * (ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
+     @. dc = (C_0 + δ * (ICa(v,  g_Ca, V1, V2, E_Ca)*(1.0-q)) - λ * c) / τc
      @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
@@ -374,7 +374,7 @@ function SAC_GAP(du, u, p, t, MAP; gGAP = 0.1)
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
-     @. dc = (C_0 + δ * (ICa_mGluR2(v, q, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
+     @. dc = (C_0 + δ * (ICa(v,  g_Ca, V1, V2, E_Ca)*(1.0-q)) - λ * c) / τc
      @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
