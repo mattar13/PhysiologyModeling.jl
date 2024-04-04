@@ -8,21 +8,18 @@ using PhysiologyPlotting
 using GLMakie
 
 #%% [Solving a single SDE for tspan]_______________________________________________________________________________________________#
-tspan = (0.0, 1000.0)
+tspan = (0.0, 300e3)
 #Extract and modify parameters
 p0_dict = SAC_p0_dict()
 p0_dict["g_GABA"] = 0.0
 p0_dict["g_ACh"] = 0.0
 #Set the stimulus parameters
-p0_dict["I_app"] = 10.0
-p0_dict["stim_start"] = 200.0
-p0_dict["stim_stop"] = 300.0
 p0 = extract_p0(p0_dict)
 #Extract and modify initial conditions
 u0_dict = SAC_u0_dict()
 u0 = extract_u0(u0_dict)
 #Set up the problem
-prob = SDEProblem(SAC_ODE_IC, noise1D, u0, tspan, p0)
+prob = SDEProblem(SAC_ODE, noise1D, u0, tspan, p0)
 @time sol = solve(prob, SOSRI(), reltol = 2e-2, abstol = 2e-2, progress = true, progress_steps = 1)
 
 # [Plot the solution]_________________________________________________________________________________________________________#
@@ -60,20 +57,21 @@ lines!(ax12, Time, map(t -> sol(t)[13], Time))
 lines!(ax13, Time, map(t -> sol(t)[1], Time))
 
 display(fSDE)
-#save("test/SAC_model_tests/data/SDESol.png", fSDE)
+save("test/SAC_model_tests/data/SDESol.png", fSDE)
 
-#%% [Running a series of SDE models over parameter space idx]_______________________________________________________________________________________#
+#%% [Simulate a current clamp experiment]_______________________________________________________________________________________#
 
 #Specify the timespan
 tspan = (0.0, 3e3)
 #Extract and modify parameters
 p0_dict = SAC_p0_dict()
-p0_dict["stim_start"] = 200.0
-p0_dict["VC"] = -10.0
-p0_dict["stim_stop"] = 500.0
-
 p0_dict["g_GABA"] = 0.0
 p0_dict["g_ACh"] = 0.0
+
+p0_dict["stim_start"] = 200.0
+p0_dict["I_app"] = -10.0
+p0_dict["stim_stop"] = 500.0
+
 p0 = extract_p0(p0_dict)
 
 #Extract and modify initial conditions
@@ -81,11 +79,11 @@ u0_dict = SAC_u0_dict()
 u0 = extract_u0(u0_dict)
 
 #Set up the problem
-idx = par_idx("VC")
+idx = par_idx("I_app")
 n_traces = 10
-param_rng = LinRange(-90, -10, n_traces)
+param_rng = LinRange(-20.0, 200, n_traces)
 
-fSAC(du, u, p, t) = SAC_ODE_VC(du, u, p, t)
+fSAC(du, u, p, t) = SAC_ODE_IC(du, u, p, t)
 prob = SDEProblem(fSAC, noise1D, u0, tspan, p0)
 function fSAC_ensemble(prob, i, repeat; idx = idx)
      pI = prob.p
@@ -98,25 +96,25 @@ ensemble_prob = EnsembleProblem(prob, prob_func = fSAC_ensemble)
      progress = true, progress_steps = 1, reltol = 0.01, abstol = 0.01, maxiters = 1e7)
 
 # [Plot the solution]_____________________________________________________________________________________#
-fSDE = Figure(size = (1800, 800))
-ax1 = Axis(fSDE[1,1], title = "Voltage (Vt)")
-ax2 = Axis(fSDE[2,1], title = "K Repol. (Nt)")
-ax3 = Axis(fSDE[3,1], title = "Na Gating (Mt)")
-ax4 = Axis(fSDE[4,1], title = "Na Close (Ht)")
+fIC = Figure(size = (1800, 800))
+ax1 = Axis(fIC[1,1], title = "Voltage (Vt)")
+ax2 = Axis(fIC[2,1], title = "K Repol. (Nt)")
+ax3 = Axis(fIC[3,1], title = "Na Gating (Mt)")
+ax4 = Axis(fIC[4,1], title = "Na Close (Ht)")
 
-ax5 = Axis(fSDE[1,2], title = "Calcium (Ct)")
-ax6 = Axis(fSDE[2,2], title = "cAMP (At)")
-ax7 = Axis(fSDE[3,2], title = "TREK (Bt)")
+ax5 = Axis(fIC[1,2], title = "Calcium (Ct)")
+ax6 = Axis(fIC[2,2], title = "cAMP (At)")
+ax7 = Axis(fIC[3,2], title = "TREK (Bt)")
 
-ax8 = Axis(fSDE[1,3], title = "ACh (Et)")
-ax9 = Axis(fSDE[2,3], title = "GABA (It)")
-ax10 = Axis(fSDE[3,3], title = "Glutamate (Gt)")
-ax11 = Axis(fSDE[4,3], title = "Gq (Qt)")
+ax8 = Axis(fIC[1,3], title = "ACh (Et)")
+ax9 = Axis(fIC[2,3], title = "GABA (It)")
+ax10 = Axis(fIC[3,3], title = "Glutamate (Gt)")
+ax11 = Axis(fIC[4,3], title = "Gq (Qt)")
 
-ax12 = Axis(fSDE[1,4], title = "Noise (Wt)")
-ax13 = Axis(fSDE[2,4], title = "I_ext (pA)")
+ax12 = Axis(fIC[1,4], title = "Noise (Wt)")
+ax13 = Axis(fIC[2,4], title = "I_ext (pA)")
 
-Colorbar(fSDE[5,1], limits = (param_rng[1], param_rng[end]), colormap = :viridis,
+Colorbar(fIC[5,1], limits = (param_rng[1], param_rng[end]), colormap = :viridis,
     vertical = false)
 for (i, sol) in enumerate(sim)
      println(sol.t[end])
@@ -138,8 +136,8 @@ for (i, sol) in enumerate(sim)
      lines!(ax13, Time, map(t -> sol(t)[1], Time), color = x, colormap = :viridis, colorrange = (param_rng[1], param_rng[end]))
 end
 
-display(fSDE)
-
+display(fIC)
+ 
 #%% [Solving a single SDE by adding mGluR6 into the equation]______________________________________________________________________#
 tspan = (0.0, 10e3)
 dt = 1.0

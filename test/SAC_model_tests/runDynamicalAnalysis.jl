@@ -162,9 +162,6 @@ la1 = lines!(axC1, Time, v_traces[1], color = :red, linewidth = 2.0)
 la2 = lines!(axC2, Time, n_traces[1], color = :blue, linewidth = 2.0)
 lb1 = lines!(axC3, v_traces[1], n_traces[1], color = :black, linewidth = 2.0, linestyle = :dashdot)
 
-fp1 |> typeof |> fieldnames
-fp1[1]
-
 #Animate this section of the model
 x_rng = 1:length(sim)
 
@@ -203,8 +200,8 @@ end
 BifProb = BifurcationProblem(fODE, u0, p0, (@lens _[1]), 
      record_from_solution = (x, p) -> (v = x[1], n = x[2], iapp = p[1])
 )
-
-#Set the optiopns
+ 
+#Set the options
 p_min = -65.0
 p_max = 200.0
 opts_br = ContinuationPar(
@@ -213,15 +210,36 @@ opts_br = ContinuationPar(
      detect_bifurcation = 3 #Detect bi
 )
 #Continuation acts like solve and solves the eq fODE(u, p) = 0.0
-br = continuation(BifProb, PALC(), opts_br; bothside = true, verbosity = 2)
-
+br = continuation(BifProb, PALC(), opts_br; bothside = true)
+br
 #Extract the v, n, and i from the continuation
 i_eq = map(i -> br.branch[i].iapp, 1:length(br))
 v_eq = map(i -> br.branch[i].v, 1:length(br))
 n_eq = map(i -> br.branch[i].n, 1:length(br))
 
+#%% Do the codim 2 analysis
+p2_min = 5.0
+p2_max = 200.0
+c2_opts = ContinuationPar(
+     p_min = p2_min, p_max = p2_max, #This is the parameter range we want to observe
+     detect_bifurcation = 2, #Detect bi
+     n_inversion = 10, max_steps = 10000, max_bisection_steps = 55
+)
+cont_par = par_idx("g_Ca")
+sn_codim2 = continuation(br, 2, (@lens _[cont_par]), c2_opts,
+     update_minaug_every_step = 1, 
+     detect_codim2_bifurcation = 2, 
+     record_from_solution = (x, p) -> (v = x[1], n = x[2], gc = p[1])
+)
+#Extract the v, n, and i from the continuation
+sn_codim2.branch
+i_eq_c2 = map(i -> sn_codim2.branch[i].p1, 1:length(sn_codim2))
+gc_eq_c2 = map(i -> sn_codim2.branch[i].p2, 1:length(sn_codim2))
+v_eq_c2 = map(i -> sn_codim2.branch[i].v, 1:length(sn_codim2))
+n_eq_c2 = map(i -> sn_codim2.branch[i].n, 1:length(sn_codim2))
+
 #%%====================================Plot the solution====================================#
-fig = Figure(size = (800, 800)); #Make the figure
+fig = Figure(size = (750, 750)); #Make the figure
 #g1 = fig[1,1] = GridLayout()
 display(fig)
 
@@ -229,11 +247,17 @@ display(fig)
 axA1 = Axis3(fig[1, 1], xlabel = "Iapp (pA)", ylabel = "V_eq (mV)", zlabel = "N_eq"); #Make axis 3
 axA2 = Axis(fig[2,1:2], #=limits = (-65.0, 50.0, -110.0, 10.0),=# ylabel = "V_eq (mV)"); #Make axis 1
 axA3 = Axis(fig[3,1:2], #=limits = (-65.0, 50.0, -0.1, 1.1),=# xlabel = "I applied (pA)", ylabel = "N_eq"); #Make axis 2
+axA4 = Axis(fig[4,1:2], #=limits = (-65.0, 50.0, -0.1, 1.1),=# xlabel = "I applied (pA)", ylabel = "N_eq"); #Make axis 2
 
 #Plot the bifurcation branches first
 lines!(axA1, i_eq, v_eq, n_eq, linewidth = 1.0, color = :black)
 lines!(axA2, i_eq, v_eq, linewdith = 1.0, color = :black)
 lines!(axA3, i_eq, n_eq, linewidth = 1.0, color = :black)
+
+lines!(axA1, i_eq_c2, v_eq_c2, n_eq_c2, linewidth = 1.0, color = :red)
+lines!(axA2, i_eq_c2, v_eq_c2, linewdith = 1.0, color = :red)
+lines!(axA3, i_eq_c2, n_eq_c2, linewidth = 1.0, color = :red)
+lines!(axA4, gc_eq_c2, i_eq_c2, linewidth = 1.0, color = :red)
 
 #Plot the branching points
 for i in br.specialpoint
