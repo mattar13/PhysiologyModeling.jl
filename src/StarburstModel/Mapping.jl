@@ -179,7 +179,7 @@ end
 
 linDist(x; m = 1.0, b = 0.0) = m*x + b 
 #This is our non-linear distance function
-ring(d; max_strength = 0.05, max_dist = 0.15, slope = 0.01) = max_strength * exp(-((d - max_dist)^2) / (2 * slope^2))
+ring(d; density = 0.05, max_dist = 0.15, slope = 0.01) = density * exp(-((d - max_dist)^2) / (2 * slope^2))
 
 function circle_overlap_area(d, r1, r2)
      if d >= r1 + r2
