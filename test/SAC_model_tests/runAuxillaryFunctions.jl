@@ -9,33 +9,6 @@ using SparseArrays
 import .PhysiologyModeling.euclidean_distance
 
 #%%
-#generate a map of xs and ys
-origin = (0.0, 0.0)
-xrng = LinRange(-0.750, 0.750, 100)
-yrng = LinRange(-0.750, 0.750, 100)
-coords = Iterators.product(xrng, yrng) |> collect
-distances = zeros(size(coords)...)
-
-for ix in axes(coords, 1), iy in axes(coords,2)
-     distances[ix, iy] = euclidean_distance(origin, coords[ix, iy])
-end
-dist_func1(d) = ring_circle_overlap_area(d; density = 0.01, r_inner = 0.1, r_outer = 0.18, r_circle = 0.18)
-dist_func2(d) = ring(d; max_strength = 0.001, max_dist = 0.18, slope = 0.025)
-
-strengths1 = dist_func1.(distances)
-strengths2 = dist_func2.(distances)
-
-#%% Plot the function
-fmap = Figure(size = (900, 300))
-ax1 = Axis(fmap[1,1])
-ax2 = Axis(fmap[1,2])
-ax3 = Axis(fmap[1,3])
-heatmap!(ax1, xrng, yrng, distances)
-heatmap!(ax2, xrng, yrng, strengths1)
-heatmap!(ax3, xrng, yrng, strengths2)
-scatter!(ax1, origin); scatter!(ax2, origin); scatter!(ax3, origin)
-
-#%%
 f_DIST = Figure()
 ax_DIST = Axis(f_DIST[1,1], xlabel = "Distance from Soma (um)", ylabel = "NT Release (uM)")
 
