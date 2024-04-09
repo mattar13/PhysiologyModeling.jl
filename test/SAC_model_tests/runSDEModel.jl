@@ -19,7 +19,8 @@ p0 = extract_p0(p0_dict)
 u0_dict = SAC_u0_dict()
 u0 = extract_u0(u0_dict)
 #Set up the problem
-prob = SDEProblem(SAC_ODE, noise1D, u0, tspan, p0)
+import PhysiologyModeling.SAC_ODE_bKV
+prob = SDEProblem(SAC_ODE_bKV, noise1D, u0, tspan, p0)
 @time sol = solve(prob, SOSRI(), reltol = 2e-2, abstol = 2e-2, progress = true, progress_steps = 1)
 
 # [Plot the solution]_________________________________________________________________________________________________________#
