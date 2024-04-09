@@ -19,8 +19,7 @@ p0 = extract_p0(p0_dict)
 u0_dict = SAC_u0_dict()
 u0 = extract_u0(u0_dict)
 #Set up the problem
-import PhysiologyModeling.SAC_ODE_bKV
-prob = SDEProblem(SAC_ODE_bKV, noise1D, u0, tspan, p0)
+prob = SDEProblem(SAC_ODE, noise1D, u0, tspan, p0)
 @time sol = solve(prob, SOSRI(), reltol = 2e-2, abstol = 2e-2, progress = true, progress_steps = 1)
 
 # [Plot the solution]_________________________________________________________________________________________________________#
@@ -58,8 +57,7 @@ lines!(ax12, Time, map(t -> sol(t)[13], Time))
 lines!(ax13, Time, map(t -> sol(t)[1], Time))
 
 display(fSDE)
-save("test/SAC_model_tests/data/SDESol.png", fSDE)
-
+save("test/SAC_model_tests/data/SDESol_bKV.png", fSDE)
 #%% [Simulate a current clamp experiment]_______________________________________________________________________________________#
 
 #Specify the timespan
