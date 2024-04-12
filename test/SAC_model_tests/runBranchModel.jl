@@ -12,29 +12,38 @@ using LinearAlgebra
 radial = 4
 branches = 2
 layers = 5
+
+#xs = LinRange(-1.0, 1.0, 10) |> collect
+#ys = zeros(10)
+#connection_list = connect_neighbors_radius(xs, ys, 0.3, constant = 1.0)
+#%%
 xs, ys, connection_list = create_dendrogram_map(radial, branches, layers)
 #xs .+= rand(length(xs))/1000
 #ys .+= rand(length(ys))/1000
+
 connections = connection_matrix(connection_list, m = length(xs), n = length(ys))
-cell_map = CellMap(xs, ys, connections);
-#%% Only do if there is GPU
+dist_f(x) = 1.0 #constant distance function 
+cell_map = CellMap(xs, ys, connections, distance_function = dist_f);
+
+# Only do if there is GPU
 cell_map_GPU = cell_map |> make_GPU
 
-#%% [run the model]____________________________________________________________________________#
+# [run the model]____________________________________________________________________________#
 p0_dict = SAC_p0_dict()
-p0_dict["g_ACh"] = 2.0
+p0_dict["g_ACh"] = 0.0
 p0_dict["g_GABA"] = 0.0
-p0_dict["C_m"] = 13.6#/size(cell_map)
+p0_dict["g_GLUT"] = 1.0
+p0_dict["C_m"] = 13.6
 p0 = extract_p0(p0_dict)
 
 u0_dict= SAC_u0_dict(n_cells = size(cell_map))
+u0_dict["g"][1] = 0.5
 u0 = extract_u0(u0_dict) 
-u0[1,2] = 100.0
 u0 = u0 |> CuArray{Float32}
 # 3) Define the problem
-tspan = (0.0, 300e3)
+tspan = (0.0, 300.0)
 
-f_PDE(du, u, p, t) = SAC_GAP(du, u, p, t, cell_map_GPU; gGAP = 0.01)
+f_PDE(du, u, p, t) = SAC_GAP(du, u, p, t, cell_map_GPU)
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
 @time sol = solve(prob, 
     #SOSRI(), #This seems to be the best solver option
@@ -43,11 +52,9 @@ prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
     progress=true, progress_steps=1
 );
 
-#save("data.jld", "initial_cond", sol[end])
-
-#%% [Plot the model]___________________________________________________________#
+# [Plot the model]___________________________________________________________#
 CUDA.allowscalar(true) #allow GPU operations to be offloaded to CPU 
-Time = sol.t[1]:5.0:sol.t[end]
+Time = sol.t[1]:0.5:sol.t[end]
 vt = hcat(map(t -> sol(t)[:,2], Time)...)|>Array
 nt = hcat(map(t -> sol(t)[:,3], Time)...)|>Array
 mt = hcat(map(t -> sol(t)[:,4], Time)...)|>Array
@@ -95,4 +102,4 @@ GLMakie.record(fig1, "test/SAC_model_tests/data/branch_model_animation.mp4", ani
 	sctV.color = c
     tickerb[1] = [t]
     tickerc[1] = [t]
-end 
+end  

@@ -106,7 +106,7 @@ function create_dendrogram_map(radial_lines, branches, layers;
 end
 
 # [Connection generation functions] ___________________________________________________________________________________________________________________________-#
-function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::T) where T <: Real
+function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::T, constant = nothing) where T <: Real
      connections = Tuple[]  
      n_xpoints = size(xs, 1)
      n_ypoints = size(ys, 1)
@@ -115,13 +115,17 @@ function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::T) where 
           within_radius_indices = findall(d -> d <= radii, cell_distances)
           #println(within_radius_indices)
           for (idx, neighbor) in enumerate(within_radius_indices)
-               push!(connections, (i, neighbor, cell_distances[idx]))
+               if isnothing(constant)
+                    push!(connections, (i, neighbor, constant))
+               else
+                    push!(connections, (i, neighbor, cell_distances[idx]))
+               end
           end
      end
      connections
 end
 
-function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::Vector{T}) where T <: Real
+function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::Vector{T}, constant = nothing) where T <: Real
      connections = Tuple[]  
      n_xpoints = size(xs, 1)
      n_ypoints = size(ys, 1)
@@ -130,7 +134,11 @@ function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::Vector{T}
           within_radius_indices = findall(d -> d <= radii[i], cell_distances)
           #println(within_radius_indices)
           for (idx, neighbor) in enumerate(within_radius_indices)
-               push!(connections, (i, neighbor, cell_distances[idx]))
+               if isnothing(constant)
+                    push!(connections, (i, neighbor, constant))
+               else
+                    push!(connections, (i, neighbor, cell_distances[idx]))
+               end
           end
      end
      connections
