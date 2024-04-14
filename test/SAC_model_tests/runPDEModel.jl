@@ -21,8 +21,10 @@ dx = dy = 0.05 #Mean distribution is 40-50 micron (WR taylor et al)
 #2) create a random distribution of cells and their radii
 #The density of SACs in the retina is around 1200 per mm2. So if we have 5mm2 1200 * 5 = 6000
 n_cells = 300 #Really pushing the model
-xs = rand(xmin:dx:xmax, n_cells)
-ys = rand(ymin:dy:ymax, n_cells)
+xs, ys = create_random_map(n_cells, 
+     xmin = xmin, dx = dx, xmax = xmax, 
+     ymin = ymin, dy = dy, ymax = ymax
+)
 connection_list = connect_neighbors_radius(xs, ys, 0.2)
 connections = connection_matrix(connection_list, m = length(xs), n = length(ys))
 dist_func1(d) = ring_circle_overlap_area(d; density = 0.1, r_inner = 0.1, r_outer = 0.2, r_circle = 0.2);
