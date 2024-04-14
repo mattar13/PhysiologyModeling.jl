@@ -14,16 +14,22 @@ end
 
 This function creates a evenly spaced map of cells
 """
-function create_even_map(;xmin=0.0, dx=0.1, xmax=1.0, ymin=0.0, dy=0.1, ymax=1.0)
+function create_even_map(;
+     xmin=0.0, dx=0.1, xmax=1.0, 
+     ymin=0.0, dy=0.1, ymax=1.0)
      cells = vec([(i, j) for i in xmin:dx:xmax, j in ymin:dy:ymax])
      xs = map(c->c[1], cells)
      ys = map(c->c[2], cells)
      xs, ys
 end
 
-function create_random_map(n_points; rng_min = 0.0, rng_dt = 0.1, rng_max = 1.0)
-     map = rand(rng_min:rng_dt:rng_max, n_points, 2) 
-     map[:, 1], map[:,2]
+function create_random_map(n_cells;      
+     xmin = 0.0, dx = 0.05, xmax = 1.0, 
+     ymin = 0.0, dy = 0.05, ymax = 1.0
+)
+     xs = rand(xmin:dx:xmax, n_cells)
+     ys = rand(ymin:dy:ymax, n_cells)
+     return xs, ys
 end
 
 function create_ring_map(n ;center = [0.0, 0.0], r = 0.05)
@@ -106,26 +112,25 @@ function create_dendrogram_map(radial_lines, branches, layers;
 end
 
 # [Connection generation functions] ___________________________________________________________________________________________________________________________-#
-function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::T, constant = nothing) where T <: Real
+function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::T; constant = nothing) where T <: Real
      connections = Tuple[]  
      n_xpoints = size(xs, 1)
      n_ypoints = size(ys, 1)
      for i in 1:n_xpoints
           cell_distances = [euclidean_distance([xs[i], ys[i]], [xs[j], ys[j]]) for j in 1:n_ypoints]
           within_radius_indices = findall(d -> d <= radii, cell_distances)
-          #println(within_radius_indices)
           for (idx, neighbor) in enumerate(within_radius_indices)
                if isnothing(constant)
-                    push!(connections, (i, neighbor, constant))
-               else
                     push!(connections, (i, neighbor, cell_distances[idx]))
+               else
+                    push!(connections, (i, neighbor, constant))
                end
           end
      end
      connections
 end
 
-function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::Vector{T}, constant = nothing) where T <: Real
+function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::Vector{T}; constant = nothing) where T <: Real
      connections = Tuple[]  
      n_xpoints = size(xs, 1)
      n_ypoints = size(ys, 1)
@@ -135,9 +140,9 @@ function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::Vector{T}
           #println(within_radius_indices)
           for (idx, neighbor) in enumerate(within_radius_indices)
                if isnothing(constant)
-                    push!(connections, (i, neighbor, constant))
-               else
                     push!(connections, (i, neighbor, cell_distances[idx]))
+               else
+                    push!(connections, (i, neighbor, constant))
                end
           end
      end
