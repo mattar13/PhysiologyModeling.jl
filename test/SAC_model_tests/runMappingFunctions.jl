@@ -52,7 +52,7 @@ xs, ys = create_random_map(n_cells, dx = dy = 0.01, xmax = 2.0, ymax = 2.0)
 connection_list = connect_neighbors_radius(xs, ys, 0.2)
 connection_list = connection_list[findall(c -> c[3] > 0.0, connection_list)]
 connections = connection_matrix(connection_list, m = length(xs), n = length(ys))
-dist_func1(d) = ring(d; density = 0.01, max_dist = 0.18, slope = 0.025);
+dist_func1(d) = ring_circle_overlap_area(d; density = 0.1, r_inner = 0.1, r_outer = 0.2, r_circle = 0.2);
 cell_map_CPU = CellMap(xs, ys, connections; distance_function = dist_func1);
 cell_map_CPU.strength[2,:]
 
