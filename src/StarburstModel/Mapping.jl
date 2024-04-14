@@ -24,8 +24,8 @@ function create_even_map(;
 end
 
 function create_random_map(n_cells;      
-     xmin = 0.0, dx = 0.05, xmax = 1.0, 
-     ymin = 0.0, dy = 0.05, ymax = 1.0
+     xmin = 0.0, dx = 0.05, xmax = 2.0, 
+     ymin = 0.0, dy = 0.05, ymax = 2.0
 )
      xs = rand(xmin:dx:xmax, n_cells)
      ys = rand(ymin:dy:ymax, n_cells)
