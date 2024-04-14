@@ -13,18 +13,19 @@ radial = 4
 branches = 2
 layers = 5
 
-#xs = LinRange(-1.0, 1.0, 10) |> collect
-#ys = zeros(10)
-#connection_list = connect_neighbors_radius(xs, ys, 0.3, constant = 1.0)
-#%%
+#=
+xs = LinRange(-1.0, 1.0, 10) |> collect
+ys = zeros(10)
+connection_list = connect_neighbors_radius(xs, ys, 0.3, constant = 0.10)
+=#
+
 xs, ys, connection_list = create_dendrogram_map(radial, branches, layers)
 #xs .+= rand(length(xs))/1000
 #ys .+= rand(length(ys))/1000
 
 connections = connection_matrix(connection_list, m = length(xs), n = length(ys))
-dist_f(x) = 1.0 #constant distance function 
+dist_f(x) = 0.01 #constant distance function 
 cell_map = CellMap(xs, ys, connections, distance_function = dist_f);
-
 # Only do if there is GPU
 cell_map_GPU = cell_map |> make_GPU
 
@@ -37,22 +38,27 @@ p0_dict["C_m"] = 13.6
 p0 = extract_p0(p0_dict)
 
 u0_dict= SAC_u0_dict(n_cells = size(cell_map))
-u0_dict["g"][1] = 0.5
+u0_dict["v"][1] = -30
 u0 = extract_u0(u0_dict) 
 u0 = u0 |> CuArray{Float32}
 # 3) Define the problem
-tspan = (0.0, 300.0)
+tspan = (0.0, 1.0)
 
 f_PDE(du, u, p, t) = SAC_GAP(du, u, p, t, cell_map_GPU)
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
+
+#u0 = u0_dict["v"]
+#u0 = u0 |> CuArray{Float32}
+#prob = ODEProblem(∇α, u0, tspan, cell_map_GPU)
+
 @time sol = solve(prob, 
     #SOSRI(), #This seems to be the best solver option
-    SOSRA(),
+    #SOSRA(),
     reltol =  2e-1, abstol = 2e-1, 
     progress=true, progress_steps=1
 );
 
-# [Plot the model]___________________________________________________________#
+#%% [Plot the model]___________________________________________________________#
 CUDA.allowscalar(true) #allow GPU operations to be offloaded to CPU 
 Time = sol.t[1]:0.5:sol.t[end]
 vt = hcat(map(t -> sol(t)[:,2], Time)...)|>Array
