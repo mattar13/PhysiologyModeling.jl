@@ -3,33 +3,31 @@ using Pkg; Pkg.activate(".")
 using ElectroPhysiology, PhysiologyModeling
 Pkg.activate("test") #Activate the testing environment
 using PhysiologyPlotting, GLMakie
-using CUDA
-CUDA.allowscalar(false)
+#using CUDA
+#CUDA.allowscalar(false)
 using SparseArrays
 using LinearAlgebra
 
+δV(V1, V2, Ra) = (V1-V2)/Ra
+
+
 #%%=[Run branch generation]__________________________________________________________________________________#
 radial = 4
-branches = 2
-layers = 5
-
-#=
-xs = LinRange(-1.0, 1.0, 10) |> collect
-ys = zeros(10)
-connection_list = connect_neighbors_radius(xs, ys, 0.3, constant = 0.10)
-=#
+branches = 1
+layers = 1
 
 xs, ys, connection_list = create_dendrogram_map(radial, branches, layers)
 #xs .+= rand(length(xs))/1000
 #ys .+= rand(length(ys))/1000
 
 connections = connection_matrix(connection_list, m = length(xs), n = length(ys))
-dist_f(x) = 0.01 #constant distance function 
+dist_f(x) = 0.1 #constant distance function 
 cell_map = CellMap(xs, ys, connections, distance_function = dist_f);
 # Only do if there is GPU
+cell_map.strength = -cell_map.strength
 cell_map_GPU = cell_map |> make_GPU
 
-# [run the model]____________________________________________________________________________#
+#%% [run the model]____________________________________________________________________________#
 p0_dict = SAC_p0_dict()
 p0_dict["g_ACh"] = 0.0
 p0_dict["g_GABA"] = 0.0
