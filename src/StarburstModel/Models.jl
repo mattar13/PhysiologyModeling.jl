@@ -225,7 +225,8 @@ end
 
 #=================================================PDE EQUATIONS=================================================#
 function ∇α(du, u, cell_map, t) #Could it really be this easy? 
-     du .+= (cell_map.strength_out .* u) + (cell_map.strength * u)
+     δu = u .* cell_map.strength
+     du .+= sum(δu, dims = 1)'-sum(δu, dims = 2)
 end
 
 function DIFFUSION_MODEL(du, u, p, t; active_cell = 221, growth_rate = 0.5)
@@ -311,6 +312,8 @@ function SAC_PDE(du, u, p, t, E_MAP, I_MAP)
      @. dW = -W / τw
      nothing
 end
+
+#Need a new function for gap junctions
 
 function SAC_GAP(du, u, p, t, MAP)
      I_ext = view(u, :, 1)
