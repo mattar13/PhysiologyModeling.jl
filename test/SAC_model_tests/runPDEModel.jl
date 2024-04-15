@@ -8,9 +8,13 @@ CUDA.allowscalar(false)
 using SparseArrays
 using LinearAlgebra
 
+
 #Try importing some other solver methods
 import .PhysiologyModeling: CVODE_BDF, ring
 import .PhysiologyModeling.DifferentialEquations: ImplicitRKMil, SKenCarp
+
+save_fn = "D:/Data/Analysis/2024_02_12_WTCell1_MODEL.mp4"
+
 #%% [Create the cell maps]__________________________________________________________________________________#
 
 #1) determine the domains and spacing of cells. 
@@ -67,10 +71,10 @@ it = hcat(map(t -> sol(t)[:,10], Time)...)|>Array
 Wt = hcat(map(t -> sol(t)[:,11], Time)...)|>Array
 
 #====================================[Plot the solution]====================================#
-fig1 = Figure(size = (400,800))
-ax1a = Axis(fig1[1,1], title = "Calcium Imageing", xlabel = "nx", ylabel = "ny")
-ax1b = Axis(fig1[2,1], title = "Calcium ROIs", xlabel = "time (ms)", ylabel = "Ct")
-ax1c = Axis(fig1[3,1], title = "Voltage Traces", xlabel = "time (ms)", ylabel = "Vt (mV)")
+fig1 = Figure(size = (1000, 500))
+ax1a = Axis(fig1[1:2,1], title = "Calcium Imageing", xlabel = "nx", ylabel = "ny")
+ax1b = Axis(fig1[1,2], title = "Calcium ROIs", xlabel = "time (ms)", ylabel = "Ct")
+ax1c = Axis(fig1[2,2], title = "Voltage Traces", xlabel = "time (ms)", ylabel = "Vt (mV)")
 
 rowsize!(fig1.layout, 1, Relative(1/2)) #Make the cell plot larger
 sctV = scatter!(ax1a, xs, ys, color = sol(0.0)[:,6]|>Array, colorrange = (0.0, maximum(ct)), markersize = 20.0)
@@ -88,7 +92,7 @@ animate_t = LinRange(0.0, sol.t[end], n_frames)
 dt = animate_t[2] - animate_t[1]
 fps = round(Int64, (1/dt) * 1000)
 
-GLMakie.record(fig1, "test/SAC_model_tests/data/model_animation.mp4", animate_t, framerate = 8) do t
+GLMakie.record(fig1, save_fn, animate_t, framerate = 8) do t
 	println(t)
 	c = sol(t)[:, 6] |> Array
 	sctV.color = c
