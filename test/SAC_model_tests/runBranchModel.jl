@@ -3,13 +3,10 @@ using Pkg; Pkg.activate(".")
 using ElectroPhysiology, PhysiologyModeling
 Pkg.activate("test") #Activate the testing environment
 using PhysiologyPlotting, GLMakie
-#using CUDA
-#CUDA.allowscalar(false)
+using CUDA
+CUDA.allowscalar(false)
 using SparseArrays
 using LinearAlgebra
-
-δV(V1, V2, Ra) = (V1-V2)/Ra
-
 
 #%%=[Run branch generation]__________________________________________________________________________________#
 radial = 4
