@@ -30,9 +30,9 @@ function SAC_u0_dict(;mode = :ODE, n_cells = 1)
           u0_dict["q"] = 0.0 #Modulatory g-protein deactivating gCa
      end
 end
-
-function SAC_p0_dict(;keyset = :DEFAULT) 
-     base_dict = Dict(
+#
+function SAC_p0_dict(;keyset = :DEFAULT)
+     base_dict = Dict{String, Union{Real, Vector}}(
           "I_app"     => 0.0,
           "VC"        => 0.0, #For voltage clamp
 
@@ -122,7 +122,7 @@ function SAC_p0_dict(;keyset = :DEFAULT)
      end
 end
 
-function extract_p0(d::Dict{String, T}; mode = :ODE) where T
+function extract_p0(d::Dict{String, Union{Real, Vector}}; mode = :ODE)
      if mode == :ODE
           keys_p0 = [
                "I_app", "VC",
@@ -174,7 +174,7 @@ function extract_p0(d::Dict{String, T}; mode = :ODE) where T
                "stim_start", "stim_stop"
           ]  
      end
-     return extract_dict(d, keys_p0)
+     return map(k -> d[k], keys_p0)
 end
 
 function extract_u0(d::Dict{String, T}; mode = :ODE) where T
