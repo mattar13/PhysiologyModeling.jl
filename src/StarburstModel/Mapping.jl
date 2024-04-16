@@ -242,7 +242,7 @@ function CellMap(xs::Vector{T}, ys::Vector{T}, connections::SparseMatrixCSC{T, I
      rows, cols, values = findnz(connections)
      new_values = map(x -> distance_function(x), values)
      strength = sparse(rows, cols, new_values, length(xs), length(ys))
-     strength_out = -sum(strength, dims=1) |> vec #should we do dims 1 or dims 2
+     strength_out = -sum(strength, dims=2) |> vec #should we do dims 1 or dims 2
 
      return CellMap(xs, ys, connections, strength, strength_out)
 end
