@@ -8,6 +8,8 @@ CUDA.allowscalar(false)
 using SparseArrays
 using LinearAlgebra
 
+save_fn = ""
+
 #%%=[Run branch generation]__________________________________________________________________________________#
 radial = 4
 branches = 1
@@ -18,26 +20,35 @@ xs, ys, connection_list = create_dendrogram_map(radial, branches, layers)
 #ys .+= rand(length(ys))/1000
 
 connections = connection_matrix(connection_list, m = length(xs), n = length(ys))
-dist_f(x) = 0.1 #constant distance function 
+dist_f(x) = 0.01 #constant distance function 
 cell_map = CellMap(xs, ys, connections, distance_function = dist_f);
 # Only do if there is GPU
-cell_map.strength = -cell_map.strength
+#cell_map.strength = -cell_map.strength
+
 cell_map_GPU = cell_map |> make_GPU
 
-#%% [run the model]____________________________________________________________________________#
+es = zeros(size(cell_map))
+es[1] = -10.0
+es[2] = 10.0
+es
+
+de = similar(es)
+∇α(de, es, cell_map, 0.0)
+de
+
+# [run the model]____________________________________________________________________________#
 p0_dict = SAC_p0_dict()
 p0_dict["g_ACh"] = 0.0
 p0_dict["g_GABA"] = 0.0
 p0_dict["g_GLUT"] = 1.0
-p0_dict["C_m"] = 13.6
+p0_dict["I_app"] = 10.0
 p0 = extract_p0(p0_dict)
 
 u0_dict= SAC_u0_dict(n_cells = size(cell_map))
-u0_dict["v"][1] = -30
 u0 = extract_u0(u0_dict) 
 u0 = u0 |> CuArray{Float32}
 # 3) Define the problem
-tspan = (0.0, 1.0)
+tspan = (0.0, 5e3)
 
 f_PDE(du, u, p, t) = SAC_GAP(du, u, p, t, cell_map_GPU)
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
@@ -48,14 +59,16 @@ prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
 
 @time sol = solve(prob, 
     #SOSRI(), #This seems to be the best solver option
-    #SOSRA(),
-    reltol =  2e-1, abstol = 2e-1, 
+    SOSRA(),
+    #dtmin = 0.001,
+    reltol =  0.2, abstol = 2.0, 
     progress=true, progress_steps=1
 );
 
-#%% [Plot the model]___________________________________________________________#
+# [Plot the model]___________________________________________________________#
 CUDA.allowscalar(true) #allow GPU operations to be offloaded to CPU 
 Time = sol.t[1]:0.5:sol.t[end]
+It = hcat(map(t -> sol(t)[:,1], Time)...)|>Array
 vt = hcat(map(t -> sol(t)[:,2], Time)...)|>Array
 nt = hcat(map(t -> sol(t)[:,3], Time)...)|>Array
 mt = hcat(map(t -> sol(t)[:,4], Time)...)|>Array
@@ -71,6 +84,7 @@ fig1 = Figure(size = (400,800))
 ax1a = Axis(fig1[1,1], title = "Calcium Imageing", xlabel = "nx", ylabel = "ny")
 ax1b = Axis(fig1[2,1], title = "Calcium ROIs", xlabel = "time (ms)", ylabel = "Ct")
 ax1c = Axis(fig1[3,1], title = "Voltage Traces", xlabel = "time (ms)", ylabel = "Vt (mV)")
+ax1d = Axis(fig1[4,1], title = "Current Traces", xlabel = "time (ms)", ylabel = "Vt (mV)")
 
 rowsize!(fig1.layout, 1, Relative(1/2)) #Make the cell plot larger
 
@@ -82,10 +96,12 @@ for i in eachindex(rows)
     lines!(ax1a, [xs[r], xs[c]], [ys[r], ys[c]], color = :black)#[d], colorrange = (minimum(data), maximum(data)), alpha = 0.1)
 end
 sctV = scatter!(ax1a, xs, ys, markersize = 15.0, color = sol(0.0)[:,2]|>Array, colorrange = (minimum(vt), maximum(vt)))
+cell_map_GPU |> typeof
 
 for n in 1:size(cell_map)
-     lines!(ax1b, Time, ct[n, :])
-     lines!(ax1c, Time, vt[n, :])
+    lines!(ax1b, Time, ct[n, :])
+    lines!(ax1c, Time, vt[n, :])
+    lines!(ax1d, Time, It[n, :])
 end
 tickerb = vlines!(ax1b, [0.0])
 tickerc = vlines!(ax1c, [0.0])
