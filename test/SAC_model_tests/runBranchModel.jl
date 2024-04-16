@@ -12,36 +12,26 @@ save_fn = ""
 
 #%%=[Run branch generation]__________________________________________________________________________________#
 radial = 4
-branches = 1
-layers = 1
+branches = 2
+layers = 3
 
 xs, ys, connection_list = create_dendrogram_map(radial, branches, layers)
 #xs .+= rand(length(xs))/1000
 #ys .+= rand(length(ys))/1000
 
 connections = connection_matrix(connection_list, m = length(xs), n = length(ys))
-dist_f(x) = 0.01 #constant distance function 
+dist_f(x) = 0.001 #constant distance function 
 cell_map = CellMap(xs, ys, connections, distance_function = dist_f);
 # Only do if there is GPU
 #cell_map.strength = -cell_map.strength
-
 cell_map_GPU = cell_map |> make_GPU
-
-es = zeros(size(cell_map))
-es[1] = -10.0
-es[2] = 10.0
-es
-
-de = similar(es)
-∇α(de, es, cell_map, 0.0)
-de
-
 # [run the model]____________________________________________________________________________#
 p0_dict = SAC_p0_dict()
 p0_dict["g_ACh"] = 0.0
 p0_dict["g_GABA"] = 0.0
 p0_dict["g_GLUT"] = 1.0
-p0_dict["I_app"] = 10.0
+p0_dict["I_app"] = 0.0
+p0_dict["g_K"] = LinRange(1, 10, size(cell_map)) |> collect
 p0 = extract_p0(p0_dict)
 
 u0_dict= SAC_u0_dict(n_cells = size(cell_map))
