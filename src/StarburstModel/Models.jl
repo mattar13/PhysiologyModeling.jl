@@ -382,7 +382,7 @@ function SAC_GAP(du, u, p, t, MAP)
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
-     @. dg = -g
+     @. dg = 0.0
      @. dq = (γg*g^g_n * (1-q) - q) / τq
      @. dW = -W / τw
      nothing
