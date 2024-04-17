@@ -370,8 +370,8 @@ function SAC_GAP(du, u, p, t, MAP)
           + IGABA(v, i, g_GABA, k_GABA, E_Cl) 
           + IGLUT(v, g, g_GLUT, k_GLUT, E_GLUT) #These are ionic glutamate channels
           + I_app + W) - I_TOTAL
-     ∇α(dI_TOTAL, I_TOTAL, MAP, t)
-
+          
+     ∇α(dI_TOTAL, v, MAP, t)
      @. dv = (I_TOTAL) / C_m #Unless we are doing IC, this has to stay this way
 
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
