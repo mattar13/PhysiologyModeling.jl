@@ -456,8 +456,7 @@ end
 
 function apply_glutamate_affect!(integrator; 
      pulse_list = [93, 45, 21, 9, 3, 1, 2, 6, 12, 30, 63], 
-     n_stops = 10,
-     x_stops = LinRange(minimum(xs), maximum(xs), n_stops),
+     n_stops = 10,x_stops = nothing,
      dt_pulse = 250.0, pulse_start = 200.0, 
      spread = 250.0, amp = 5.0
  )

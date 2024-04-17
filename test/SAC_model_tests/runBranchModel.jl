@@ -26,8 +26,8 @@ cell_map = CellMap(xs, ys, connections, distance_function = dist_f);
 #cell_map.strength = -cell_map.strength
 #cell_map = cell_map |> make_GPU
 
-fig = Figure()
-ax1a = Axis(fig[1,1])
+fig = Figure(size = (500,500))
+ax1a = Axis(fig[1,1], aspect = 1)
 
 rows, cols, data = findnz(cell_map.strength)
 for i in eachindex(rows)
@@ -37,7 +37,17 @@ for i in eachindex(rows)
     lines!(ax1a, [xs[r], xs[c]], [ys[r], ys[c]], color = :black)#[d], colorrange = (minimum(data), maximum(data)), alpha = 0.1)
 end
 texts = map(i -> "$i", axes(cell_map))
+n_stops = 4
+x_stops = LinRange(minimum(xs), maximum(xs), n_stops)
+
+for i in 1:n_stops-1
+    println(i)
+    sctV = scatter!(ax1a, xs[findall(x_stops[i] .<= xs .<= x_stops[i+1])], ys[findall(x_stops[i] .<= xs .<= x_stops[i+1])], 
+        markersize = 35.0, color = [i], colorrange = (1, n_stops), 
+    )
+end
 sctV = scatter!(ax1a, xs, ys, markersize = 25.0, color = :gold)
+
 text!(ax1a, xs, ys, text = texts, align = (:center, :center))
 display(fig)
 
@@ -45,7 +55,7 @@ display(fig)
 p0_dict = SAC_p0_dict()
 p0_dict["g_ACh"] = 0.0
 p0_dict["g_GABA"] = 0.0
-p0_dict["g_GLUT"] = 15.0
+p0_dict["g_GLUT"] = 1.0
 #p0_dict["g_K"] = LinRange(1.0, 10.0, size(cell_map)) |> collect
 p0 = extract_p0(p0_dict)
 
@@ -62,12 +72,13 @@ f_PDE(du, u, p, t) = SAC_GAP(du, u, p, t, cell_map)
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
 
 #create a callback for the glutamate pulse
+n_stops = 10
+x_stops = LinRange(minimum(xs), maximum(xs), n_stops)
 
-function affect!(integrator; pulse_list = [93, 45, 21, 9, 3, 1, 2, 6, 12, 30, 63], dt_pulse = 250.0, pulse_start = 100.0, spread = 100.0, amp = 5.0)
-    for (i, pulse) in enumerate(pulse_list)
-        integrator.u[pulse, 11] = gauss_pulse(integrator.t; t0 = pulse_start + (dt_pulse * i), spread = spread, peak_amp = amp)
-    end
-end
+fn_affect!(integrator) = apply_glutamate_affect!(integrator; 
+    n_stops = n_stops, x_stops = x_stops,
+    dt_pulse = 250.0, pulse_start = 500.0
+)
 cb = PresetTimeCallback(tseries, affect!)
 
 @time sol = solve(prob, 
@@ -97,12 +108,14 @@ Wt = hcat(map(t -> sol(t)[:,13], Time)...)|>Array
 
 fig1 = Figure(size = (1800,450))
 ax1a = Axis(fig1[1:2,1], title = "Calcium Imageing", xlabel = "nx", ylabel = "ny")
-ax1b = Axis(fig1[1,2], title = "Calcium ROIs", xlabel = "time (ms)", ylabel = "Ct")
-ax1c = Axis(fig1[2,2], title = "Current Traces", xlabel = "time (ms)", ylabel = "It (pA)")
-ax1d = Axis(fig1[1,3], title = "Voltage Traces", xlabel = "time (ms)", ylabel = "Vt (mV)")
-ax1e = Axis(fig1[2,3], title = "NT release", xlabel = "time (ms)", ylabel = "Gt (pA)")
-ax1f = Axis(fig1[1,4], title = "Voltage Traces", xlabel = "time (ms)", ylabel = "Vt (mV)")
-ax1g = Axis(fig1[2,4], title = "NT release", xlabel = "time (ms)", ylabel = "Gt (pA)")
+ax1b = Axis(fig1[1,2], title = "Current", xlabel = "time (ms)", ylabel = "It (pA)")
+ax1c = Axis(fig1[2,2], title = "Voltage", xlabel = "time (ms)", ylabel = "vt (mV)")
+
+ax1d = Axis(fig1[1,3], title = "Calcium", xlabel = "time (ms)", ylabel = "Ct (mM)")
+ax1e = Axis(fig1[2,3], title = "GABA", xlabel = "time (ms)", ylabel = "it (mM)")
+
+ax1f = Axis(fig1[1,4], title = "Glutamate", xlabel = "time (ms)", ylabel = "Gt (mM)")
+ax1g = Axis(fig1[2,4], title = "G-protein", xlabel = "time (ms)", ylabel = "qt")
 
 colsize!(fig1.layout, 1, Relative(1/4)) #Make the cell plot larger
 rows, cols, data = findnz(cell_map.strength)
@@ -115,33 +128,36 @@ end
 sctV = scatter!(ax1a, xs, ys, markersize = 15.0, color = sol(0.0)[:,6]|>Array, colorrange = (minimum(ct), maximum(ct)))
 
 for n in 1:size(cell_map)
+    lines!(ax1b, Time, It[n, :])
     lines!(ax1c, Time, vt[n, :])
-    lines!(ax1d, Time, It[n, :])
-    lines!(ax1e, Time, gt[n, :])
-    lines!(ax1f, Time, qt[n, :])
-    lines!(ax1b, Time, ct[n, :])
-    lines!(ax1g, Time, et[n, :])
+    lines!(ax1d, Time, ct[n, :])
+    lines!(ax1e, Time, it[n, :])
+    lines!(ax1f, Time, gt[n, :])
+    lines!(ax1g, Time, qt[n, :])
 end
 tickerb = vlines!(ax1b, [0.0])
 tickerc = vlines!(ax1c, [0.0])
 tickerd = vlines!(ax1d, [0.0])
 tickere = vlines!(ax1e, [0.0])
-tickerd = vlines!(ax1d, [0.0])
-tickere = vlines!(ax1e, [0.0])
+tickerf = vlines!(ax1f, [0.0])
+tickerg = vlines!(ax1g, [0.0])
 
 display(fig1)
-#%%
-n_frames = 1000
+
+
+n_frames = 500
 animate_t = LinRange(0.0, sol.t[end], n_frames)
 dt = animate_t[2] - animate_t[1]
 fps = round(Int64, (1/dt) * 1000)
 
-GLMakie.record(fig1, save_fn, animate_t, framerate = fps) do t
+GLMakie.record(fig1, save_fn, animate_t, framerate = fps/10) do t
 	println(t)
-	c = sol(t)[:, 2] |> Array
+	c = sol(t)[:, 6] |> Array
 	sctV.color = c
     tickerb[1] = [t]
     tickerc[1] = [t]
     tickerd[1] = [t]
     tickere[1] = [t]
+    tickerf[1] = [t]
+    tickerg[1] = [t]
 end   
