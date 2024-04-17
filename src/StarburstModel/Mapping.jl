@@ -61,7 +61,9 @@ function calculate_dendrogram_distance(xs::Vector{T}, ys::Vector{T}, old_connect
 end
 
 function create_dendrogram_map(radial_lines, branches, layers; 
-     origin = (0.0, 0.0), radius = 0.05/layers, branch_distance = 0.65)
+     origin = (0.0, 0.0), radius = 0.05/layers, branch_distance = 0.65, 
+     symmetric = true #this should be true if the connections can feedback
+)
      #determine angles for the inner spokes
      x0, y0 = origin
      branch_xs = Float64[origin[1],]
@@ -83,6 +85,9 @@ function create_dendrogram_map(radial_lines, branches, layers;
                     push!(branch_xs, round(x, digits = 5))
                     push!(branch_ys, round(y, digits = 5))
                     push!(connections, (parent_indices[1], point_index)) #connect all the 
+                    if symmetric
+                         push!(connections, (point_index, parent_indices[1]))
+                    end
                     push!(children_indices, point_index)
                     point_index += 1
                else
@@ -96,7 +101,11 @@ function create_dendrogram_map(radial_lines, branches, layers;
                          y = (y0 + radius * sin(angle+branch) * layer)
                          push!(branch_xs, round(x, digits = 5))
                          push!(branch_ys, round(y, digits = 5))
-                         push!(connections, (popfirst!(parent_connections), point_index))
+                         parent = popfirst!(parent_connections)
+                         push!(connections, (parent, point_index))
+                         if symmetric
+                              push!(connections, (point_index, parent))
+                         end
                          push!(children_indices, point_index)
                          point_index += 1
                     end
