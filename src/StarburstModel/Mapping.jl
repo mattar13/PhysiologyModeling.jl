@@ -150,8 +150,8 @@ function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::Vector{T}
 end
 
 function connection_matrix(connections_list::AbstractArray{Tuple}; m = nothing, n = nothing)
-     rows = map(c -> c[1], connections_list)
-     cols = map(c -> c[2], connections_list)
+     rows = map(c -> c[2], connections_list)
+     cols = map(c -> c[1], connections_list)
      data = map(c -> c[3], connections_list)
      if isnothing(m)
           m = maximum(rows)
