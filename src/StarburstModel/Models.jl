@@ -453,3 +453,25 @@ function DynamicSAC(du, u, p, t)
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
      nothing
 end
+
+function apply_glutamate_affect!(integrator; 
+     pulse_list = [93, 45, 21, 9, 3, 1, 2, 6, 12, 30, 63], 
+     n_stops = 10,
+     x_stops = LinRange(minimum(xs), maximum(xs), n_stops),
+     dt_pulse = 250.0, pulse_start = 200.0, 
+     spread = 250.0, amp = 5.0
+ )
+     if !isnothing(x_stops)
+         for i in 1:n_stops-1
+             for idx in findall(x_stops[i] .<= xs .<= x_stops[i+1])
+                 integrator.u[idx, 11] = gauss_pulse(integrator.t; 
+                     t0 = pulse_start + (dt_pulse * i), 
+                     spread = spread, peak_amp = amp)
+             end
+         end
+     else
+         for (i, pulse) in enumerate(pulse_list)
+             integrator.u[pulse, 11] = gauss_pulse(integrator.t; t0 = pulse_start + (dt_pulse * i), spread = spread, peak_amp = amp)
+         end
+     end
+end

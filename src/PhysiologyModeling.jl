@@ -46,6 +46,7 @@ export SAC_GAP #Make a model for a gap junction
 export SAC_ODE_Compartment
 export noise1D, noise2D
 export DynamicSAC
+export apply_glutamate_affect!
 
 include("StarburstModel/Mapping.jl")
 export CellMap
