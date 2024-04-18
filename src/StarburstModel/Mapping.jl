@@ -61,7 +61,7 @@ function calculate_dendrogram_distance(xs::Vector{T}, ys::Vector{T}, old_connect
 end
 
 function create_dendrogram_map(radial_lines, branches, layers; 
-     origin = (0.0, 0.0), radius = 0.05/layers, branch_distance = 0.65, 
+     origin = (0.0, 0.0), radius = 0.05/layers, branch_distance = 0.50, 
      symmetric = true #this should be true if the connections can feedback
 )
      #determine angles for the inner spokes
