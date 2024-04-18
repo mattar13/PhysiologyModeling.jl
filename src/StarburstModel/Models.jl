@@ -132,7 +132,7 @@ function SAC_ODE_IC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
           + IACh(v, e, g_ACh, k_ACh, E_ACh) 
           + IGABA(v, i, g_GABA, k_GABA, E_Cl) 
           + IGLUT(v, g, g_GLUT, k_GLUT, E_GLUT) #These are ionic glutamate channels
-          + I_app + W) / C_m #Unless we are doing IC, this has to stay this way
+          + I_ext + W) / C_m #Unless we are doing IC, this has to stay this way
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
