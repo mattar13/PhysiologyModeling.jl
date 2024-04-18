@@ -15,7 +15,10 @@
 
 @inline ILeak(v::T, g_leak, E_leak) where T = -g_leak * (v - E_leak)
 @inline ICa(v::T, g_Ca, V1, V2, E_Ca) where T = -g_Ca * M∞(v, V1, V2) * (v - E_Ca)
-@inline IK(v::T, n::T, g_K, E_K) where T = -g_K * n * (v - E_K)
+#This function is for the potassium current. g_K can be a vector. 
+@inline IK(v::T, n::T, g_K::T, E_K) where T = -g_K .* n .* (v .- E_K)
+@inline IK(v::T, n::T, g_K::eltype(T), E_K) where T = -g_K .* n .* (v .- E_K)
+
 @inline ITREK(v::T, b::T, g_TREK, E_K) where T = -g_TREK * b * (v - E_K)
 @inline IACh(v::T, e::T, g_ACh, k_ACh, E_ACh) where T = -g_ACh * ħe(e, k_ACh) * (v - E_ACh)
 @inline IGABA(v::T, i::T, g_GABA, k_GABA, E_Cl) where T = -g_GABA * ħi(i, k_GABA) * (v - E_Cl)
@@ -26,3 +29,25 @@
 @inline IGLUT(v::T, g::T, g_GLUT, k_GLUT, E_GLUT) where T = -g_GLUT * ħe(g, k_GLUT) * (v - E_GLUT)
 
 gauss_pulse(t; t0  = 25.0, spread = 500.0, peak_amp = 1.0) = peak_amp * exp(-(t0-t)^2/((2*spread)^2))
+
+#%% Callback functions 
+function apply_glutamate_affect!(integrator; xs = nothing, ys = nothing,  
+    pulse_list = [93, 45, 21, 9, 3, 1, 2, 6, 12, 30, 63], 
+    n_stops = 10,x_stops = nothing,
+    dt_pulse = 250.0, pulse_start = 200.0, 
+    spread = 250.0, amp = 5.0
+) 
+    if !isnothing(x_stops)
+        for i in 1:n_stops-1
+            for idx in findall(x_stops[i] .<= xs .<= x_stops[i+1])
+                integrator.u[idx, 11] = gauss_pulse(integrator.t; 
+                    t0 = pulse_start + (dt_pulse * i), 
+                    spread = spread, peak_amp = amp)
+            end
+        end
+    else
+        for (i, pulse) in enumerate(pulse_list)
+            integrator.u[pulse, 11] = gauss_pulse(integrator.t; t0 = pulse_start + (dt_pulse * i), spread = spread, peak_amp = amp)
+        end
+    end
+end
