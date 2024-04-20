@@ -9,7 +9,8 @@ using SparseArrays
 using LinearAlgebra
 using StatsBase, Statistics
 save_fn = "test/SAC_model_tests/data/branch_model_animation.mp4"
-import .PhysiologyModeling.DiffEqCallbacks
+import .PhysiologyModeling.PresetTimeCallback
+
 #%%=[Run branch generation]__________________________________________________________________________________#
 radial = 5
 branches = 2
@@ -26,9 +27,7 @@ cell_map = CellMap(xs, ys, connections, distance_function = dist_f);
 #cell_map.strength = -cell_map.strength
 #cell_map = cell_map |> make_GPU
 
-
-
-#%% [run the model]____________________________________________________________________________#
+# [run the model]____________________________________________________________________________#
 p0_dict = SAC_p0_dict()
 p0_dict["g_ACh"] = 0.0
 p0_dict["g_GABA"] = 0.0
@@ -57,7 +56,7 @@ fn_affect!(integrator) = apply_glutamate_affect!(integrator;
     n_stops = n_stops, x_stops = x_stops,
     dt_pulse = 250.0, pulse_start = 500.0
 )
-import .PhysiologyModeling.PresetTimeCallback
+
 cb = PresetTimeCallback(tseries, fn_affect!)
 @time sol = solve(prob, 
     #SOSRI(), #This seems to be the best solver option
@@ -67,10 +66,7 @@ cb = PresetTimeCallback(tseries, fn_affect!)
     progress=true, progress_steps=1
 );
 
-# 
-
-
-# [Plot the model]___________________________________________________________#
+#%% [Plot the model]___________________________________________________________#
 #CUDA.allowscalar(true) #allow GPU operations to be offloaded to CPU 
 Time = LinRange(sol.t[1], sol.t[end], 5000)
 It = hcat(map(t -> sol(t)[:,1], Time)...)|>Array
@@ -179,7 +175,7 @@ animate_t = LinRange(0.0, sol.t[end], n_frames)
 dt = animate_t[2] - animate_t[1]
 fps = round(Int64, (1/dt) * 1000)
 
-GLMakie.record(fig2, save_fn, animate_t, framerate = fps/10) do t
+GLMakie.record(fig2, save_fn, animate_t, framerate = fps) do t
 	println(t)
 	sctC.color = sol(t)[:, 6] |> Array
     sctI.color = sol(t)[:, 10] |> Array
@@ -192,3 +188,30 @@ GLMakie.record(fig2, save_fn, animate_t, framerate = fps/10) do t
     tickerh[1] = [t]
     tickeri[1] = [t]
 end   
+
+#%% Figure 3 average spatial
+fig3 = Figure(size = (1000,700))
+fig2.layout.width
+ax1a = Axis(fig3[1,1], title = "Calcium Imaging", xlabel = "nx", ylabel = "ny")
+ax1b = Axis(fig3[1,2], title = "GABA Imaging", xlabel = "nx", ylabel = "ny")
+ax1c = Axis(fig3[1,3], title = "Glutamate Imaging", xlabel = "nx", ylabel = "ny")
+
+rows, cols, data = findnz(cell_map.strength)
+for i in eachindex(rows)
+    r = rows[i]
+    c = cols[i]
+    d = data[i]
+    lines!(ax1a, [xs[r], xs[c]], [ys[r], ys[c]], color = :black)#[d], colorrange = (minimum(data), maximum(data)), alpha = 0.1)
+    lines!(ax1b, [xs[r], xs[c]], [ys[r], ys[c]], color = :black)#[d], colorrange = (minimum(data), maximum(data)), alpha = 0.1)
+    lines!(ax1c, [xs[r], xs[c]], [ys[r], ys[c]], color = :black)#[d], colorrange = (minimum(data), maximum(data)), alpha = 0.1)
+end
+
+c_avg = mean(ct, dims = 2)[:,1]
+i_avg = mean(it, dims = 2)[:,1]
+g_avg = mean(gt, dims = 2)[:,1]
+
+sctC = scatter!(ax1a, xs, ys, markersize = 15.0, color = c_avg, colorrange = (minimum(c_avg), maximum(c_avg)))
+sctI = scatter!(ax1b, xs, ys, markersize = 15.0, color = i_avg, colorrange = (minimum(i_avg), maximum(i_avg)))
+sctG = scatter!(ax1c, xs, ys, markersize = 15.0, color = g_avg, colorrange = (minimum(g_avg), maximum(g_avg)))
+
+display(fig3)
