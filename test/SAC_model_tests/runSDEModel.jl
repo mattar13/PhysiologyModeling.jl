@@ -8,18 +8,19 @@ using PhysiologyPlotting
 using GLMakie
 
 #%% [Solving a single SDE for tspan]_______________________________________________________________________________________________#
-tspan = (0.0, 300e3)
+tspan = (0.0, 10.0)
 #Extract and modify parameters
 p0_dict = SAC_p0_dict()
 p0_dict["g_GABA"] = 0.0
 p0_dict["g_ACh"] = 0.0
+p0_dict["VC"] = -65.0
 #Set the stimulus parameters
 p0 = extract_p0(p0_dict)
 #Extract and modify initial conditions
 u0_dict = SAC_u0_dict()
 u0 = extract_u0(u0_dict)
 #Set up the problem
-prob = SDEProblem(SAC_ODE, noise1D, u0, tspan, p0)
+prob = SDEProblem(SAC_ODE_VC, noise1D, u0, tspan, p0)
 @time sol = solve(prob, SOSRI(), reltol = 2e-2, abstol = 2e-2, progress = true, progress_steps = 1)
 
 # [Plot the solution]_________________________________________________________________________________________________________#
@@ -57,7 +58,7 @@ lines!(ax12, Time, map(t -> sol(t)[13], Time))
 lines!(ax13, Time, map(t -> sol(t)[1], Time))
 
 display(fSDE)
-save("test/SAC_model_tests/data/SDESol_bKV.png", fSDE)
+#save("test/SAC_model_tests/data/SDESol_bKV.png", fSDE)
 #%% [Simulate a current clamp experiment]_______________________________________________________________________________________#
 
 #Specify the timespan
