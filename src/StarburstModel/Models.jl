@@ -195,11 +195,6 @@ function SAC_ODE_VC(du, u, p, t; hold = -65.0, k = 1000.0)
           stim_start, stim_stop
      ) = p
      
-     if stim_start < t < stim_stop
-          @. dv = (VC-v)*k
-     else
-          @. dv = (hold-v)*k
-     end
      @. dI_ext = (ILeak(v, g_leak, E_leak) + 
           + ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q) 
           + IK(v, n, g_K, E_K) 
@@ -210,6 +205,12 @@ function SAC_ODE_VC(du, u, p, t; hold = -65.0, k = 1000.0)
           + IGLUT(v, g, g_GLUT, k_GLUT, E_GLUT) #These are ionic glutamate channels
           + W
      ) - I_ext
+
+     if stim_start < t < stim_stop
+          @. dv = (VC-v)/C_m
+     else
+          @. dv = (hold-v)/C_m
+     end
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
