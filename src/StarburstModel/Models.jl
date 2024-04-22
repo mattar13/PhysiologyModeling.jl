@@ -147,7 +147,7 @@ function SAC_ODE_IC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
      nothing
 end
 
-function SAC_ODE_VC(du, u, p, t; hold = -65.0, k = 1000.0)
+function SAC_ODE_VC(du, u, p, t; hold = -65.0, k = 1.0)
      I_ext = view(u, 1)
      v = view(u, 2)
      n = view(u, 3)
@@ -194,23 +194,24 @@ function SAC_ODE_VC(du, u, p, t; hold = -65.0, k = 1000.0)
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, 
           stim_start, stim_stop
      ) = p
-     
-     @. dI_ext = (ILeak(v, g_leak, E_leak) + 
-          + ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q) 
-          + IK(v, n, g_K, E_K) 
+      
+     @. dv = (ILeak(v, g_leak, E_leak) + 
+          + ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q)
           + INa(v, m, h, g_Na, E_Na)
+          + IK(v, n, g_K, E_K) 
           + ITREK(v, b, g_TREK, E_K) 
           + IACh(v, e, g_ACh, k_ACh, E_ACh) 
           + IGABA(v, i, g_GABA, k_GABA, E_Cl) 
           + IGLUT(v, g, g_GLUT, k_GLUT, E_GLUT) #These are ionic glutamate channels
-          + W
-     ) - I_ext
+          + I_app - I_ext + W
+     ) / C_m #Unless we are doing IC, this has to stay this way
 
      if stim_start < t < stim_stop
-          @. dv = (VC-v)/C_m
+          @. dI_ext = k*(v+dv - VC) - I_ext
      else
-          @. dv = (hold-v)/C_m
-     end
+          @. dI_ext = k*(v+dv - hold) - I_ext 
+     end   
+
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
