@@ -243,7 +243,7 @@ function circle_overlap_area(d, r1, r2)
      end
 end
 
-function ring_circle_overlap_area(d; density = 1.0, r_inner = 0.1, r_outer = 0.2, r_circle = 0.2 )
+function ring_circle_overlap_area(d; density = 10.0, r_inner = 0.1, r_outer = 0.15, r_circle = 0.18)
      # Area of overlap between outer circle of the ring and the circle
      outer_overlap = circle_overlap_area(d, r_outer, r_circle)
 
