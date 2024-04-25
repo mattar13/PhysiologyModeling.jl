@@ -121,19 +121,43 @@ function create_dendrogram_map(radial_lines, branches, layers;
 end
 
 # [Connection generation functions] ___________________________________________________________________________________________________________________________-#
-function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::T; constant = nothing) where T <: Real
+function connect_k_neighbors(xs::Vector{T}, ys::Vector{T}, k::Int64; self_connecting = false) where T <: Real
      connections = Tuple[]  
      n_xpoints = size(xs, 1)
      n_ypoints = size(ys, 1)
      for i in 1:n_xpoints
           cell_distances = [euclidean_distance([xs[i], ys[i]], [xs[j], ys[j]]) for j in 1:n_ypoints]
-          within_radius_indices = findall(d -> d <= radii, cell_distances)
-          for (idx, neighbor) in enumerate(within_radius_indices)
-               if isnothing(constant)
-                    push!(connections, (i, neighbor, cell_distances[idx]))
-               else
-                    push!(connections, (i, neighbor, constant))
-               end
+          #now we need to pick the top k cell_distances
+          if self_connecting
+               sorted_idxs = sortperm(cell_distances, rev = false)#The first one will be self connected
+          else
+               sorted_idxs = sortperm(cell_distances, rev = false)[2:end] #The first one will be self connected
+          end
+          println(cell_distances[sorted_idxs])
+          for nn in sorted_idxs[1:k]
+               #k_nearest_idxs = sorted_idxs[nn]
+               println("$(i), ($(xs[i]), $(ys[i])) -> $(nn) ($(xs[nn]), $(ys[nn])). Dist: $(cell_distances[nn])")
+
+               push!(connections, (i, nn, cell_distances[nn]))
+          end
+     end
+     connections
+
+end
+
+function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::T; self_connecting = false) where T <: Real
+     connections = Tuple[]  
+     n_xpoints = size(xs, 1)
+     n_ypoints = size(ys, 1)
+     for i in 1:n_xpoints
+          cell_distances = [euclidean_distance([xs[i], ys[i]], [xs[j], ys[j]]) for j in 1:n_ypoints]
+          if self_connecting
+               within_radius_indices = findall(d -> d <= radii, cell_distances)
+          else
+               within_radius_indices = findall(d -> d != 0.0 && d <= radii, cell_distances)
+          end
+          for neighbor in within_radius_indices
+               push!(connections, (i, neighbor, cell_distances[neighbor]))
           end
      end
      connections
