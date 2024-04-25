@@ -235,7 +235,7 @@ function DIFFUSION_MODEL(du, u, p, t; active_cell = 221, growth_rate = 0.5)
      du .= -u/540 #du decays over time
      if 500.0 < t < 2500.0
           #We want to add some diffusive material during a time range
-          du[active_cell] = growth_rate
+          u[active_cell] = 1.0
      end
      ∇α(du, u, p, t)#Diffusion occurs after
      #We should go through and decay the edges 
