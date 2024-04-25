@@ -52,6 +52,9 @@ include("StarburstModel/Mapping.jl")
 export CellMap
 export create_even_map, create_random_map
 export create_ring_map, create_dendrogram_map
+export connect_k_neighbors, connect_neighbors_radius
+export connection_matrix
+export ring, ring_circle_overlap_area
 
 export connect_neighbors_radius
 export connection_matrix
