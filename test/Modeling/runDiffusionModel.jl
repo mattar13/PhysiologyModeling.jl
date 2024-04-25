@@ -31,7 +31,6 @@ tspan = (0.0, 1.0)
 f_diffuse(du, u, p, t) = DIFFUSION_MODEL_GPU(du, u, p, t; active_cell = mid)
 probSDE = SDEProblem(f_diffuse, DIFFUSION_NOISE, u0, tspan, cell_map)
 @time sol = solve(probSDE, SOSRI(), reltol=1e-1, abstol=1e-1, progress=true, progress_steps=1)
-sol.t
 
 # Run figure 2, the diffusion animation
 fig2 = Figure(size = (1000,1000))
