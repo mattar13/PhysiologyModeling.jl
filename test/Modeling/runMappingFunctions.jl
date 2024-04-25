@@ -17,26 +17,27 @@ distances = zeros(size(coords)...)
 for ix in axes(coords, 1), iy in axes(coords,2)
      distances[ix, iy] = euclidean_distance(origin, coords[ix, iy])
 end
-dist_func1(d) = ring_circle_overlap_area(d; density = 0.01, r_inner = 0.1, r_outer = 0.18, r_circle = 0.18)
-dist_func2(d) = ring(d; density = 0.01, max_dist = 0.18, slope = 0.025)
-dist_func3(d) = d
-strengths1 = dist_func1.(distances)
-strengths2 = dist_func2.(distances)
-strengths3 = dist_func3.(distances)
-distances
+dist_func1(d) = ring_circle_overlap_area(d; density = 10.0, r_inner = 0.1, r_outer = 0.18, r_circle = 0.18)
+dist_func2(d) = ring(d; density = 1.0, max_dist = 0.18, slope = 0.025)
+dist_func3(d) = -10.0*d+10
+rinc_str = dist_func1.(distances)
+ring_str = dist_func2.(distances)
+cons_str = dist_func3.(distances)
 
 # [Plot the function] _______________________________________________________________#
-fig1 = Figure(size = (1200, 300))
-ax1a = Axis(fig1[1,1])
-ax1b = Axis(fig1[1,2])
-ax1c = Axis(fig1[1,3])
-ax1d = Axis(fig1[1,4])
-heatmap!(ax1a, xrng, yrng, distances)
-heatmap!(ax1b, xrng, yrng, strengths1)
-heatmap!(ax1c, xrng, yrng, strengths2)
-heatmap!(ax1d, xrng, yrng, strengths3)
+fig1 = Figure(size = (1000, 400))
+ax1a = Axis(fig1[1,1], title = "RingCirc")
+ax1b = Axis(fig1[1,2], title = "Ring")
+ax1c = Axis(fig1[1,3], title = "Constant")
+hma = heatmap!(ax1a, xrng, yrng, rinc_str)
+hmb = heatmap!(ax1b, xrng, yrng, ring_str)
+hmc = heatmap!(ax1c, xrng, yrng, cons_str)
 scatter!(ax1a, origin); scatter!(ax1b, origin); scatter!(ax1c, origin)
-save("test/SAC_model_tests/data/MappingFunc.png", fig1)
+Colorbar(fig1[2, 1], hma, vertical = false, label = "Fluorescence (px)")
+Colorbar(fig1[2, 2], hmb, vertical = false, label = "Fluorescence (px)")
+Colorbar(fig1[2, 3], hmc, vertical = false, label = "Fluorescence (px)")
+rowsize!(fig1.layout, 2, 0.12)
+save("test/Modeling/Results/MappingFunc.png", fig1)
 
 #%% [Drawing random cell maps] ________________________________________________________#
 #1) determine the domains and spacing of cells. 
