@@ -24,32 +24,47 @@ cell_map = CellMap(xs, ys, connections; distance_function = dist_func) |> make_G
 #3) Define the initial state and timespan
 u0 = zeros(size(cell_map.connections, 1)) |> CuArray{Float32}
 mid = ceil(Int64, length(xs)/2)
-
+ 
 u0[mid] =  1.0
 #4) Run model
 tspan = (0.0, 1.0)
 f_diffuse(du, u, p, t) = DIFFUSION_MODEL_GPU(du, u, p, t; active_cell = mid)
 probSDE = SDEProblem(f_diffuse, DIFFUSION_NOISE, u0, tspan, cell_map)
-@time sol = solve(probSDE, SOSRI(), reltol=1e-1, abstol=1e-1, progress=true, progress_steps=1)
+@time sol = solve(probSDE, SOSRI(), 
+    reltol=1e-1, abstol=1e-1, progress=true, progress_steps=1)
 
+import .PhysiologyModeling.IACh
+p0_dict = SAC_p0_dict()
+g_ACh = p0_dict["g_ACh"] 
+k_ACh = p0_dict["k_ACh"]
+E_ACh = p0_dict["E_ACh"]
+f(u) = IACh(-65.0, u, g_ACh, k_ACh, E_ACh)
+
+uALL = Array{Float64}(sol) .|> Float64
+iALL = f.(uALL)
+
+#%%
 # Run figure 2, the diffusion animation
 fig2 = Figure(size = (1000,1000))
 ax1 = Axis3(fig2[1,1]; aspect=(1, 1, 1), title = "T = 0.00")
+Array{Float64}(sol) .|> Float64
 
-surf2 = surface!(ax1, xs, ys, sol(0.0), colorrange = (0.0, 0.1), markersize = 35.0)
+surf2 = surface!(ax1, xs, ys, iALL[:,1], colorrange = (0.0, 0.1), markersize = 35.0)
 
 xlims!(ax1, (xmin, xmax))
 ylims!(ax1, (ymin, ymax))
-zlims!(ax1, (0.0, 0.1))
+zlims!(ax1, (0.0, maximum(iall)*0.1))
+
 n_frames = 1000
 animate_t = LinRange(0.0, sol.t[end], n_frames)
 dt = animate_t[2] - animate_t[1]
 fps = (1/dt)*5
+
 GLMakie.record(fig2, "test/Modeling/Results/diffusion_animation.mp4", animate_t, framerate = fps) do t
 	println(t)
-	u = sol(t)
+	u = Array{Float64}(sol(t)) .|> Float64
 	ax1.title = "T = $(round(t, digits = 3))s"
-	surf2[3] = u
+	surf2[3] = f.(u)
 end
 
 #%% Figure 1 showing the map
