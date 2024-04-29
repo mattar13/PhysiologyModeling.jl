@@ -126,56 +126,52 @@ function connect_k_neighbors(xs::Vector{T}, ys::Vector{T}, k::Int64; self_connec
      n_xpoints = size(xs, 1)
      n_ypoints = size(ys, 1)
      for i in 1:n_xpoints
-          cell_distances = [euclidean_distance([xs[i], ys[i]], [xs[j], ys[j]]) for j in 1:n_ypoints]
+          cell_distances = map(j -> euclidean_distance((xs[i], ys[i]), (xs[j], ys[j])) , 1:n_ypoints)
           #now we need to pick the top k cell_distances
           if self_connecting
                sorted_idxs = sortperm(cell_distances, rev = false)#The first one will be self connected
           else
                sorted_idxs = sortperm(cell_distances, rev = false)[2:end] #The first one will be self connected
           end
-          println(cell_distances[sorted_idxs])
           for nn in sorted_idxs[1:k]
-               #k_nearest_idxs = sorted_idxs[nn]
-               println("$(i), ($(xs[i]), $(ys[i])) -> $(nn) ($(xs[nn]), $(ys[nn])). Dist: $(cell_distances[nn])")
-
-               push!(connections, (i, nn, cell_distances[nn]))
+               d = cell_distances[nn]
+               #println("$(i), ($(xs[i]), $(ys[i])) -> $(nn) ($(xs[nn]), $(ys[nn])). Dist: $(cell_distances[nn])")
+               push!(connections, (i, nn, d))
           end
      end
      connections
 
 end
 
-function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::T; self_connecting = false) where T <: Real
+function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radius::T; self_connecting = false) where T <: Real
      connections = Tuple[]  
      n_xpoints = size(xs, 1)
      n_ypoints = size(ys, 1)
      for i in 1:n_xpoints
-          cell_distances = [euclidean_distance([xs[i], ys[i]], [xs[j], ys[j]]) for j in 1:n_ypoints]
-          if self_connecting
-               within_radius_indices = findall(d -> d <= radii, cell_distances)
-          else
-               within_radius_indices = findall(d -> d != 0.0 && d <= radii, cell_distances)
-          end
-          for neighbor in within_radius_indices
-               push!(connections, (i, neighbor, cell_distances[neighbor]))
+          for j in 1:n_ypoints
+               d = euclidean_distance((xs[i], ys[i]), (xs[j], ys[j]))
+               #println(d)
+               if self_connecting && d <= radius
+                    push!(connections, (i, j, d))
+               elseif !self_connecting && d != 0.0 && d <= radius
+                    push!(connections, (i, j, d))
+               end
           end
      end
      connections
 end
 
-function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::Vector{T}; constant = nothing) where T <: Real
+function connect_neighbors_radius(xs::Vector{T}, ys::Vector{T}, radii::Vector{T}; self_connecting = false) where T <: Real
      connections = Tuple[]  
      n_xpoints = size(xs, 1)
      n_ypoints = size(ys, 1)
      for i in 1:n_xpoints
-          cell_distances = [euclidean_distance([xs[i], ys[i]], [xs[j], ys[j]]) for j in 1:n_ypoints]
-          within_radius_indices = findall(d -> d <= radii[i], cell_distances)
-          #println(within_radius_indices)
-          for (idx, neighbor) in enumerate(within_radius_indices)
-               if isnothing(constant)
-                    push!(connections, (i, neighbor, cell_distances[idx]))
-               else
-                    push!(connections, (i, neighbor, constant))
+          for j in 1:n_ypoints
+               d = euclidean_distance((xs[i], ys[i]), (xs[j], ys[j]))
+               if self_connecting && d <= radii[i]
+                    push!(connections, (i, j, d))
+               elseif !self_connecting && d != 0.0 && d <= radius
+                    push!(connections, (i, j, d))
                end
           end
      end
@@ -202,14 +198,65 @@ connection_matrix(xs, ys, connections) = (xs, ys, connection_matrix(connections)
 # [Distance calculations] __________________________________________________________________________________________________________________#
 
 # Calculate Euclidean distance between two points
-function euclidean_distance(p1::Tuple{T,T}, p2::Tuple{T,T}) where T <: Real
+function euclidean_distance(p1::Tuple{T,T}, p2::Tuple{T,T}; ) where T <: Real
      x1, y1 = p1
      x2, y2 = p2
-     return sqrt((x2 - x1)^2 + (y2 - y1)^2)
+     x_dist = (x2 - x1)
+     y_dist = (y2 - y1)
+     return sqrt(x_dist^2+ y_dist^2)
 end
 
-function euclidean_distance(p1, p2)
-     return sqrt(sum((p1 .- p2) .^ 2))
+function find_angle(p1, p2)
+     # Compute differences in the x and y coordinates
+     x_diff = p2[1] - p1[1]
+     y_diff = p2[2] - p1[2]
+     
+     # Calculate the angle from the horizontal
+     angle = atan(-x_diff, -y_diff)
+     
+     return rad2deg(angle)
+end
+
+function calculate_linear_bias(current_angle, bias_angle; decay_rate = 1.0)
+     # Calculate the absolute difference and adjust for circularity
+     angular_difference = abs(current_angle - bias_angle)
+     if angular_difference > 180
+          angular_difference = 360 - angular_difference
+     end
+
+     # Calculate the bias value
+     # Bias drops linearly to zero at 180 degrees away
+     bias_value = max(0, 1 - (angular_difference / 180)*decay_rate)
+
+     return bias_value
+end
+
+function calculate_exponential_bias(current_angle, bias_angle; decay_rate = 0.03)
+     # Calculate the angular difference and adjust for circularity
+     angular_difference = abs(current_angle - bias_angle)
+     if angular_difference > 180
+          angular_difference = 360 - angular_difference
+     end
+
+     # Calculate the bias using an exponential decay function
+     bias_value = exp(-decay_rate * angular_difference)
+
+     return bias_value
+end
+
+function calculate_polynomial_bias(current_angle, bias_angle; power = 2)
+     # Calculate the angular difference and adjust for circularity
+     angular_difference = abs(current_angle - bias_angle)
+     if angular_difference > 180
+          angular_difference = 360 - angular_difference
+     end
+
+     # Calculate the bias using a polynomial decay function
+     # Normalize the difference to range from 0 to 1
+     normalized_difference = angular_difference / 180
+     bias_value = (1 - normalized_difference)^power
+
+     return bias_value
 end
 
 function return_connected_indices(cells, connections)
@@ -223,11 +270,21 @@ function return_connected_indices(cells, connections)
      return indices
 end
 
-linDist(x; m = 1.0, b = 0.0) = m*x + b 
-#This is our non-linear distance function
-ring(d; density = 0.05, max_dist = 0.15, slope = 0.01) = density * exp(-((d - max_dist)^2) / (2 * slope^2))
+# Helper function for the Rectified Linear Unit
+LIN(x; m = -1.0, b = 0.0) = m*x + b 
 
-function circle_overlap_area(d, r1, r2)
+#This is our non-linear distance function
+RING(d; density = 0.0005, max_dist = 0.18, slope = 0.025) = density * exp(-((d - max_dist)^2) / (2 * slope^2))
+
+function RING(p1::Tuple{T, T}, p2::Tuple{T, T}; kwargs...) where T<:Real
+     d = euclidean_distance(p1, p2)
+     val = RING(d; kwargs...)
+     #I want to calculate the bias in this section. 
+
+     return val
+end
+
+function circle_overlap(d, r1, r2)
      if d >= r1 + r2
          return 0.0  # No overlap
      elseif d == 0.0
@@ -243,38 +300,57 @@ function circle_overlap_area(d, r1, r2)
      end
 end
 
-function ring_circle_overlap_area(d; density = 10.0, r_inner = 0.1, r_outer = 0.15, r_circle = 0.18)
+function RING_CIRC(d; density = 0.005, r_inner = 0.1, r_outer = 0.18, r_circle = 0.18)
      # Area of overlap between outer circle of the ring and the circle
-     outer_overlap = circle_overlap_area(d, r_outer, r_circle)
+     outer_overlap = circle_overlap(d, r_outer, r_circle)
 
      # Area of overlap between inner circle of the ring and the circle
-     inner_overlap = circle_overlap_area(d, r_inner, r_circle)
+     inner_overlap = circle_overlap(d, r_inner, r_circle)
 
      # The overlapping area with the ring is the difference
      return density*max(0.0, outer_overlap - inner_overlap)
 end
 
-function ring_circle_overlap_area(p1::Tuple{T, T}, p2::Tuple{T, T}; density = 1.0, r_inner = 0.05, r_outer = 0.09, r_circle = 0.09) where T <: Real
+function RING_CIRC(p1::Tuple{T, T}, p2::Tuple{T, T}; kwargs...) where T <: Real 
      # Area of overlap between outer circle of the ring and the circle
      d = euclidean_distance(p1, p2)
-     outer_overlap = circle_overlap_area(d, r_outer, r_circle)
+     return RING_CIRC(d; kwargs...)
+end
 
-     # Area of overlap between inner circle of the ring and the circle
-     inner_overlap = circle_overlap_area(d, r_inner, r_circle)
-
+function RING_CIRC_BIAS(p1::Tuple{T, T}, p2::Tuple{T, T}; 
+     bias_angle = 180, mode = :Exponential, decay_rate = 0.03, kwargs...
+) where T <: Real 
+     # Area of overlap between outer circle of the ring and the circle
+     d = euclidean_distance(p1, p2)
      # The overlapping area with the ring is the difference
-     return density*max(0.0, outer_overlap - inner_overlap)
+     angle = find_angle(p1, p2)
+     if mode == :Exponential
+          bias = calculate_exponential_bias(angle, bias_angle, decay_rate = decay_rate)
+     elseif mode == :Linear
+          bias = calculate_linear_bias(angle, bias_angle)
+     else
+          bias = 1.0
+     end
+     return RING_CIRC(d; kwargs...) * bias
 end
 
 # [Constructor functions] _____________________________________________________________________________________________________________________________#
 function CellMap(xs::Vector{T}, ys::Vector{T}, connections::SparseMatrixCSC{T, Int64}; 
-     distance_function = ring_circle_overlap_area
+     distance_function = RING_CIRC
 ) where T <: Real
 
      #Determine the strength of the connection via a distance function
      rows, cols, values = findnz(connections)
-     new_values = map(x -> distance_function(x), values)
-     strength = sparse(rows, cols, new_values, length(xs), length(ys))
+     strengths = similar(values)
+     for idx in axes(rows,1)
+          p1_idx = rows[idx]
+          p2_idx = cols[idx]
+          p1 = (xs[p1_idx], ys[p1_idx])
+          p2 = (xs[p2_idx], ys[p2_idx])
+          strengths[idx] = distance_function(p1, p2)
+     end
+
+     strength = sparse(rows, cols, strengths, length(xs), length(ys))
      strength_out = -sum(strength, dims=1) |> vec #should we do dims 1 or dims 2
 
      return CellMap(xs, ys, connections, strength, strength_out)
@@ -283,23 +359,3 @@ end
 # [Some utility functions for CellMap] ____________________________________________________________________________________________________________#
 size(cell_map::CellMap) = length(cell_map.xs) 
 
-function map_points(cell_map::CellMap)
-     hcat(cell_map.xs, cell_map.ys)
-end
-
-function rasterize(map::CellMap; dx = 0.2, dy = 0.2)
-     #round each xs and ys to integers. Then color the heatmap in based on that
-     domains = map.domains
-     x_map = domains[:x][1]:dx:domains[:x][2]
-     y_map = domains[:y][1]:dy:domains[:y][2]
-     nx = length(x_map)
-     ny = length(y_map)
-     grid = zeros(nx, ny)
-     for i in 1:length(map.xs)
-          x = round(Int64, ((map.xs[i] - domains[:x][1])/(domains[:x][2] - domains[:x][1]))/dx+1)
-          y = round(Int64, ((map.ys[i] - domains[:y][1])/(domains[:y][2] - domains[:y][1]))/dy+1)
-          grid[x, y] += map.vs[i]
-     end
-     
-     return x_map, y_map, grid
-end
