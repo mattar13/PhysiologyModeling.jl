@@ -22,8 +22,13 @@ xs, ys = create_random_map(n_cells,
 )
 connection_list = connect_neighbors_radius(xs, ys, 0.18, self_connecting = false)
 connections = connection_matrix(connection_list, m = length(xs), n = length(ys))
-dist_func(d) = ring_circle_overlap_area(d; density = 0.005, r_inner = 0.1, r_outer = 0.15, r_circle = 0.18);
-cell_map = CellMap(xs, ys, connections; distance_function = dist_func) |> make_GPU;
+
+ACH_dist_func(p1, p2) = RING_CIRC(p1, p2) 
+cell_map_ACH = CellMap(xs, ys, connections; distance_function = ACH_dist_func) |> make_GPU;
+#Make the map for GABA
+bias_func(p1, p2) = calculate_exponential_bias(find_angle(p1, p2), 90.0)
+GABA_dist_func(p1, p2) = RING_CIRC(p1, p2) * bias_func(p1, p2)
+cell_map_GABA = CellMap(xs, ys, connections; distance_function = GABA_dist_func) |> make_GPU;
 
 #[run the model]____________________________________________________________________________#
 p0_dict = SAC_p0_dict()
@@ -36,7 +41,7 @@ u0 = extract_u0(u0_dict) |> CuArray{Float32}
 
 #3) Define the problem
 tspan = (0.0, 60e3)
-f_PDE(du, u, p, t) = SAC_PDE(du, u, p, t, cell_map, cell_map) #for now diffusion is the same in both directions
+f_PDE(du, u, p, t) = SAC_PDE(du, u, p, t, cell_map_ACH, cell_map_GABA) #for now diffusion is the same in both directions
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
 @time sol = solve(prob, 
      #SOSRI(), #This seems to be the best solver option
