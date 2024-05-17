@@ -1,7 +1,7 @@
 name = "PhysiologyModeling"
 uuid = "6edd8d80-c083-4fb2-88a3-9ae8efe7fb75"
 authors = ["mattar13 <mtarchick13@gmail.com> and contributors"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
