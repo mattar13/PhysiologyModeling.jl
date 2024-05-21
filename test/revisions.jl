@@ -7,9 +7,15 @@ using PhysiologyPlotting, GLMakie
 using BenchmarkTools
 
 #3 Goals
-#GOAL) Analysis of Physiological data
-#GOAL) Speeding up the model
 #GOAL) Analyzing the model
+
+
+
+
+
+
+
+
 #GOAL) Testing models against physiology data
 
 #%% GOAL: Testing models against physiology data
