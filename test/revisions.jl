@@ -4,9 +4,28 @@ using PhysiologyModeling
 
 #3 Goals
 #GOAL) Analyzing the model
+using Pkg; Pkg.activate("test")
+using Optimization
+#, DiffEqFlux
 
 
+#Extract and modify initial conditions
+u0_dict = SAC_u0_dict()
+u0 = extract_u0(u0_dict)
 
+#Specify the timespan
+tspan = (0.0, 60e3)
+
+#Set the stimulus parameters
+save_fn = "D:/Data/Analysis/2024_02_12_WT_Cell1_IC.png"
+p0_dict = SAC_p0_dict() #Extract parameters
+p0_dict["g_GABA"] = 0.0 #Null GABA conductance
+p0_dict["g_ACh"] = 0.0 #Null ACh conductance
+p0 = extract_p0(p0_dict)
+
+#Set up the problem
+prob = SDEProblem(SAC_ODE, noise1D, u0, tspan, p0)
+@time sol = solve(prob, SOSRI(), reltol = 2e-2, abstol = 2e-2, progress = true, progress_steps = 1)
 
 
 
