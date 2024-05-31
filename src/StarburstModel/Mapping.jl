@@ -54,7 +54,7 @@ function calculate_dendrogram_distance(xs::Vector{T}, ys::Vector{T}, old_connect
           yi = ys[x_idx]
           xj = xs[y_idx]
           yj = ys[y_idx]
-          dist = euclidean_distance([xi, yi], [xj, yj])
+          dist = euclidean_distance((xi, yi), (xj, yj))
           push!(connection_list, (x_idx, y_idx, dist))
      end
      connection_list

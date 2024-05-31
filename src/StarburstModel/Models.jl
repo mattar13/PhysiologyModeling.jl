@@ -317,7 +317,7 @@ end
 
 #Need a new function for gap junctions
 
-function SAC_GAP(du, u, p, t, MAP)
+function SAC_GAP(du, u, p, t, V_MAP, E_MAP, I_MAP)
      I_TOTAL = view(u, :, 1)
      v = view(u, :, 2)
      n = view(u, :, 3)
@@ -374,7 +374,7 @@ function SAC_GAP(du, u, p, t, MAP)
           + IGLUT(v, g, g_GLUT, k_GLUT, E_GLUT) #These are ionic glutamate channels
           + I_app + W) - I_TOTAL
           
-     ∇α(dI_TOTAL, v, MAP, t)
+     ∇α(dI_TOTAL, v, V_MAP, t)
      @. dv = (I_TOTAL) / C_m #Unless we are doing IC, this has to stay this way
 
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
@@ -384,7 +384,9 @@ function SAC_GAP(du, u, p, t, MAP)
      @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
      @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
+     ∇α(de, e, E_MAP, t)
      @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
+     ∇α(di, i, I_MAP, t)
      @. dg = 0.0
      @. dq = (γg*g^g_n * (1-q) - q) / τq
      @. dW = -W / τw
