@@ -2,6 +2,7 @@ using Revise
 using ElectroPhysiology
 using PhysiologyModeling
 
+<<<<<<< HEAD
 import PhysiologyModeling.calculate_dendrogram_distance
 #%%=[Run branch generation]__________________________________________________________________________________#
 radial = 5
