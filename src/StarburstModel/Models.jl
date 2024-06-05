@@ -46,7 +46,7 @@ function SAC_ODE(du, u, p, t)
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, 
           stim_start, stim_stop
      ) = p
-     @. dI_ext = (stim_amp-I_ext)
+     @. dI_ext = (I_app-I_ext)
      @. dv = (ILeak(v, g_leak, E_leak) + 
           + ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q)
           + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)
