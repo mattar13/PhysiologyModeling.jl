@@ -39,8 +39,9 @@ function SAC_ODE(du, u, p, t)
           α, τa, 
           β, τb, 
           a_n, b_n,
-          VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
-          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
+          k_SYT, n_SYT,
+          ρe,  g_ACh, k_ACh, E_ACh,  τACh,
+          ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           g_GLUT, k_GLUT, E_GLUT, 
           γg, g_n, τq,
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, 
@@ -61,8 +62,9 @@ function SAC_ODE(du, u, p, t)
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q)) - λ * c) / τc
      @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
-     @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
-     @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
+     #What if we make these dependent on the calcium concentration 
+     @. de = (ρe * ΦCa(c, k_SYT, n_SYT) - e) / τACh #Change these to reflect calcium
+     @. di = (ρi * ΦCa(c, k_SYT, n_SYT) - i) / τGABA
      @. dg = 0.0
      @. dq = (γg*g^g_n * (1-q) - q) / τq
      @. dW = -W / τw
@@ -109,8 +111,9 @@ function SAC_ODE_IC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
           α, τa, 
           β, τb, 
           a_n, b_n,
-          VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
-          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
+          k_SYT, n_SYT,
+          ρe,  g_ACh, k_ACh, E_ACh,  τACh,
+          ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           g_GLUT, k_GLUT, E_GLUT, 
           γg, g_n, τq,
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, 
@@ -138,8 +141,8 @@ function SAC_ODE_IC(du, u, p, t; stim_start = 500.0, stim_stop = 2000.0)
      @. dc = (C_0 + δ * (ICa(v,  g_Ca, V1, V2, E_Ca)*(1.0-q)) - λ * c) / τc
      @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
-     @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
-     @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
+     @. de = (ρe * ΦCa(c, k_SYT, n_SYT) - e) / τACh #Change these to reflect calcium
+     @. di = (ρi * ΦCa(c, k_SYT, n_SYT) - i) / τGABA
      @. dg = 0.0
      @. dq = (γg*g^g_n * (1-q) - q) / τq
      @. dW = -W / τw
@@ -280,8 +283,9 @@ function SAC_PDE(du, u, p, t, E_MAP, I_MAP)
           α, τa, 
           β, τb, 
           a_n, b_n,
-          VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
-          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
+          k_SYT, n_SYT,
+          ρe,  g_ACh, k_ACh, E_ACh,  τACh,
+          ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           g_GLUT, k_GLUT, E_GLUT, 
           γg, g_n, τq,
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, 
@@ -303,9 +307,9 @@ function SAC_PDE(du, u, p, t, E_MAP, I_MAP)
      @. dc = (C_0 + δ * (ICa(v,  g_Ca, V1, V2, E_Ca)*(1.0-q)) - λ * c) / τc
      @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
-     @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
+     @. de = (ρe * ΦCa(c, k_SYT, n_SYT) - e) / τACh #Change these to reflect calcium
      ∇α(de, e, E_MAP, t)
-     @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
+     @. di = (ρi * ΦCa(c, k_SYT, n_SYT) - i) / τGABA
      ∇α(di, i, I_MAP, t)
 
      @. dg = 0.0
@@ -356,8 +360,9 @@ function SAC_GAP(du, u, p, t, V_MAP, E_MAP, I_MAP)
           α, τa, 
           β, τb, 
           a_n, b_n,
-          VSe, V0e, ρe,  g_ACh, k_ACh, E_ACh,  τACh,
-          VSi, V0i, ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
+          k_SYT, n_SYT,
+          ρe,  g_ACh, k_ACh, E_ACh,  τACh,
+          ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
           g_GLUT, k_GLUT, E_GLUT, 
           γg, g_n, τq,
           V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, 
@@ -371,9 +376,9 @@ function SAC_GAP(du, u, p, t, V_MAP, E_MAP, I_MAP)
           + IACh(v, e, g_ACh, k_ACh, E_ACh) 
           + IGABA(v, i, g_GABA, k_GABA, E_Cl) 
           + IGLUT(v, g, g_GLUT, k_GLUT, E_GLUT) #These are ionic glutamate channels
-          + I_app + W) - I_TOTAL
-          
+          + I_app + W) - I_TOTAL     
      ∇α(dI_TOTAL, v, V_MAP, t)
+
      @. dv = (I_TOTAL) / C_m #Unless we are doing IC, this has to stay this way
 
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
@@ -382,9 +387,9 @@ function SAC_GAP(du, u, p, t, V_MAP, E_MAP, I_MAP)
      @. dc = (C_0 + δ * (ICa(v,  g_Ca, V1, V2, E_Ca)*(1.0-q)) - λ * c) / τc
      @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
      @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
-     @. de = (ρe * Φe(v, VSe, V0e) - e) / τACh
+     @. de = (ρe * ΦCa(c, k_SYT, n_SYT) - e) / τACh #Change these to reflect calcium
      ∇α(de, e, E_MAP, t)
-     @. di = (ρi * Φi(v, VSi, V0i) - i) / τGABA
+     @. di = (ρi * ΦCa(c, k_SYT, n_SYT) - i) / τGABA
      ∇α(di, i, I_MAP, t)
      @. dg = 0.0
      @. dq = (γg*g^g_n * (1-q) - q) / τq
@@ -404,8 +409,6 @@ end
 
 """
 We have to remove the two variables that don't change
-
-
 """
 function DynamicSAC(du, u, p, t)
      #Try making functions for differential equations

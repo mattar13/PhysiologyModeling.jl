@@ -70,6 +70,8 @@ function SAC_p0_dict(;keyset = :DEFAULT)
           "a_n"       => 4.0,
           "b_n"       => 4.0,
 
+          "k_SYT"     => 1.0e-6,
+          "n_SYT"     => 10.0,
           "ρe"        => 6.0,
           "VSe"       => 0.2,
           "V0e"       => -40.0,
@@ -77,6 +79,7 @@ function SAC_p0_dict(;keyset = :DEFAULT)
           "g_ACh"     => 2.15,
           "k_ACh"     => 0.1, #Half maximal concentration is 100 uM
           "E_ACh"     => 0.0,
+          
           "ρi"        => 5.0,
           "VSi"       => 0.2,
           "V0i"       => -40.0,
@@ -138,8 +141,10 @@ function extract_p0(d::Dict{String, Union{Real, Vector}}; mode = :ODE)
                "β", "τb", 
                "a_n", "b_n",
 
-               "VSe", "V0e", "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
-               "VSi", "V0i", "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
+               "k_SYT", "n_SYT",
+
+               "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
+               "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
 
                "g_GLUT", "k_GLUT", "E_GLUT", 
                
@@ -163,8 +168,10 @@ function extract_p0(d::Dict{String, Union{Real, Vector}}; mode = :ODE)
                "β", "τb", 
                "a_n", "b_n",
 
-               "VSe", "V0e", "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
-               "VSi", "V0i", "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
+               "k_NT",
+
+               "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
+               "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
 
                "g_GLUT", "k_GLUT", "E_GLUT", 
                
@@ -203,8 +210,10 @@ function par_idx(par::String)
           "β", "τb", 
           "a_n", "b_n",
 
-          "VSe", "V0e", "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
-          "VSi", "V0i", "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
+          "k_SYT","n_SYT",
+
+          "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
+          "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
 
           "g_GLUT", "k_GLUT", "E_GLUT", 
           

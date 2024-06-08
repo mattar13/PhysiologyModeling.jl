@@ -2,8 +2,12 @@
 @inline M∞(v::T, V1, V2) where T = (1 + tanh((v - V1) / V2)) / 2
 @inline N∞(v::T, V3, V4) where T = (1 + tanh((v - V3) / V4)) / 2
 @inline Λ(V::T, V3, V4) where T = cosh((V - V3) / (2 * V4));
+
 @inline Φe(v::T, VSe, V0e) where T = 1 / (1 + exp(-VSe * (v - V0e)))
 @inline Φi(v::T, VSi, V0i) where T = 1 / (1 + exp(-VSi * (v - V0i)))
+
+@inline ΦCa(c::T, k_SYT, n_SYT) where T = (c^n_SYT) / (c^n_SYT + k_SYT)  # Similar to Michaelis-Menten kinetics
+
 @inline ħe(e::T, k_ACh) where T = (e^2) / (e^2 + k_ACh)
 @inline ħi(i::T, k_GABA) where T = (i^2) / (i^2 + k_GABA)
 @inline ħg(g::T, k_GLUT) where T = (g^2) / (g^2 + k_GLUT)
