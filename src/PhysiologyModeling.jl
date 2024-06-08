@@ -60,6 +60,8 @@ export connection_matrix
 export RING, CIRC, RING_CIRC, LIN
 export RING_CIRC_BIAS
 
+export find_angle, calculate_exponential_bias
+
 export make_GPU
 
 #Eventually PhysiologyPlotting will include some things we need to plot everything
