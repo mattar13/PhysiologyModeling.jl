@@ -70,20 +70,21 @@ function SAC_p0_dict(;keyset = :DEFAULT)
           "a_n"       => 4.0,
           "b_n"       => 4.0,
 
-          "k_SYT"     => 1.0e-6,
+          "k_SYT"     => 1.0e-8,
           "n_SYT"     => 10.0,
-          "ρe"        => 6.0,
+
+          "ρe"        => 1.0,#6.0,
           "VSe"       => 0.2,
           "V0e"       => -40.0,
-          "τACh"      => 540.0,
+          "τACh"      => 124.0,
           "g_ACh"     => 2.15,
           "k_ACh"     => 0.1, #Half maximal concentration is 100 uM
           "E_ACh"     => 0.0,
           
-          "ρi"        => 5.0,
+          "ρi"        => 1.0,#5.0,
           "VSi"       => 0.2,
           "V0i"       => -40.0,
-          "τGABA"     => 1000.0, #1000
+          "τGABA"     => 100.0, #1000
           "g_GABA"    => 0.9,
           "k_GABA"    => 0.1,
           "E_Cl"      => -65.0,
