@@ -52,7 +52,7 @@ function SAC_ODE(du, u, p, t)
      ) = p
      @. dI_ext = (I_app-I_ext)
      @. dv = (ILeak(v, g_leak, E_leak) + 
-          + ICa(v, g_Ca, V1, V2, E_Ca)# * (1.0-q)
+          + ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q)
           + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)
           + ITREK(v, b, g_TREK, E_K) 
           + IACh(v, e, g_ACh, k_ACh, E_ACh) 
@@ -63,14 +63,18 @@ function SAC_ODE(du, u, p, t)
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q)) - λ * c) / τc
-     @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
-     @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     
+     #@. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
+     #@. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     @. da = (-α*c^a_n*a + (1-a)) / τa #Why didn't the old way work? 
+     @. db = (β*(1-a)^b_n*(1-b) - b)/τb #TREK activity
+
      #What if we make these dependent on the calcium concentration 
      @. de = (ρe * ΦCa(c, k_SYT, n_SYT) - e) / τACh #Change these to reflect calcium
      @. di = (ρi * ΦCa(c, k_SYT, n_SYT) - i) / τGABA
      @. dg = 0.0 #This value needs to exponentially decay
      @. dd = -d/τd #This is the reuptake and removal of dopamine from synapses
-     @. dq = (γg*d^g_n * (1-q) - q) / τq #This is gprotein response of DA
+     @. dq = (γg*g^g_n * (1-q) - q) / τq #This is the mGluR2 gproteins
      @. dW = -W / τw
      nothing
 end
@@ -312,8 +316,12 @@ function SAC_PDE(du, u, p, t, E_MAP, I_MAP)
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
      @. dc = (C_0 + δ * (ICa(v,  g_Ca, V1, V2, E_Ca)*(1.0-q)) - λ * c) / τc
-     @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
-     @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     
+     #@. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
+     #@. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
+     @. da = (-α*c^a_n*a + (1-a)) / τa #Why didn't the old way work? 
+     @. db = (β*(1-a)^b_n*(1-b) - b)/τb #TREK activity
+
      @. de = (ρe * ΦCa(c, k_SYT, n_SYT) - e) / τACh #Change these to reflect calcium
      ∇α(de, e, E_MAP, t)
      @. di = (ρi * ΦCa(c, k_SYT, n_SYT) - i) / τGABA
@@ -321,7 +329,7 @@ function SAC_PDE(du, u, p, t, E_MAP, I_MAP)
 
      @. dg = 0.0
      @. dd = -d / τd
-     @. dq = (γg*d^g_n * (1-q) - q) / τq
+     @. dq = (γg*g^g_n * (1-q) - q) / τq
      @. dW = -W / τw
      nothing
 end
