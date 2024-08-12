@@ -13,7 +13,8 @@ function SAC_u0_dict(;mode = :ODE, n_cells = 1)
           "b" => 7.714363674074932e-6,  #8  b(t) = 0.000 
           "e" => 0.04675168624810658,   #9  e(t) = 0.000 
           "i" => 0.03895973860120606,   #10 i(t) = 0.000 
-          "g" => 0.0, 
+          "g" => 0.0,
+          "d" => 0.0, 
           "q" => 0.0,
           "W" => 0.000                  #11 W(t) = 0.000 #Initial conditions
      )
@@ -94,6 +95,7 @@ function SAC_p0_dict(;keyset = :DEFAULT)
           "k_GLUT"    => 0.007, #halfmax activation occurs at 7 uM
           "E_GLUT"    => 0.0, #NMDA receptors are non-selective
           
+          "τd"        => 100.0, #decay of dopamine
           "g_n"       => 2.0, #number of glutamate moleculaes needed to activte the g protein response
           "γg"        => 6.18, #rate of Gq activation by G protein 
           "τq"        => 500.0, #time needed for Gq to return to baseline
@@ -149,6 +151,7 @@ function extract_p0(d::Dict{String, Union{Real, Vector}}; mode = :ODE)
 
                "g_GLUT", "k_GLUT", "E_GLUT", 
                
+               "τd",
                "γg", "g_n", "τq",
 
                "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18",
@@ -175,7 +178,8 @@ function extract_p0(d::Dict{String, Union{Real, Vector}}; mode = :ODE)
                "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
 
                "g_GLUT", "k_GLUT", "E_GLUT", 
-               
+
+               "τd",
                "γg", "g_n", "τq",
 
                "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18",
@@ -187,7 +191,7 @@ end
 
 function extract_u0(d::Dict{String, T}; mode = :ODE) where T
      if mode == :ODE || mode == :PDE
-          keys_u0 = ["I_ext", "v", "n", "m", "h", "c", "a", "b", "e", "i", "g", "q", "W"]
+          keys_u0 = ["I_ext", "v", "n", "m", "h", "c", "a", "b", "e", "i", "g", "d", "q", "W"]
      elseif mode == :KEYS
 
      elseif mode == :DynamicalAnalysis
@@ -218,6 +222,7 @@ function par_idx(par::String)
 
           "g_GLUT", "k_GLUT", "E_GLUT", 
           
+          "τd",
           "γg", "g_n", "τq",
 
           "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18",

@@ -18,6 +18,7 @@ p0_dict["g_GABA"] = 0.0 #Null GABA conductance
 p0_dict["g_ACh"] = 0.0 #Null ACh conductance
 p0 = extract_p0(p0_dict)
 
+
 #Set up the problem
 prob = SDEProblem(SAC_ODE, noise1D, u0, tspan, p0)
 @time sol = solve(prob, SOSRI(), reltol = 2e-2, abstol = 2e-2, progress = true, progress_steps = 1)
