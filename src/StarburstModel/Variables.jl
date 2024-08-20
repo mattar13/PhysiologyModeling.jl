@@ -95,7 +95,7 @@ function SAC_p0_dict(;keyset = :DEFAULT)
           "k_GLUT"    => 0.007, #halfmax activation occurs at 7 uM
           "E_GLUT"    => 0.0, #NMDA receptors are non-selective
           
-          "τd"        => 100.0, #decay of dopamine
+          "τd"        => 5000.0, #decay of dopamine
           "g_n"       => 2.0, #number of glutamate moleculaes needed to activte the g protein response
           "γg"        => 6.18, #rate of Gq activation by G protein 
           "τq"        => 500.0, #time needed for Gq to return to baseline
