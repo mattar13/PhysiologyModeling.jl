@@ -301,7 +301,7 @@ function circle_overlap(d, r1, r2)
 end
 
 function RING_CIRC(d; 
-     density = 0.005, 
+     density = 80e-6, 
      r_inner = 40.0, 
      r_outer = 80.0, 
      r_circle = 80.0
