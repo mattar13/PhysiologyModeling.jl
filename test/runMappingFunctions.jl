@@ -1,7 +1,7 @@
 using ElectroPhysiology, PhysiologyModeling
+import PhysiologyModeling: euclidean_distance, calculate_linear_bias, find_angle
 using Pkg; Pkg.activate("test")
 using PhysiologyPlotting, GLMakie
-import PhysiologyModeling: euclidean_distance, calculate_linear_bias, find_angle
 
 #%% [Eventually we want to generalize the mapping function] ____________________________________________#
 origin = (0.0, 0.0)

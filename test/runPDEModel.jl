@@ -1,23 +1,24 @@
 #=[Import packages]============================================================#
 using ElectroPhysiology
 using PhysiologyModeling
-using PhysiologyPlotting, GLMakie
 using DiffEqCallbacks
+import PhysiologyModeling: calculate_exponential_bias, find_angle
+using Pkg; Pkg.activate("test")
+using PhysiologyPlotting, GLMakie
 using CUDA
 CUDA.allowscalar(true)
 using SparseArrays
 using LinearAlgebra
-import PhysiologyModeling: calculate_exponential_bias, find_angle
 using Dates
 
-#%% 1) determine the domains and spacing of cells. 
-domain_x = (xmin, xmax) = (0.0, 0.3445) #This is a simulation for a retina 5mm in diameter
-domain_y = (ymin, ymax) = (0.0, 0.3445)
-dx = dy = 0.005 #Mean distribution is 40-50 micron (WR taylor et al)
+#1) determine the domains and spacing of cells. 
+domain_x = (xmin, xmax) = (0.0, 1.0) #This is a simulation for a retina 5mm in diameter
+domain_y = (ymin, ymax) = (0.0, 1.0)
+dx = dy = 0.03 #Mean distribution is 40-50 micron (WR taylor et al)
 
 #2) create a random distribution of cells and their radii
 #The density of SACs in the retina is around 1200 per mm2. So if we have 5mm2 1200 * 5 = 6000
-n_cells = 200 #Really pushing the model
+n_cells = 27 #Really pushing the model
 xs, ys = create_random_map(n_cells, 
      xmin = xmin, dx = dx, xmax = xmax, 
      ymin = ymin, dy = dy, ymax = ymax
@@ -25,7 +26,7 @@ xs, ys = create_random_map(n_cells,
 connection_list = connect_neighbors_radius(xs, ys, 0.18, self_connecting = false)
 connections = connection_matrix(connection_list, m = length(xs), n = length(ys))
 
-ACH_dist_func(p1, p2) = RING_CIRC(p1, p2) 
+ACH_dist_func(p1, p2) = RING_CIRC(p1, p2)
 cell_map_ACH = CellMap(xs, ys, connections; distance_function = ACH_dist_func) |> make_GPU;
 #Make the map for GABA
 bias_func(p1, p2) = calculate_exponential_bias(find_angle(p1, p2), 90.0)
@@ -42,21 +43,15 @@ u0_dict= SAC_u0_dict(mode = :PDE, n_cells = n_cells)
 u0 = extract_u0(u0_dict) |> CuArray{Float32}
 
 #3) Define the problem
-tspan = (0.0, 300e3)
+tspan = (0.0, 10e3)
 dt = 1.0
 tseries = tspan[1]:dt:tspan[2]
 
 f_PDE(du, u, p, t) = SAC_PDE(du, u, p, t, cell_map_ACH, cell_map_GABA) #for now diffusion is the same in both directions
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
-@time sol = solve(prob, 
-     #SOSRI(), #This seems to be the best solver option
-     SOSRA(),
-     #tstops = tseries, callback = cb,
-     reltol =  0.1, abstol = 0.1, 
-     progress=true, progress_steps=1
-)
+@time sol = solve(prob, SOSRA(), reltol =  0.1, abstol = 0.1, progress=true, progress_steps=1)
 #save("data.jld", "initial_cond", sol[end])
- 
+
 #%%====================================[Plot the solution]====================================#
 CUDA.allowscalar(true) #allow GPU operations to be offloaded to CPU 
 start_time = sol.t[1]
@@ -74,44 +69,41 @@ et = hcat(map(t -> sol(t)[:,9], Time)...)|>Array
 it = hcat(map(t -> sol(t)[:,10], Time)...)|>Array
 gt = hcat(map(t -> sol(t)[:,11], Time)...)|>Array
 qt = hcat(map(t -> sol(t)[:,12], Time)...)|>Array
-Wt = hcat(map(t -> sol(t)[:,13], Time)...)|>Array
+dt = hcat(map(t -> sol(t)[:,13], Time)...)|>Array
+Wt = hcat(map(t -> sol(t)[:,14], Time)...)|>Array
+Wt
+#%% Plot the figure
+fig1 = Figure(size = (1200, 500))
+ax1 = Axis(fig1[1:3,1], title = "Map")
 
+ax2a = Axis(fig1[1,2], title = "Applied Current")
+ax2b = Axis(fig1[2,2], title = "Voltage (Vt)")
+ax2c = Axis(fig1[3,2], title = "Noise (Wt)")
 
-fig1 = Figure(size = (1800, 800))
-ax1a = Axis(fig1[1,1], title = "I_ext (pA)")
-ax2a = Axis(fig1[2,1], title = "Voltage (Vt)")
-ax3a = Axis(fig1[3,1], title = "Noise (Wt)")
-
-ax1b = Axis(fig1[1,2], title = "K Repol. (Nt)")
-ax2b = Axis(fig1[2,2], title = "Na Gating (Mt)")
-ax3b = Axis(fig1[3,2], title = "Na Close (Ht)")
-
-ax1c = Axis(fig1[1,3], title = "Calcium (Ct)")
-ax2c = Axis(fig1[2,3], title = "cAMP (At)")
+ax3a = Axis(fig1[1,3], title = "Calcium (Ct)")
+ax3b = Axis(fig1[2,3], title = "cAMP (At)")
 ax3c = Axis(fig1[3,3], title = "TREK (Bt)")
 
-ax1d = Axis(fig1[1,4], title = "ACh (Et)")
-ax2d = Axis(fig1[2,4], title = "GABA (It)")
-ax3d = Axis(fig1[3,4], title = "Glutamate (Gt)")
+ax4a = Axis(fig1[1,4], title = "ACh (Et)")
+ax4b = Axis(fig1[2,4], title = "GABA (It)")
+ax4c = Axis(fig1[3,4], title = "Glutamate (Gt)")
 
 for n in 1:n_cells
-     lines!(ax1a, Time, It[n, :])
-     lines!(ax2a, Time, vt[n, :])
-     lines!(ax3a, Time, Wt[n, :])
+     lines!(ax2a, Time, It[n, :])
+     lines!(ax2b, Time, vt[n, :])
+     lines!(ax2c, Time, Wt[n, :])
      
-     lines!(ax1b, Time, nt[n, :])
-     lines!(ax2b, Time, mt[n, :])
-     lines!(ax3b, Time, ht[n, :])
-     
-     lines!(ax1c, Time, ct[n, :])
-     lines!(ax2c, Time, at[n, :])
+     lines!(ax3a, Time, ct[n, :])
+     lines!(ax3b, Time, at[n, :])
      lines!(ax3c, Time, bt[n, :])
      
-     lines!(ax1d, Time, et[n, :])
-     lines!(ax2d, Time, it[n, :])
-     lines!(ax3d, Time, gt[n, :])
+     lines!(ax4a, Time, et[n, :])
+     lines!(ax4b, Time, it[n, :])
+     lines!(ax4c, Time, gt[n, :])
 end
 display(fig1)
+
+#%%
 save_fn1 = "Modeling/Results/$(Dates.today())_MODEL_TRACES.png"
 save(save_fn1, fig1)
 
