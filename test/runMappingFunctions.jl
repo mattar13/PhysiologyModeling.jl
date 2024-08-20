@@ -5,16 +5,16 @@ import PhysiologyModeling: euclidean_distance, calculate_linear_bias, find_angle
 
 #%% [Eventually we want to generalize the mapping function] ____________________________________________#
 origin = (0.0, 0.0)
-xs = LinRange(-100.0, 100.0, 1000)
-ys = LinRange(-100.0, 100.0, 1000)
+xs = LinRange(-0.10, 0.10, 1000)
+ys = LinRange(-0.10, 0.10, 1000)
 coords = Iterators.product(xs, ys) |> collect
 
 rinc_str = zeros(size(coords)...)
 ring_str = zeros(size(coords)...)
 cons_str = zeros(size(coords)...)
 angles = zeros(size(coords)...)
-dist_func1(p1, p2) = RING_CIRC(p1, p2; density = 80e-6, r_inner = 40.0, r_outer = 80.0, r_circle = 80.0) 
-dist_func2(p1, p2) = RING_CIRC(p1, p2; density = 80e-6, r_inner = 40.0, r_outer = 80.0, r_circle = 80.0)
+dist_func1(p1, p2) = RING_CIRC(p1, p2)
+dist_func2(p1, p2) = RING_CIRC(p1, p2)
 
 angle_bias = 180
 for ix in axes(coords, 1), iy in axes(coords,2)
