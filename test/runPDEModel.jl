@@ -72,6 +72,7 @@ qt = hcat(map(t -> sol(t)[:,12], Time)...)|>Array
 dt = hcat(map(t -> sol(t)[:,13], Time)...)|>Array
 Wt = hcat(map(t -> sol(t)[:,14], Time)...)|>Array
 Wt
+
 #%% Plot the figure
 fig1 = Figure(size = (1200, 500))
 ax1 = Axis(fig1[1:3,1], title = "Map")

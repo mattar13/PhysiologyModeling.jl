@@ -2,6 +2,9 @@
 using ElectroPhysiology, PhysiologyModeling
 using PhysiologyPlotting, GLMakie
 using DiffEqCallbacks
+using Pkg; Pkg.activate("test")
+using PhysiologyPlotting, GLMakie
+using CUDA
 
 #%%=[Solving a single SDE for tspan]==========================================#
 #Extract and modify initial conditions
@@ -31,8 +34,7 @@ prob = SDEProblem(SAC_ODE, noise1D, u0, tspan, p0)
     tstops = dosetimes, callback = cb, 
     progress = true, progress_steps = 1
 )
-sol(sol.t[end])[7]
-sol(sol.t[end])[8]
+
 # [Plot the solution]_________________________________________________________________________________________________________#
 fig1 = Figure(size = (1800, 800))
 ax1a = Axis(fig1[1,1], title = "I_ext (pA)")
