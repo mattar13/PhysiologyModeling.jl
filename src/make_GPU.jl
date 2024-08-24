@@ -2,6 +2,7 @@ mutable struct CellMapGPU{T}
 	xs::Vector{T}
 	ys::Vector{T}
 	connections::CUDA.CUSPARSE.CuSparseMatrixCSC{T, Int32}
+     connections_idx::Vector{Tuple{Int64, Int64}}
      strength::CUDA.CUSPARSE.CuSparseMatrixCSC{T, Int32}
      strength_out::CuArray{T}
 end
@@ -12,7 +13,7 @@ function make_GPU(MAP::CellMap{T}) where T <: Real
      connections = MAP.connections .|> Float32 |> CUSPARSE.CuSparseMatrixCSC
      strength = MAP.strength .|> Float32 |> CUSPARSE.CuSparseMatrixCSC
      strength_out = MAP.strength_out |> CuArray{Float32}
-     return CellMapGPU(xs, ys, connections, strength, strength_out)
+     return CellMapGPU(xs, ys, connections, MAP.connections_idx, strength, strength_out)
 end
 
 function DIFFUSION_MODEL_GPU(du, u, p, t; active_cell = 221)
