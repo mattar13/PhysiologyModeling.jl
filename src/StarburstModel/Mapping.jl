@@ -4,6 +4,7 @@ mutable struct CellMap{T}
 	xs::Vector{T}
 	ys::Vector{T}
 	connections::SparseMatrixCSC{T, Int64}
+     connections_idx::Vector{Tuple{Int64, Int64}}
      strength::SparseMatrixCSC{T, Int64}
      strength_out::Vector{T}
 end
@@ -341,24 +342,27 @@ end
 
 # [Constructor functions] _____________________________________________________________________________________________________________________________#
 function CellMap(xs::Vector{T}, ys::Vector{T}, connections::SparseMatrixCSC{T, Int64}; 
-     distance_function = RING_CIRC
+     distance_function = (x,y) -> 1.0 #Default is a constant 1.0
 ) where T <: Real
 
      #Determine the strength of the connection via a distance function
      rows, cols, values = findnz(connections)
      strengths = similar(values)
+     connections_idx = Tuple{Int64, Int64}[]
      for idx in axes(rows,1)
           p1_idx = rows[idx]
           p2_idx = cols[idx]
           p1 = (xs[p1_idx], ys[p1_idx])
           p2 = (xs[p2_idx], ys[p2_idx])
+          connect_idx = (p1_idx, p2_idx)
+          push!(connections_idx, connect_idx)
           strengths[idx] = distance_function(p1, p2)
      end
 
      strength = sparse(rows, cols, strengths, length(xs), length(ys))
      strength_out = -sum(strength, dims=1) |> vec #should we do dims 1 or dims 2
 
-     return CellMap(xs, ys, connections, strength, strength_out)
+     return CellMap(xs, ys, connections, connections_idx, strength, strength_out)
 end
 
 # [Some utility functions for CellMap] ____________________________________________________________________________________________________________#

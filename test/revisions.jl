@@ -6,21 +6,24 @@ using CUDA
 
 #create a map from preselected dictionary of points
 #%% 1) determine the domains and spacing of cells. 
-domain_x = (xmin, xmax) = (0.0, 97.5) #This is a simulation for a retina 5mm in diameter
-domain_y = (ymin, ymax) = (0.0, 97.5)
-dx = dy = 20.0 #Mean distribution is 40-50 micron (WR taylor et al)
+domain_x = (xmin, xmax) = (0.0, 0.0975) #This is a simulation for a retina 5mm in diameter
+domain_y = (ymin, ymax) = (0.0, 0.0975)
+dx = dy = 0.02 #Mean distribution is 40-50 micron (WR taylor et al)
 
 #2) create a random distribution of cells and their radii
 #The density of SACs in the retina is around 1200 per mm2. So if we have 5mm2 1200 * 5 = 6000
-n_cells = 27 #Really pushing the model
+n_cells = 4 #Really pushing the model
 xs, ys = create_random_map(n_cells, 
      xmin = xmin, dx = dx, xmax = xmax, 
      ymin = ymin, dy = dy, ymax = ymax
 )
-connection_list = connect_neighbors_radius(xs, ys, 80.0)
+connection_list = connect_neighbors_radius(xs, ys, 0.08)
 connections = connection_matrix(connection_list, m = length(xs), n = length(ys))
 
 #Make the map for ACh
+cell_map_GAP = CellMap(xs, ys, connections) |> make_GPU;
+
+#%%Make the map for ACh
 ACH_dist_func(p1, p2) = RING_CIRC(p1, p2) 
 cell_map_ACH = CellMap(xs, ys, connections; distance_function = ACH_dist_func) |> make_GPU;
 #Make the map for GABA
@@ -31,6 +34,8 @@ cell_map_GABA = CellMap(xs, ys, connections; distance_function = GABA_dist_func)
 #[run the model]____________________________________________________________________________#
 #Load parameters
 p0_dict = SAC_p0_dict()
+p0_dict["g_ACh"] = 0.0
+p0_dict["g_GABA"] = 0.0
 p0 = extract_p0(p0_dict) 
 
 #Load initial conditions
@@ -42,7 +47,7 @@ tspan = (0.0, 1e3)
 dt = 1.0
 tseries = tspan[1]:dt:tspan[2]
 
-f_PDE(du, u, p, t) = SAC_PDE(du, u, p, t, cell_map_ACH, cell_map_GABA) #for now diffusion is the same in both directions
+f_PDE(du, u, p, t) = SAC_PDE(du, u, p, t, cell_map_GAP, cell_map_ACH, cell_map_GABA) #for now diffusion is the same in both directions
 prob = SDEProblem(f_PDE, noise2D, u0, tspan, p0)
 @time sol = solve(prob, 
      SOSRA(),

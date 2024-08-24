@@ -36,7 +36,7 @@ function SAC_p0_dict(;keyset = :DEFAULT)
      base_dict = Dict{String, Union{Real, Vector}}(
           "I_app"     => 0.0,
           "VC"        => 0.0, #For voltage clamp
-
+          "gGAP"      => 0.2, #for gap junction conductance
           "C_m"       => 13.6,
           "g_W"       => 0.075,
           "τw"        => 800.0,
@@ -129,63 +129,33 @@ function SAC_p0_dict(;keyset = :DEFAULT)
 end
 
 function extract_p0(d::Dict{String, Union{Real, Vector}}; mode = :ODE)
-     if mode == :ODE
-          keys_p0 = [
-               "I_app", "VC",
-               "C_m", "g_W", "τw", 
-               "g_leak", "E_leak", 
-               "g_K", "V3", "V4", "E_K", "τn", 
-               "g_Ca", "V1", "V2","E_Ca", "τc",
-               "g_Na", "E_Na", 
-               "g_TREK",
-               
-               "C_0", "λ" , "δ",  
-               "α", "τa", 
-               "β", "τb", 
-               "a_n", "b_n",
+     keys_p0 = [
+          "I_app", "VC", "gGAP",
+          "C_m", "g_W", "τw", 
+          "g_leak", "E_leak", 
+          "g_K", "V3", "V4", "E_K", "τn", 
+          "g_Ca", "V1", "V2","E_Ca", "τc",
+          "g_Na", "E_Na", 
+          "g_TREK",
+          
+          "C_0", "λ" , "δ",  
+          "α", "τa", 
+          "β", "τb", 
+          "a_n", "b_n",
 
-               "k_SYT", "n_SYT",
+          "k_SYT", "n_SYT",
 
-               "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
-               "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
+          "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
+          "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
 
-               "g_GLUT", "k_GLUT", "E_GLUT", 
-               
-               "τd",
-               "γg", "g_n", "τq",
+          "g_GLUT", "k_GLUT", "E_GLUT", 
+          
+          "τd",
+          "γg", "g_n", "τq",
 
-               "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18",
-               "stim_start", "stim_stop"
-          ]  
-     elseif mode == :PDE
-          keys_p0 = [
-               "I_app", "VC",
-               "C_m", "g_W", "τw", 
-               "g_leak", "E_leak", 
-               "g_K", "V3", "V4", "E_K", "τn", 
-               "g_Ca", "V1", "V2","E_Ca", "τc",
-               "g_Na", "E_Na", 
-               "g_TREK",
-               
-               "C_0", "λ" , "δ",  
-               "α", "τa", 
-               "β", "τb", 
-               "a_n", "b_n",
-
-               "k_NT",
-
-               "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
-               "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",
-
-               "g_GLUT", "k_GLUT", "E_GLUT", 
-
-               "τd",
-               "γg", "g_n", "τq",
-
-               "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18",
-               "stim_start", "stim_stop"
-          ]  
-     end
+          "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18",
+          "stim_start", "stim_stop"
+     ]  
      return map(k -> d[k], keys_p0)
 end
 

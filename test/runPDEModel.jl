@@ -18,7 +18,7 @@ dx = dy = 0.03 #Mean distribution is 40-50 micron (WR taylor et al)
 
 #2) create a random distribution of cells and their radii
 #The density of SACs in the retina is around 1200 per mm2. So if we have 5mm2 1200 * 5 = 6000
-n_cells = 27 #Really pushing the model
+n_cells = 3 #Really pushing the model
 xs, ys = create_random_map(n_cells, 
      xmin = xmin, dx = dx, xmax = xmax, 
      ymin = ymin, dy = dy, ymax = ymax

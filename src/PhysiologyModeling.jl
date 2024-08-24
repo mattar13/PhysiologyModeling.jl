@@ -41,6 +41,7 @@ include("StarburstModel/Models.jl")
 export SAC_ODE, SAC_ODE_NT_CLAMP
 export SAC_ODE_IC, SAC_ODE_VC
 export ∇α, DIFFUSION_MODEL, DIFFUSION_NOISE
+export ∇GAP
 export SAC_PDE, SAC_PDE_STIM 
 export SAC_GAP #Make a model for a gap junction
 export SAC_ODE_Compartment

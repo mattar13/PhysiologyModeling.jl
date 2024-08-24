@@ -52,7 +52,7 @@ function SAC_ODE(du, u, p, t)
      ) = p
      @. dI_ext = (I_app-I_ext)
      @. dv = (ILeak(v, g_leak, E_leak) + 
-          + ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q)
+          + ICa(v, g_Ca, V1, V2, E_Ca)# * (1.0-q)
           + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)
           + ITREK(v, b, g_TREK, E_K) 
           + IACh(v, e, g_ACh, k_ACh, E_ACh) 
@@ -62,7 +62,7 @@ function SAC_ODE(du, u, p, t)
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
-     @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q)) - λ * c) / τc
+     @. dc = (C_0 + δ * (ICa(v, g_Ca, V1, V2, E_Ca)) - λ * c) / τc
      
      #@. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
      #@. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
@@ -74,7 +74,7 @@ function SAC_ODE(du, u, p, t)
      @. di = (ρi * ΦCa(c, k_SYT, n_SYT) - i) / τGABA
      @. dg = 0.0 #This value needs to exponentially decay
      @. dd = -d/τd #This is the reuptake and removal of dopamine from synapses
-     @. dq = (γg*g^g_n * (1-q) - q) / τq #This is the mGluR2 gproteins
+     @. dq = (γg*d^g_n * (1-q) - q) / τq #This is the DA
      @. dW = -W / τw
      nothing
 end
@@ -241,6 +241,13 @@ function ∇α(du, u, cell_map, t) #Could it really be this easy?
      du .+= (cell_map.strength_out .* u) + (cell_map.strength * u)
 end
 
+function ∇GAP(du, u, cell_map, t)
+     for c in cell_map.connections_idx
+          x, y = c
+          du[x] = (u[x] - u[y])/2 
+     end
+end
+
 function DIFFUSION_MODEL(du, u, p, t; active_cell = 221, growth_rate = 0.5)
      du .= -u/540 #du decays over time
      if 500.0 < t < 2500.0
@@ -251,8 +258,8 @@ function DIFFUSION_MODEL(du, u, p, t; active_cell = 221, growth_rate = 0.5)
      #We should go through and decay the edges 
 end
 
-function SAC_PDE(du, u, p, t, E_MAP, I_MAP) 
-     I_ext = view(u, :, 1)
+function SAC_PDE(du, u, p, t, G_MAP, E_MAP, I_MAP) 
+     v_GAP = view(u, :, 1)
      v = view(u, :, 2)
      n = view(u, :, 3)
      m = view(u, :, 4)
@@ -267,7 +274,7 @@ function SAC_PDE(du, u, p, t, E_MAP, I_MAP)
      d = view(u, :, 13)
      W = view(u, :, 14)
 
-     dI_ext = view(du, :, 1)
+     dv_GAP = view(du, :, 1)
      dv = view(du, :, 2)
      dn = view(du, :, 3)
      dm = view(du, :, 4)
@@ -282,7 +289,7 @@ function SAC_PDE(du, u, p, t, E_MAP, I_MAP)
      dd = view(du, :, 13)
      dW = view(du, :, 14)
 
-     (I_app, VC,
+     (I_app, VC, gGAP,
           C_m, g_W, τw, 
           g_leak, E_leak, 
           g_K, V3, V4, E_K, τn, 
@@ -303,7 +310,9 @@ function SAC_PDE(du, u, p, t, E_MAP, I_MAP)
           stim_start, stim_stop
      ) = p
 
-     @. dI_ext = I_app-I_ext
+     @. dv_GAP = -v_GAP
+     ∇GAP(dv, v, G_MAP, t)
+
      @. dv = (ILeak(v, g_leak, E_leak) + 
           + ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q)
           + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)
@@ -311,7 +320,9 @@ function SAC_PDE(du, u, p, t, E_MAP, I_MAP)
           + IACh(v, e, g_ACh, k_ACh, E_ACh) 
           + IGABA(v, i, g_GABA, k_GABA, E_Cl) 
           + IGLUT(v, g, g_GLUT, k_GLUT, E_GLUT) #These are ionic glutamate channels
-          + I_app + W) / C_m #Unless we are doing IC, this has to stay this way
+          + I_app 
+          + -gGAP*v_GAP 
+          + W) / C_m #Unless we are doing IC, this has to stay this way
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
      @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
@@ -329,85 +340,6 @@ function SAC_PDE(du, u, p, t, E_MAP, I_MAP)
 
      @. dg = 0.0
      @. dd = -d / τd
-     @. dq = (γg*g^g_n * (1-q) - q) / τq
-     @. dW = -W / τw
-     nothing
-end
-
-#Need a new function for gap junctions
-
-function SAC_GAP(du, u, p, t, V_MAP, E_MAP, I_MAP)
-     I_TOTAL = view(u, :, 1)
-     v = view(u, :, 2)
-     n = view(u, :, 3)
-     m = view(u, :, 4)
-     h = view(u, :, 5)
-     c = view(u, :, 6)
-     a = view(u, :, 7)
-     b = view(u, :, 8)
-     e = view(u, :, 9)
-     i = view(u, :, 10)
-     g = view(u, :, 11)
-     q = view(u, :, 12)
-     W = view(u, :, 13)
-
-     dI_TOTAL = view(du, :, 1)
-     dv = view(du, :, 2)
-     dn = view(du, :, 3)
-     dm = view(du, :, 4)
-     dh = view(du, :, 5)
-     dc = view(du, :, 6)
-     da = view(du, :, 7)
-     db = view(du, :, 8)
-     de = view(du, :, 9)
-     di = view(du, :, 10)
-     dg = view(du, :, 11)
-     dq = view(du, :, 12)
-     dW = view(du, :, 13)
-
-     (I_app, VC,
-          C_m, g_W, τw, 
-          g_leak, E_leak, 
-          g_K, V3, V4, E_K, τn, 
-          g_Ca, V1, V2,E_Ca, τc,
-          g_Na, E_Na, 
-          g_TREK,
-          C_0, λ , δ,  
-          α, τa, 
-          β, τb, 
-          a_n, b_n,
-          k_SYT, n_SYT,
-          ρe,  g_ACh, k_ACh, E_ACh,  τACh,
-          ρi,  g_GABA, k_GABA, E_Cl, τGABA, 
-          g_GLUT, k_GLUT, E_GLUT, 
-          γg, g_n, τq,
-          V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, 
-          stim_start, stim_stop
-     ) = p
-
-     @. dI_TOTAL = (ILeak(v, g_leak, E_leak) + 
-          + ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q)
-          + IK(v, n, g_K, E_K) + INa(v, m, h, g_Na, E_Na)
-          + ITREK(v, b, g_TREK, E_K) 
-          + IACh(v, e, g_ACh, k_ACh, E_ACh) 
-          + IGABA(v, i, g_GABA, k_GABA, E_Cl) 
-          + IGLUT(v, g, g_GLUT, k_GLUT, E_GLUT) #These are ionic glutamate channels
-          + I_app + W) - I_TOTAL     
-     ∇α(dI_TOTAL, v, V_MAP, t)
-
-     @. dv = (I_TOTAL) / C_m #Unless we are doing IC, this has to stay this way
-
-     @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
-     @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
-     @. dh = α_H(v, V13, V14, V15) * (1 - h) - β_H(v, V16, V17, V18) * h
-     @. dc = (C_0 + δ * (ICa(v,  g_Ca, V1, V2, E_Ca)*(1.0-q)) - λ * c) / τc
-     @. da = (α * c^a_n * (1 - a) - a) / τa #These were the old options
-     @. db = (β * a^b_n * (1 - b) - b) / τb #These were the old options
-     @. de = (ρe * ΦCa(c, k_SYT, n_SYT) - e) / τACh #Change these to reflect calcium
-     ∇α(de, e, E_MAP, t)
-     @. di = (ρi * ΦCa(c, k_SYT, n_SYT) - i) / τGABA
-     ∇α(di, i, I_MAP, t)
-     @. dg = 0.0
      @. dq = (γg*g^g_n * (1-q) - q) / τq
      @. dW = -W / τw
      nothing
