@@ -171,8 +171,8 @@ function extract_u0(d::Dict{String, T}; mode = :ODE) where T
 end
 
 function par_idx(par::String)
-     keys_p0 = [
-          "I_app", "VC",
+     keys_p0 =keys_p0 = [
+          "I_app", "VC", "gGAP",
           "C_m", "g_W", "τw", 
           "g_leak", "E_leak", 
           "g_K", "V3", "V4", "E_K", "τn", 
@@ -185,7 +185,7 @@ function par_idx(par::String)
           "β", "τb", 
           "a_n", "b_n",
 
-          "k_SYT","n_SYT",
+          "k_SYT", "n_SYT",
 
           "ρe",  "g_ACh", "k_ACh", "E_ACh",  "τACh",
           "ρi",  "g_GABA", "k_GABA", "E_Cl", "τGABA",

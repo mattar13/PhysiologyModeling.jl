@@ -241,13 +241,6 @@ function ∇α(du, u, cell_map, t) #Could it really be this easy?
      du .+= (cell_map.strength_out .* u) + (cell_map.strength * u)
 end
 
-function ∇GAP(du, u, cell_map, t)
-     for c in cell_map.connections_idx
-          x, y = c
-          du[x] = (u[x] - u[y])/2 
-     end
-end
-
 function DIFFUSION_MODEL(du, u, p, t; active_cell = 221, growth_rate = 0.5)
      du .= -u/540 #du decays over time
      if 500.0 < t < 2500.0
@@ -289,7 +282,7 @@ function SAC_PDE(du, u, p, t, G_MAP, E_MAP, I_MAP)
      dd = view(du, :, 13)
      dW = view(du, :, 14)
 
-     (I_app, VC, gGAP,
+     (I_app, VC, g_GAP,
           C_m, g_W, τw, 
           g_leak, E_leak, 
           g_K, V3, V4, E_K, τn, 
@@ -310,8 +303,8 @@ function SAC_PDE(du, u, p, t, G_MAP, E_MAP, I_MAP)
           stim_start, stim_stop
      ) = p
 
-     @. dv_GAP = -v_GAP
-     ∇GAP(dv, v, G_MAP, t)
+     @. dv_GAP = -v_GAP #Lets try this. 
+     ∇α(dv_GAP, v, G_MAP, t)
 
      @. dv = (ILeak(v, g_leak, E_leak) + 
           + ICa(v, g_Ca, V1, V2, E_Ca) * (1.0-q)
@@ -321,7 +314,7 @@ function SAC_PDE(du, u, p, t, G_MAP, E_MAP, I_MAP)
           + IGABA(v, i, g_GABA, k_GABA, E_Cl) 
           + IGLUT(v, g, g_GLUT, k_GLUT, E_GLUT) #These are ionic glutamate channels
           + I_app 
-          + -gGAP*v_GAP 
+          + -g_GAP*(1.0-a^2)*v_GAP 
           + W) / C_m #Unless we are doing IC, this has to stay this way
      @. dn = (Λ(v, V3, V4) * ((N∞(v, V3, V4) - n))) / τn
      @. dm = α_M(v, V7, V8, V9) * (1 - m) - β_M(v, V10, V11, V12) * m
@@ -338,7 +331,7 @@ function SAC_PDE(du, u, p, t, G_MAP, E_MAP, I_MAP)
      @. di = (ρi * ΦCa(c, k_SYT, n_SYT) - i) / τGABA
      ∇α(di, i, I_MAP, t)
 
-     @. dg = 0.0
+     @. dg = -g/500.0
      @. dd = -d / τd
      @. dq = (γg*g^g_n * (1-q) - q) / τq
      @. dW = -W / τw
@@ -349,9 +342,9 @@ end
 
 DIFFUSION_NOISE(du, u, p, t) = du[:] .= 0.001
 
-noise2D(du, u, p, t) = du[:, end] .= p[4]
+noise2D(du, u, p, t) = du[:, end] .= p[5]
 function noise1D(du, u, p, t) 
-     du[end] = p[4]
+     du[end] = p[5]
 end
 
 
