@@ -1,1 +1,0 @@
-#Each modelling session can start with a definition of the 
