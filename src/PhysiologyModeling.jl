@@ -7,7 +7,7 @@ using ElectroPhysiology
 using LinearAlgebra, SparseArrays
 using ForwardDiff, NLsolve
 using DifferentialEquations
-using DiffEqCallbacks #This is necessary for inserting conductances into the model
+#using DiffEqCallbacks #This is necessary for inserting conductances into the model
 
 
 using Logging: global_logger
