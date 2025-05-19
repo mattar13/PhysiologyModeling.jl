@@ -9,7 +9,6 @@ using ForwardDiff, NLsolve
 using DifferentialEquations
 #using DiffEqCallbacks #This is necessary for inserting conductances into the model
 
-
 using Logging: global_logger
 using TerminalLoggers: TerminalLogger
 
