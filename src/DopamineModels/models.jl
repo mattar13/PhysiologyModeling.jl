@@ -1,17 +1,18 @@
 # ---------- ODE system ----------
 function dopaminergic_autoreceptor!(du, u, p, t)
-    @unpack Cm, gL, EL, gCa, ECa, Vhalf, kV, τCa, αCa,
+    (Cm, gL, EL, gCa, ECa, Vhalf, kV, τCa, αCa,
             krel, kclear, kon, koff, kG, kGdeg, G50, nGi,
-            kACbasal, kcAMPdeg, kPKA, kPKAdeg = p
+            kACbasal, kcAMPdeg, kPKA, kPKAdeg) = p
 
     V,  Ca,  DA,  P,  Gi,  cAMP,  PKA = u   # current state
 
     # instantaneous Ca current
     m_inf = 1 / (1 + exp(-(V - Vhalf)/kV))
-    I_Ca  = gCa * m_inf * (V - ECa)        # nA (nS·mV)
+    I_leak = -gL * (V - EL)          # nA (nS·mV)
+    I_Ca  = -gCa * m_inf * (V - ECa)        # nA (nS·mV)
 
     # 1. Voltage
-    du[1] = (-gL*(V - EL) - I_Ca + I_stim(t)) / Cm          # dV/dt (mV/ms)
+    du[1] = (I_leak + I_Ca + I_stim(t)) / Cm          # dV/dt (mV/ms)
 
     # 2. Calcium
     du[2] = -Ca/τCa + αCa*I_Ca                               # µM/ms

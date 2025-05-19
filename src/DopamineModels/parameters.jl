@@ -27,3 +27,12 @@ p = (
     kPKA      = 0.03,     # µM·ms⁻¹
     kPKAdeg   = 0.01      # ms⁻¹
 )
+
+conds = (
+
+)
+
+settings = (
+    tspan = (0.0, 500.0), # ms
+    dt    = 0.5          # ms
+)
