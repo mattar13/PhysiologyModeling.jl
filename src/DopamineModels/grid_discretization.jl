@@ -150,14 +150,6 @@ function update_dopamine_grid!(dDA_grid::Vector{T}, DA_grid::Vector{T}, p, t, gr
     krel, kclear = p  # Get release and clearance parameters
     nx, ny = grid_params.nx, grid_params.ny
     
-    # Add release at specific sites
-    # for (i, j) in grid_params.release_sites
-    #     if 1 ≤ i ≤ nx && 1 ≤ j ≤ ny
-    #         idx = (j-1)*nx + i
-    #         DA_grid[idx] += krel * t  # Add release based on calcium (t is actually Ca here)
-    #     end
-    # end
-    
     # Apply diffusion operator based on method
     if method == :fdm
         dDA_grid .= grid_params.fdm_operator * DA_grid - kclear * DA_grid
@@ -167,7 +159,7 @@ function update_dopamine_grid!(dDA_grid::Vector{T}, DA_grid::Vector{T}, p, t, gr
         K = grid_params.spectral_operator
         DA_hat = fft(reshape(DA_grid, nx, ny))
         DA_hat .*= exp.(K * dt)
-        dDA_grid .= vec(real(ifft(DA_hat)))# - kclear * DA_grid
+        dDA_grid .= vec(real(ifft(DA_hat))) - kclear * DA_grid
     end
 end
 
