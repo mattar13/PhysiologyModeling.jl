@@ -38,7 +38,7 @@ end
     dopaminergic_autoreceptor_grid!(du, u, p, t, grid_params, method)
 Modified version of dopaminergic_autoreceptor! that uses a 2D grid for dopamine diffusion.
 """
-function dopaminergic_autoreceptor_grid!(du, u, p, t, grid_params, method)
+function dopaminergic_autoreceptor_grid!(du, u, p, t, grid_params; method = :fdm)
     (Cm, gL, EL, gCa, ECa, Vhalf, kV, τCa, αCa,
             krel, kclear, kon, koff, kG, kGdeg, G50, nGi,
             kACbasal, kcAMPdeg, kPKA, kPKAdeg) = p
@@ -63,11 +63,17 @@ function dopaminergic_autoreceptor_grid!(du, u, p, t, grid_params, method)
     # 2. Calcium
     du[2] = -Ca/τCa + αCa*I_Ca                               # µM/ms
 
+    #We want to update the dopamine grid here
+    for release_index in grid_params.release_sites
+        release_index_1D = (release_index[2]-1)*grid_params.nx + release_index[1]
+        du[release_index_1D] += krel*Ca - kclear*DA_grid[release_index_1D]
+    end
+
     # 3. Dopamine grid (using the grid discretization)
     update_dopamine_grid!(du[3:end-4], DA_grid, (krel, kclear), Ca, grid_params; method=method)
 
     # 4. D2 occupancy (using average dopamine concentration)
-    DA_avg = mean(DA_grid)
+    DA_avg = 0.0 #mean(DA_grid)
     du[end-3] = kon*DA_avg*(1 - P) - koff*P
 
     # 5. Gi/Go
