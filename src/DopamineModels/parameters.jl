@@ -10,7 +10,7 @@ p = (
     τCa       = 30.0,     # ms
     αCa       = 0.02,     # µM / (nA·ms)
 
-    krel      = 0.05,     # µM / (µM·ms)
+    krel      = 0.5,     # µM / (µM·ms)
     kclear    = 0.001,     # ms⁻¹
 
     kon       = 0.02,     # µM⁻¹·ms⁻¹

@@ -31,9 +31,9 @@ mid_x = div(settings.nx, 2) + 1  # Integer division by 2, then add 1
 mid_y = div(settings.ny, 2) + 1
 # Convert 2D index to 1D index
 mid_idx = (mid_y - 1) * settings.nx + mid_x
-u0[mid_idx] = 1.0
+u0[mid_idx] = 10.0
 
-tspan = (0.0, 10.0)
+tspan = (0.0, 100.0)
 
 prob = ODEProblem(
     (du, u, p, t) -> update_dopamine_grid!(du, u, p, t, grid_params),
@@ -53,7 +53,7 @@ ax1 = Axis(fig[1:2, 1], title="Dopamine Concentration Evolution", aspect=1.0)
 # Calculate the maximum value across all frames for consistent color limits
 max_val = maximum(DA_grid)
 hm = heatmap!(ax1, DA_grid[:,:,1], colormap=:viridis, colorrange=(0, max_val))
-Colorbar(fig[1:2, 2], hm)
+Colorbar(fig[1:2, 0], hm)
 
 # Add release site markers
 for (i, j) in release_sites
@@ -67,11 +67,11 @@ axislegend(ax1)
 
 # Add subplots for X and Y line averages
 ax_x = Axis(fig[3, 1], title="Average DA along X", xlabel="X position", ylabel="DA (μM)")
-ax_y = Axis(fig[3, 2], title="Average DA along Y", xlabel="Y position", ylabel="DA (μM)")
+ax_y = Axis(fig[1:2, 2], title="Average DA along Y", xlabel="Y position", ylabel="DA (μM)")
 
 # Create lines for X and Y averages
 x_line = lines!(ax_x, 1:settings.nx, zeros(settings.nx), color=:blue)
-y_line = lines!(ax_y, 1:settings.ny, zeros(settings.ny), color=:red)
+y_line = lines!(ax_y, zeros(settings.ny), 1:settings.ny,color=:red)
 
 # Create animation
 framerate = 30
@@ -83,5 +83,5 @@ record(fig, "src/DopamineModels/TestImages/grid_diffusion.mp4", 1:size(DA_grid, 
     
     # Update X and Y averages
     x_line[2] = mean(current_grid, dims=1)[:]  # Average along Y for each X
-    y_line[2] = mean(current_grid, dims=2)[:]  # Average along X for each Y
+    y_line[1] = mean(current_grid, dims=2)[:]  # Average along X for each Y
 end
