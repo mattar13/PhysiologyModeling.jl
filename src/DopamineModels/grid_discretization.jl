@@ -167,7 +167,7 @@ function update_dopamine_grid!(dDA_grid::Vector{T}, DA_grid::Vector{T}, p, t, gr
         K = grid_params.spectral_operator
         DA_hat = fft(reshape(DA_grid, nx, ny))
         DA_hat .*= exp.(K * dt)
-        dDA_grid .= vec(real(ifft(DA_hat))) - kclear * DA_grid
+        dDA_grid .= vec(real(ifft(DA_hat)))# - kclear * DA_grid
     end
 end
 
