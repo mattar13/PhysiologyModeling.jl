@@ -11,7 +11,7 @@ p = (
     αCa       = 0.02,     # µM / (nA·ms)
 
     krel      = 0.05,     # µM / (µM·ms)
-    kclear    = 0.01,     # ms⁻¹
+    kclear    = 0.1,     # ms⁻¹
 
     kon       = 0.02,     # µM⁻¹·ms⁻¹
     koff      = 0.01,     # ms⁻¹
@@ -34,5 +34,10 @@ conds = (
 
 settings = (
     tspan = (0.0, 500.0), # ms
-    dt    = 0.5          # ms
+    dt    = 0.5,          # ms
+    nx    = 15,
+    ny    = 15,
+    dx    = 1.0,
+    dy    = 1.0,
+    D     = 10.0         # µM·ms⁻¹
 )

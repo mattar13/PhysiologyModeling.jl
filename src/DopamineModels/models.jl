@@ -66,23 +66,23 @@ function dopaminergic_autoreceptor_grid!(du, u, p, t, grid_params; method = :fdm
     #We want to update the dopamine grid here
     for release_index in grid_params.release_sites
         release_index_1D = (release_index[2]-1)*grid_params.nx + release_index[1]
-        du[release_index_1D] += krel*Ca - kclear*DA_grid[release_index_1D]
+        du[release_index_1D] += krel*Ca# - kclear*DA_grid[release_index_1D]
     end
 
     # 3. Dopamine grid (using the grid discretization)
     update_dopamine_grid!(du[3:end-4], DA_grid, (krel, kclear), Ca, grid_params; method=method)
 
     # 4. D2 occupancy (using average dopamine concentration)
-    DA_avg = 0.0 #mean(DA_grid)
-    du[end-3] = kon*DA_avg*(1 - P) - koff*P
+    # DA_avg = 0.0 #mean(DA_grid)
+    # du[end-3] = kon*DA_avg*(1 - P) - koff*P
 
-    # 5. Gi/Go
-    du[end-2] = kG*P - kGdeg*Gi
+    # # 5. Gi/Go
+    # du[end-2] = kG*P - kGdeg*Gi
 
-    # 6. cAMP (AC inhibited by Gi)
-    AC = kACbasal / (1 + (Gi/G50)^nGi)
-    du[end-1] = AC - kcAMPdeg*cAMP
+    # # 6. cAMP (AC inhibited by Gi)
+    # AC = kACbasal / (1 + (Gi/G50)^nGi)
+    # du[end-1] = AC - kcAMPdeg*cAMP
 
-    # 7. PKA
-    du[end] = kPKA*cAMP - kPKAdeg*PKA
+    # # 7. PKA
+    # du[end] = kPKA*cAMP - kPKAdeg*PKA
 end
