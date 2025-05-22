@@ -1,5 +1,6 @@
 using SparseArrays
 using LinearAlgebra
+using FFTW
 
 """
     GridParameters
@@ -12,17 +13,28 @@ struct GridParameters
     dy::Float64      # Grid spacing in y
     D::Float64       # Diffusion coefficient
     release_sites::Vector{Tuple{Int,Int}}  # Coordinates of release sites
+    fdm_operator::SparseMatrixCSC{Float64,Int}  # FDM operator
+    fvm_operator::SparseMatrixCSC{Float64,Int}  # FVM operator
+    spectral_operator::Matrix{Complex{Float64}}  # Spectral operator
 end
 
 """
-    create_fdm_operator(params::GridParameters)
+    GridParameters(nx, ny, dx, dy, D, release_sites)
+Constructor for GridParameters that creates and stores the diffusion operators.
+"""
+function GridParameters(nx::Int, ny::Int, dx::Float64, dy::Float64, D::Float64, release_sites::Vector{Tuple{Int,Int}})
+    fdm_op = create_fdm_operator(nx, ny, dx, dy, D)
+    fvm_op = create_fvm_operator(nx, ny, dx, dy, D)
+    spec_op = create_spectral_operator(nx, ny, dx, dy, D)
+    
+    return GridParameters(nx, ny, dx, dy, D, release_sites, fdm_op, fvm_op, spec_op)
+end
+
+"""
+    create_fdm_operator(nx, ny, dx, dy, D)
 Creates the finite difference method operator for 2D diffusion
 """
-function create_fdm_operator(params::GridParameters)
-    nx, ny = params.nx, params.ny
-    dx, dy = params.dx, params.dy
-    D = params.D
-    
+function create_fdm_operator(nx::Int, ny::Int, dx::Float64, dy::Float64, D::Float64)
     # Create sparse matrix for the Laplacian
     n = nx * ny
     I = Int[]
@@ -63,14 +75,10 @@ function create_fdm_operator(params::GridParameters)
 end
 
 """
-    create_fvm_operator(params::GridParameters)
+    create_fvm_operator(nx, ny, dx, dy, D)
 Creates the finite volume method operator for 2D diffusion
 """
-function create_fvm_operator(params::GridParameters)
-    nx, ny = params.nx, params.ny
-    dx, dy = params.dx, params.dy
-    D = params.D
-    
+function create_fvm_operator(nx::Int, ny::Int, dx::Float64, dy::Float64, D::Float64)
     n = nx * ny
     I = Int[]
     J = Int[]
@@ -110,14 +118,10 @@ function create_fvm_operator(params::GridParameters)
 end
 
 """
-    create_spectral_operator(params::GridParameters)
+    create_spectral_operator(nx, ny, dx, dy, D)
 Creates the spectral method operator for 2D diffusion
 """
-function create_spectral_operator(params::GridParameters)
-    nx, ny = params.nx, params.ny
-    dx, dy = params.dx, params.dy
-    D = params.D
-    
+function create_spectral_operator(nx::Int, ny::Int, dx::Float64, dy::Float64, D::Float64)
     # Create wave numbers
     kx = 2π * fftfreq(nx, 1/dx)
     ky = 2π * fftfreq(ny, 1/dy)
@@ -132,35 +136,38 @@ function create_spectral_operator(params::GridParameters)
 end
 
 """
-    update_dopamine_grid!(du, u, p, t, grid_params, method)
-Updates the dopamine concentration grid using the specified method
+    update_dopamine_grid!(dDA_grid, DA_grid, p, t, grid_params; method=:fdm)
+Updates the dopamine concentration grid using the specified method.
+Inputs:
+- dDA_grid: Vector for storing derivatives
+- DA_grid: Current dopamine concentration vector
+- p: Tuple of (krel, kclear)
+- t: Current time
+- grid_params: Grid parameters
+- method: Discretization method (:fdm, :fvm, or :spectral)
 """
-function update_dopamine_grid!(du, u, p, t, grid_params, method)
-    krel, kclear = p[3], p[4]  # Get release and clearance parameters
+function update_dopamine_grid!(dDA_grid::Vector{T}, DA_grid::Vector{T}, p, t, grid_params; method=:fdm) where T <: Real
+    krel, kclear = p  # Get release and clearance parameters
     nx, ny = grid_params.nx, grid_params.ny
     
-    # Reshape the dopamine grid
-    DA_grid = reshape(u[3:end-4], nx, ny)
-    
     # Add release at specific sites
-    for (i, j) in grid_params.release_sites
-        if 1 ≤ i ≤ nx && 1 ≤ j ≤ ny
-            DA_grid[i,j] += krel * u[2]  # Add release based on calcium
-        end
-    end
+    # for (i, j) in grid_params.release_sites
+    #     if 1 ≤ i ≤ nx && 1 ≤ j ≤ ny
+    #         idx = (j-1)*nx + i
+    #         DA_grid[idx] += krel * t  # Add release based on calcium (t is actually Ca here)
+    #     end
+    # end
     
     # Apply diffusion operator based on method
     if method == :fdm
-        L = create_fdm_operator(grid_params)
-        du[3:end-4] = L * vec(DA_grid) - kclear * vec(DA_grid)
+        dDA_grid .= grid_params.fdm_operator * DA_grid - kclear * DA_grid
     elseif method == :fvm
-        L = create_fvm_operator(grid_params)
-        du[3:end-4] = L * vec(DA_grid) - kclear * vec(DA_grid)
+        dDA_grid .= grid_params.fvm_operator * DA_grid - kclear * DA_grid
     elseif method == :spectral
-        K = create_spectral_operator(grid_params)
-        DA_hat = fft(DA_grid)
+        K = grid_params.spectral_operator
+        DA_hat = fft(reshape(DA_grid, nx, ny))
         DA_hat .*= exp.(K * dt)
-        du[3:end-4] = real(ifft(DA_hat)) - kclear * vec(DA_grid)
+        dDA_grid .= vec(real(ifft(DA_hat))) - kclear * DA_grid
     end
 end
 
