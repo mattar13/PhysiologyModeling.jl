@@ -1,37 +1,79 @@
 using Pkg; Pkg.activate(".")
 using PhysiologyModeling
-using Pkg; Pkg.activate("test")
-using GLMakie
-using Statistics
+using FFTW
 
-#%% ---------- load packages ----------
+# ---------- load packages ----------
 include("auxillary_functions.jl")
 include("models.jl")
 include("grid_discretization.jl")
 include("parameters.jl")
 
-"""
-    test_single_release_site()
-Test the grid-based model with a single release site in the center.
-"""
+# ---------- load plotting packages ----------
+using Pkg; Pkg.activate("test")
+using GLMakie
+using Statistics
+#%% -Test the grid-based model with a single release site in the center.
+
 # Grid parameters
 nx, ny = 50, 50
 dx, dy = 1.0, 1.0
 D = 0.1  # Diffusion coefficient
 release_sites = [(25, 25)]  # Center of the grid
-
 grid_params = GridParameters(nx, ny, dx, dy, D, release_sites)
+grid_params.fdm_operator
 
-# Model parameters (example values)
-p = (
-    Cm=1.0, gL=0.1, EL=-65.0, gCa=1.0, ECa=120.0,
-    Vhalf=-20.0, kV=10.0, τCa=100.0, αCa=0.1,
-    krel=1.0, kclear=0.1, kon=1.0, koff=0.1,
-    kG=1.0, kGdeg=0.1, G50=1.0, nGi=2.0,
-    kACbasal=1.0, kcAMPdeg=0.1, kPKA=1.0, kPKAdeg=0.1
+#Create the parameters for the dopamine grid
+p_grid = (p.krel, p.kclear)
+
+#Create the initial conditions for the dopamine grid
+u0 = zeros(nx*ny)
+# Calculate middle point indices
+mid_x = div(nx, 2) + 1  # Integer division by 2, then add 1
+mid_y = div(ny, 2) + 1
+# Convert 2D index to 1D index
+mid_idx = (mid_y - 1) * nx + mid_x
+u0[mid_idx] = 1.0
+
+tspan = (0.0, 1000.0)
+
+prob = ODEProblem(
+    (du, u, p, t) -> update_dopamine_grid!(du, u, p, t, grid_params),
+    u0, tspan, p_grid
 )
 
-# Initial conditions
+sol = solve(prob, Tsit5(), saveat=1.0)  # Save more frequently for smoother animation
+
+# Create 3D array of solutions
+DA_grid = cat(map(t -> reshape(sol(t), nx, ny), sol.t)...; dims=3)
+
+#%% Create animation
+fig = Figure(size=(800, 800))
+ax = Axis(fig[1, 1], title="Dopamine Concentration Evolution", aspect=1.0)
+
+# Calculate the maximum value across all frames for consistent color limits
+max_val = maximum(DA_grid)
+hm = heatmap!(ax, DA_grid[:,:,1], colormap=:viridis, colorrange=(0, max_val))
+Colorbar(fig[1, 2], hm)
+
+# Add release site markers
+for (i, j) in release_sites
+    scatter!(ax, [i], [j], color=:red, markersize=15, label="Release Site")
+end
+
+# Set axis limits and labels
+xlims!(ax, 0.5, nx+0.5)
+ylims!(ax, 0.5, ny+0.5)
+axislegend(ax)
+
+# Create animation
+framerate = 30
+record(fig, "dopamine_evolution.mp4", 1:size(DA_grid, 3); framerate=framerate) do frame
+    println(frame)
+    hm[1] = DA_grid[:,:,frame]  # Update the heatmap data
+    ax.title = "Dopamine Concentration at t = $(round(sol.t[frame], digits=1))"
+end
+
+#%% Run the model with the dopamine grid Initial conditions
 n_grid = nx * ny
 u0 = zeros(2 + n_grid + 4)  # V, Ca, DA_grid, P, Gi, cAMP, PKA
 u0[1] = -65.0  # Initial voltage
