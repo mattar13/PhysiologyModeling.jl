@@ -33,7 +33,7 @@ mid_y = div(settings.ny, 2) + 1
 mid_idx = (mid_y - 1) * settings.nx + mid_x
 u0[mid_idx] = 1.0
 
-tspan = (0.0, 100.0)
+tspan = (0.0, 10.0)
 
 prob = ODEProblem(
     (du, u, p, t) -> update_dopamine_grid!(du, u, p, t, grid_params),
@@ -46,28 +46,42 @@ sol = solve(prob, Tsit5(), saveat=1.0)  # Save more frequently for smoother anim
 DA_grid = cat(map(t -> reshape(sol(t), settings.nx, settings.ny), sol.t)...; dims=3)
 
 # Create animation
-fig = Figure(size=(800, 800))
-ax = Axis(fig[1, 1], title="Dopamine Concentration Evolution", aspect=1.0)
+fig = Figure(size=(1200, 1000))
 
+# Left panel for heatmap
+ax1 = Axis(fig[1:2, 1], title="Dopamine Concentration Evolution", aspect=1.0)
 # Calculate the maximum value across all frames for consistent color limits
 max_val = maximum(DA_grid)
-hm = heatmap!(ax, DA_grid[:,:,1], colormap=:viridis, colorrange=(0, max_val))
-Colorbar(fig[1, 2], hm)
+hm = heatmap!(ax1, DA_grid[:,:,1], colormap=:viridis, colorrange=(0, max_val))
+Colorbar(fig[1:2, 2], hm)
 
 # Add release site markers
 for (i, j) in release_sites
-    scatter!(ax, [i], [j], color=:red, markersize=15, label="Release Site")
+    scatter!(ax1, [i], [j], color=:red, markersize=15, label="Release Site")
 end
 
 # Set axis limits and labels
-xlims!(ax, 0.5, settings.nx+0.5)
-ylims!(ax, 0.5, settings.ny+0.5)
-axislegend(ax)
+xlims!(ax1, 0.5, settings.nx+0.5)
+ylims!(ax1, 0.5, settings.ny+0.5)
+axislegend(ax1)
+
+# Add subplots for X and Y line averages
+ax_x = Axis(fig[3, 1], title="Average DA along X", xlabel="X position", ylabel="DA (μM)")
+ax_y = Axis(fig[3, 2], title="Average DA along Y", xlabel="Y position", ylabel="DA (μM)")
+
+# Create lines for X and Y averages
+x_line = lines!(ax_x, 1:settings.nx, zeros(settings.nx), color=:blue)
+y_line = lines!(ax_y, 1:settings.ny, zeros(settings.ny), color=:red)
 
 # Create animation
-framerate = 5
-record(fig, "src/DopamineModels/TestImages/grid_diffusion_evolution.mp4", 1:size(DA_grid, 3); framerate=framerate) do frame
+framerate = 30
+record(fig, "src/DopamineModels/TestImages/grid_diffusion.mp4", 1:size(DA_grid, 3); framerate=framerate) do frame
     println(frame)
-    hm[1] = DA_grid[:,:,frame]  # Update the heatmap data
-    ax.title = "Dopamine Concentration at t = $(round(sol.t[frame], digits=1))"
+    current_grid = DA_grid[:,:,frame]
+    hm[1] = current_grid  # Update the heatmap data
+    ax1.title = "Dopamine Concentration at t = $(round(sol.t[frame], digits=1))"
+    
+    # Update X and Y averages
+    x_line[2] = mean(current_grid, dims=1)[:]  # Average along Y for each X
+    y_line[2] = mean(current_grid, dims=2)[:]  # Average along X for each Y
 end
