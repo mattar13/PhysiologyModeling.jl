@@ -46,7 +46,7 @@ function dopaminergic_autoreceptor_grid!(du, u, p, t, grid_params, method)
     # Extract variables
     V = u[1]
     Ca = u[2]
-    DA_grid = reshape(u[3:end-4], grid_params.nx, grid_params.ny)
+    DA_grid = u[3:end-4]  # Already a vector
     P = u[end-3]
     Gi = u[end-2]
     cAMP = u[end-1]
@@ -64,7 +64,7 @@ function dopaminergic_autoreceptor_grid!(du, u, p, t, grid_params, method)
     du[2] = -Ca/τCa + αCa*I_Ca                               # µM/ms
 
     # 3. Dopamine grid (using the grid discretization)
-    update_dopamine_grid!(du, u, p, t, grid_params, method)
+    update_dopamine_grid!(du[3:end-4], DA_grid, (krel, kclear), Ca, grid_params; method=method)
 
     # 4. D2 occupancy (using average dopamine concentration)
     DA_avg = mean(DA_grid)
