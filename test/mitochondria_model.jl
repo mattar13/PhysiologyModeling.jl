@@ -29,22 +29,9 @@ sol = solve(prob, Rodas5(autodiff=false), progress=true)
 function add_mito_visualization!(p, params::Params2D)
     # Add contour of mitochondrial region (red)
     mito_mask_2d = reshape(params.mito_mask .+ params.cyto_mask, params.ny, params.nx)
-    contour!(p, params.xrng, params.yrng, mito_mask_2d, 
-        fillalpha=0.0,  # No fill
-        levels=[0.0, 1.0, 2.0],  # Only show the boundary between 0 and 1
-        color=[:red, :blue],
-        label="Mitochondria", 
-        linewidth=2,
-        linecolor=:red
-        )
-    
-    # # Add contour of cytoplasm region (blue)
-    # cyto_mask_2d = reshape(params.cyto_mask, params.ny, params.nx)
-    # contour!(p, params.xrng, params.yrng, cyto_mask_2d,
-    #     fillalpha=0.0,  # No fill
-    #     levels=[0.0, 1.0],  # Only show the boundary between 0 and 1
-    #     color=:blue,
-    #     label="Cytoplasm")
+    # heatmap!(p, params.xrng, params.yrng, mito_mask_2d./10.0, 
+    #     alpha = 0.01, color = :greens # This will clip values below 0.5
+    # )
 end
 
 # Initial conditions
@@ -118,20 +105,31 @@ plot(
 # --------------------------------------------------
 #%% 5) Create animation of the diffusion process
 # --------------------------------------------------
+nt = 100
+t_rng = LinRange(0.0, 1.0, nt)
+sol_arr = Array(sol(t_rng))
+
+ca = reshape(sol_arr[1:N, :], params.ny, params.nx, nt)
+atp = reshape(sol_arr[N+1:2N, :], params.ny, params.nx, nt)
+adp = reshape(sol_arr[2N+1:3N, :], params.ny, params.nx, nt)
+amp = reshape(sol_arr[3N+1:4N, :], params.ny, params.nx, nt)
+ado = reshape(sol_arr[4N+1:5N, :], params.ny, params.nx, nt)
+p = reshape(sol_arr[5N+1:6N, :], params.ny, params.nx, nt)
+
 # Create animation
-t_rng = LinRange(1.0, sol.t[end], 10)
-anim = @animate for t in t_rng
+anim = @animate for i in eachindex(t_rng)
+    t = t_rng[i]
     println("t = $t")
     # Get current state
-    ca = reshape(sol(t)[1:N], ny, nx)
-    atp = reshape(sol(t)[N+1:2N], ny, nx)
-    adp = reshape(sol(t)[2N+1:3N], ny, nx)
-    amp = reshape(sol(t)[3N+1:4N], ny, nx)
-    ado = reshape(sol(t)[4N+1:5N], ny, nx)
-    p = reshape(sol(t)[5N+1:6N], ny, nx)
+    ca_i = ca[:, :, i]
+    atp_i = atp[:, :, i]
+    adp_i = adp[:, :, i]
+    amp_i = amp[:, :, i]
+    ado_i = ado[:, :, i]
+    p_i = p[:, :, i]
     
     # Create plots
-    p1 = heatmap(xrng, yrng, ca, 
+    p1 = heatmap(params.xrng, params.yrng, ca_i, 
         title="Ca²⁺ (t=$(round(t ,digits=1)) ms)",
         aspect_ratio=1,
         xlabel="x", ylabel="y", 
@@ -139,7 +137,7 @@ anim = @animate for t in t_rng
         clims=(0, 0.1))
     add_mito_visualization!(p1, params)
     
-    p2 = heatmap(xrng, yrng, atp,
+    p2 = heatmap(params.xrng, params.yrng, atp_i,
         title="ATP (t=$(round(t ,digits=1)) ms)",
         aspect_ratio=1,
         xlabel="x", ylabel="y",
@@ -147,7 +145,7 @@ anim = @animate for t in t_rng
         clims=(0, 0.1))
     add_mito_visualization!(p2, params)
     
-    p3 = heatmap(xrng, yrng, adp,
+    p3 = heatmap(params.xrng, params.yrng, adp_i,
         title="ADP (t=$(round(t ,digits=1)) ms)",
         aspect_ratio=1,
         xlabel="x", ylabel="y",
@@ -155,7 +153,7 @@ anim = @animate for t in t_rng
         clims=(0, 0.001))
     add_mito_visualization!(p3, params)
     
-    p4 = heatmap(xrng, yrng, amp,
+    p4 = heatmap(params.xrng, params.yrng, amp_i,
         title="AMP (t=$(round(t ,digits=1)) ms)",
         aspect_ratio=1,
         xlabel="x", ylabel="y",
@@ -163,7 +161,7 @@ anim = @animate for t in t_rng
         clims=(0, 0.001))
     add_mito_visualization!(p4, params)
     
-    p5 = heatmap(xrng, yrng, ado,
+    p5 = heatmap(params.xrng, params.yrng, ado_i,
         title="Adenosine (t=$(round(t ,digits=1)) ms)",
         aspect_ratio=1,
         xlabel="x", ylabel="y",
@@ -171,7 +169,7 @@ anim = @animate for t in t_rng
         clims=(0, 0.001))
     add_mito_visualization!(p5, params)
     
-    p6 = heatmap(xrng, yrng, p,
+    p6 = heatmap(params.xrng, params.yrng, p_i ,
         title="Phosphate (t=$(round(t ,digits=1)) ms)",
         aspect_ratio=1,
         xlabel="x", ylabel="y",

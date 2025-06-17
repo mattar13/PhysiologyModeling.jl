@@ -22,7 +22,6 @@ struct Params2D
     k_adk::Float64
     k_ak::Float64  # Rate constant for mitochondrial adenylate kinase reaction
     k_atp_synth::Float64  # Rate constant for ATP synthesis from ADP + P
-    k_atp_prod::Float64
     #Laplacian matrix
     L::SparseMatrixCSC{Float64,Int}
     #Mitochondria mask
@@ -70,8 +69,7 @@ k_adp_amp = 0.008          # Rate constant for ADP → AMP conversion (ms⁻¹)
 k_amp_ado = 0.005          # Rate constant for AMP → Adenosine conversion (ms⁻¹)
 k_adk = 0.02               # Rate constant for ADK reaction: Adenosine + ATP → AMP + ADP (ms⁻¹)
 k_ak = 0.015               # Rate constant for mitochondrial AK reaction: 2ADP → ATP + AMP (ms⁻¹)
-k_atp_synth = 2.0         # Rate constant for ATP synthesis: ADP + P → ATP (ms⁻¹)
-k_atp_prod = 0.05          # Rate constant for ATP production in mitochondria (ms⁻¹)
+k_atp_synth = 0.01              # Rate constant for mitochondrial AK reaction: 2ADP → ATP + AMP (ms⁻¹)
 tspan = (0.0, 100.0)        # Time span
 N = nx * ny                 # total grid points
 
@@ -80,9 +78,9 @@ u0 = Float64[]
 ca0 = rand(Float64, N)*0.1 .* cyto_mask    
 atp0 = ones(Float64, N)*0.1 .* cyto_mask
 adp0 = ones(Float64, N)*0.1 .* cyto_mask   
-amp0 = ones(Float64, N)*0.5 .* cyto_mask   
-ado0 = ones(Float64, N)*3.0 .* cyto_mask   
-p0 = rand(Float64, N)*0.0 .* mito_mask  # Initial phosphate concentration
+amp0 = ones(Float64, N)*0.1 .* cyto_mask   
+ado0 = ones(Float64, N)*0.1 .* cyto_mask   
+p0 = rand(Float64, N)*10.0 .* mito_mask  # Initial phosphate concentration
 push!(u0, ca0...)
 push!(u0, atp0...)
 push!(u0, adp0...)
@@ -93,6 +91,6 @@ push!(u0, p0...)
 # pack parameters and define ODE problem
 params = Params2D(nx, ny, xrng, yrng, 
     D_ca, D_atp, D_adp, D_amp, D_ado, D_p,
-    k_atp_adp, k_adp_amp, k_amp_ado, k_adk, k_ak, k_atp_synth, k_atp_prod,
+    k_atp_adp, k_adp_amp, k_amp_ado, k_adk, k_ak, k_atp_synth,
     L, mito_mask, cyto_mask
 )
