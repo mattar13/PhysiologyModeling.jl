@@ -19,10 +19,14 @@ function pde_system!(du::Vector{Float64}, u::Vector{Float64}, p::Params2D, t; N 
     dado = @view du[4N+1:5N]
     dP = @view du[5N+1:6N]  # Phosphate derivative
     
-    # Convert mito_mask to a vector for broadcasting
-    #mito_mask_vec = Vector{Float64}(p.mito_mask)
-    mito_mask_vec = p.mito_mask
-    # Compute diffusion for all species
+    # Convert masks to vectors for broadcasting
+    cyto_mask_vec = p.cyto_mask
+    mito_mask_vec = p.mito_mask  # Mitochondria mask is inverse of cytoplasm mask
+    
+    # Initialize derivatives to zero
+    # fill!(du, 0.0)
+    
+    # Compute diffusion for all species (only in cytoplasm, with firm boundary at mitochondria)
     mul!(dca, p.L, ca)
     @. dca *= p.D_ca
     
@@ -41,27 +45,28 @@ function pde_system!(du::Vector{Float64}, u::Vector{Float64}, p::Params2D, t; N 
     mul!(dP, p.L, P)
     @. dP *= p.D_p
     
-    # Add reaction terms
-    # ATP → ADP conversion
-    @. datp -= p.k_atp_adp * atp
-    @. dadp += p.k_atp_adp * atp
-    @. dP += p.k_atp_adp * atp  # Release phosphate
+    # Add cytoplasmic reaction terms
+    # ATP → ADP conversion (in cytoplasm)
+    @. datp -= p.k_atp_adp * atp .* cyto_mask_vec
+    @. dadp += p.k_atp_adp * atp .* cyto_mask_vec
+    @. dP += p.k_atp_adp * atp .* cyto_mask_vec  # Release phosphate
     
-    # ADP → AMP conversion
-    @. dadp -= p.k_adp_amp * adp
-    @. damp += p.k_adp_amp * adp
-    @. dP += p.k_adp_amp * adp  # Release phosphate
+    # ADP → AMP conversion (in cytoplasm)
+    @. dadp -= p.k_adp_amp * adp .* cyto_mask_vec
+    @. damp += p.k_adp_amp * adp .* cyto_mask_vec
+    @. dP += p.k_adp_amp * adp .* cyto_mask_vec  # Release phosphate
     
-    # AMP → Adenosine conversion
-    @. damp -= p.k_amp_ado * amp
-    @. dado += p.k_amp_ado * amp
+    # AMP → Adenosine conversion (in cytoplasm)
+    @. damp -= p.k_amp_ado * amp .* cyto_mask_vec
+    @. dado += p.k_amp_ado * amp .* cyto_mask_vec
     
-    # ADK reaction: Adenosine + ATP → AMP + ADP
-    @. datp -= p.k_adk * atp .* ado  # ATP consumed
-    @. dado -= p.k_adk * atp .* ado  # Adenosine consumed
-    @. damp += p.k_adk * atp .* ado  # AMP produced
-    @. dadp += p.k_adk * atp .* ado  # ADP produced
+    # ADK reaction: Adenosine + ATP → AMP + ADP (in cytoplasm)
+    @. datp -= p.k_adk * atp .* ado .* cyto_mask_vec  # ATP consumed
+    @. dado -= p.k_adk * atp .* ado .* cyto_mask_vec  # Adenosine consumed
+    @. damp += p.k_adk * atp .* ado .* cyto_mask_vec  # AMP produced
+    @. dadp += p.k_adk * atp .* ado .* cyto_mask_vec  # ADP produced
     
+    # Add mitochondrial reaction terms
     # Mitochondrial adenylate kinase reaction: 2ADP → ATP + AMP (only in mitochondria)
     @. datp += p.k_ak * mito_mask_vec .* adp.^2  # ATP produced
     @. dadp -= 2.0 * p.k_ak * mito_mask_vec .* adp.^2  # 2 ADP consumed

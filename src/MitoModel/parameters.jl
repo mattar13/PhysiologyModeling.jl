@@ -27,19 +27,34 @@ struct Params2D
     L::SparseMatrixCSC{Float64,Int}
     #Mitochondria mask
     mito_mask::Vector{Bool}
+    #Cytoplasm mask
+    cyto_mask::Vector{Bool}
 end
 
 # --------------------------------------------------
 #%% 1) Define grid parameters, and precompute Laplacian
 # --------------------------------------------------
-nx, ny = 100, 100            # Grid resolution
+nx, ny = 25, 25            # Grid resolution
 xrng = LinRange(0, 1, nx)
 yrng = LinRange(0, 1, ny)
 dx = xrng[2] - xrng[1]
 dy = yrng[2] - yrng[1]
 N = nx*ny
-# Precompute Laplacian matrix
-L = build_laplacian(nx, ny, dx, dy)
+dx
+# Define mitochondria location and size
+mito_center = (0.5, 0.5)    # Center of mitochondria (normalized coordinates)
+mito_radius = 0.10          # Radius of mitochondria (normalized units)
+
+cyto_center = (0.5, 0.5)    # Center of cytoplasm (normalized coordinates)
+cyto_radius = 0.50          # Radius of cytoplasm (normalized units)
+# Create cytoplasm mask (inverse of mitochondria mask)
+mito_mask = create_circular_mask(nx, ny, mito_center, mito_radius, dx = dx, dy = dy)
+cyto_mask = create_circular_mask(nx, ny, cyto_center, cyto_radius, dx = dx, dy = dy) # Cytoplasm is everywhere except mitochondria
+any(mito_mask)
+heatmap(reshape(mito_mask, ny, nx))
+
+# Precompute Laplacian matrix with cytoplasm-based boundary conditions
+L = build_masked_laplacian(nx, ny, dx, dy, cyto_mask)
 
 # --------------------------------------------------
 #%% 2) Define parameters
@@ -57,26 +72,17 @@ k_adk = 0.02               # Rate constant for ADK reaction: Adenosine + ATP →
 k_ak = 0.015               # Rate constant for mitochondrial AK reaction: 2ADP → ATP + AMP (ms⁻¹)
 k_atp_synth = 2.0         # Rate constant for ATP synthesis: ADP + P → ATP (ms⁻¹)
 k_atp_prod = 0.05          # Rate constant for ATP production in mitochondria (ms⁻¹)
-tspan = (0.0, 50.0)        # Time span
+tspan = (0.0, 100.0)        # Time span
 N = nx * ny                 # total grid points
-
-
-# Define mitochondria location and size
-mito_center = (0.5, 0.5)    # Center of mitochondria (normalized coordinates)
-mito_radius = 0.10          # Radius of mitochondria (normalized units)
-
-# Create mitochondria mask
-mito_mask = create_mito_mask(nx, ny, mito_center, mito_radius, dx = dx, dy = dy)
-
 
 # initial condition: uniform concentration for all species
 u0 = Float64[]
-ca0 = rand(Float64, N)*0.1
-atp0 = ones(Float64, N)*3.0#; atp0[25] = 1.0
-adp0 = ones(Float64, N)*0.0
-amp0 = ones(Float64, N)*0.0
-ado0 = ones(Float64, N)*0.0
-p0 = ones(Float64, N)*0.0  # Initial phosphate concentration
+ca0 = rand(Float64, N)*0.1 .* cyto_mask    
+atp0 = ones(Float64, N)*0.1 .* cyto_mask
+adp0 = ones(Float64, N)*0.1 .* cyto_mask   
+amp0 = ones(Float64, N)*0.5 .* cyto_mask   
+ado0 = ones(Float64, N)*3.0 .* cyto_mask   
+p0 = rand(Float64, N)*0.0 .* mito_mask  # Initial phosphate concentration
 push!(u0, ca0...)
 push!(u0, atp0...)
 push!(u0, adp0...)
@@ -88,5 +94,5 @@ push!(u0, p0...)
 params = Params2D(nx, ny, xrng, yrng, 
     D_ca, D_atp, D_adp, D_amp, D_ado, D_p,
     k_atp_adp, k_adp_amp, k_amp_ado, k_adk, k_ak, k_atp_synth, k_atp_prod,
-    L, mito_mask
+    L, mito_mask, cyto_mask
 )

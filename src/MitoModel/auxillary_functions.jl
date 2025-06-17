@@ -34,8 +34,93 @@ function build_laplacian(nx::Int, ny::Int, dx::Float64, dy::Float64)
     return sparse(rows, cols, vals, N, N)
 end
 
+"""
+Build a sparse 2D Laplacian with mask-based boundary conditions:
+- Diagonal: -2/dx² -2/dy²
+- Off-diagonals: +1/dx² (left/right), +1/dy² (up/down)
+- Zero flux at masked boundaries
+"""
+function build_masked_laplacian(nx::Int, ny::Int, dx::Float64, dy::Float64, cyto_mask::Vector{Bool})
+    # Initialize sparse matrix
+    N = nx * ny
+    rows = Int[]
+    cols = Int[]
+    vals = Float64[]
+    
+    # Reshape mask to 2D for easier neighbor checking
+    mask_2d = reshape(cyto_mask, ny, nx)
+    
+    # Build Laplacian matrix
+    for j in 1:ny
+        for i in 1:nx
+            idx = (j-1)*nx + i
+            
+            # Skip if point is not in cytoplasm
+            if !mask_2d[j,i]
+                # For points outside cytoplasm, set diagonal to 1.0 to maintain matrix structure
+                push!(rows, idx)
+                push!(cols, idx)
+                push!(vals, 1.0)
+                continue
+            end
+            
+            # For points in cytoplasm, compute diffusion terms
+            diag_val = 0.0
+            
+            # Left neighbor
+            if i > 1
+                if mask_2d[j,i-1]  # If neighbor is also in cytoplasm
+                    push!(rows, idx)
+                    push!(cols, idx-1)
+                    push!(vals, 1.0/dx^2)
+                    diag_val -= 1.0/dx^2
+                end
+            end
+            
+            # Right neighbor
+            if i < nx
+                if mask_2d[j,i+1]  # If neighbor is also in cytoplasm
+                    push!(rows, idx)
+                    push!(cols, idx+1)
+                    push!(vals, 1.0/dx^2)
+                    diag_val -= 1.0/dx^2
+                end
+            end
+            
+            # Bottom neighbor
+            if j > 1
+                if mask_2d[j-1,i]  # If neighbor is also in cytoplasm
+                    push!(rows, idx)
+                    push!(cols, idx-nx)
+                    push!(vals, 1.0/dy^2)
+                    diag_val -= 1.0/dy^2
+                end
+            end
+            
+            # Top neighbor
+            if j < ny
+                if mask_2d[j+1,i]  # If neighbor is also in cytoplasm
+                    push!(rows, idx)
+                    push!(cols, idx+nx)
+                    push!(vals, 1.0/dy^2)
+                    diag_val -= 1.0/dy^2
+                end
+            end
+            
+            # Add diagonal entry for the center point
+            push!(rows, idx)
+            push!(cols, idx)
+            push!(vals, diag_val)
+        end
+    end
+    
+    # Create sparse matrix
+    L = sparse(rows, cols, vals, N, N)
+    return L
+end
+
 # Create mitochondria mask
-function create_mito_mask(nx, ny, center, radius; dx = 1.0, dy = 1.0)
+function create_circular_mask(nx, ny, center, radius; dx = 1.0, dy = 1.0)
     mask = zeros(Bool, ny, nx)
     for j in 1:ny, i in 1:nx
         x = (i-0.5)/nx  # Convert to normalized coordinates
