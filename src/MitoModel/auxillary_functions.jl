@@ -1,3 +1,11 @@
+α_m(V) = 0.1 * (25.0 - V) / (exp((25.0 - V)/10.0) - 1.0)
+β_m(V) = 4.0 * exp(-V/18.0)
+α_h(V) = 0.07 * exp(-V/20.0)
+β_h(V) = 1.0 / (exp((30.0 - V)/10.0) + 1.0)
+α_n(V) = 0.01 * (10.0 - V) / (exp((10.0 - V)/10.0) - 1.0)
+β_n(V) = 0.125 * exp(-V/80.0)
+
+
 """
 Build a sparse 2D Laplacian with Neumann BC via reflection:
 - Diagonal: -2/dx² -2/dy²
@@ -131,3 +139,6 @@ function create_circular_mask(nx, ny, center, radius; dx = 1.0, dy = 1.0)
     end
     return vec(mask)  # Convert to vector for easier use
 end
+
+# Function to calculate Hill equation for ATP-dependent gating
+hill_equation(atp::Float64, Kd::Float64, n::Float64) = atp > 0 ? Kd^n / (atp^n + Kd^n) : 0.0  
