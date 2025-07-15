@@ -8,6 +8,8 @@ include("auxillary_functions.jl")
 include("parameters.jl")
 include("models.jl")
 
+complete_system |> typeof |> fieldnames
+complete_system.systems
 
 # Time span
 tspan = (0.0, 1000.0)
@@ -48,10 +50,10 @@ nad_series = map(t -> sol(t)[19], tseries)
 nadh_series = map(t -> sol(t)[20], tseries)
 fad_series = map(t -> sol(t)[21], tseries)
 fadh2_series = map(t -> sol(t)[22], tseries)
-v_series = map(t -> sol(t)[23], tseries)
-m_series = map(t -> sol(t)[24], tseries)
-h_series = map(t -> sol(t)[25], tseries)
-n_series = map(t -> sol(t)[26], tseries)
+v_series = map(t -> sol(t)[26], tseries)
+m_series = map(t -> sol(t)[23], tseries)
+h_series = map(t -> sol(t)[24], tseries)
+n_series = map(t -> sol(t)[25], tseries)
 
 # Plotting
 fig = Figure(size = (1200, 1000))

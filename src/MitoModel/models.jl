@@ -72,7 +72,7 @@ hh_eqs = [
              I_K(V, n, g_K_ATP(ATP, g_K_max, K_ATP_K), E_K) + 
              I_leak(V, g_leak, E_leak) - 
              #I_NaK_ATPase(ATP, I_NaK_max, K_ATP_NaK) + 
-             I_stim) / C_m
+             I_APP(t, stim_start, stim_end, I_amplitude)) / C_m
 ]
 
 # Combine all equations

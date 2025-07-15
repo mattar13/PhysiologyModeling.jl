@@ -9,7 +9,7 @@
 @parameters k_creatine_kinase_forward k_creatine_kinase_reverse
 
 # Hodgkin-Huxley parameters
-@parameters C_m g_Na_max g_K_max g_leak E_Na E_K E_leak K_ATP_Na K_ATP_K K_ATP_NaK I_NaK_max I_stim
+@parameters C_m g_Na_max g_K_max g_leak E_Na E_K E_leak K_ATP_Na K_ATP_K K_ATP_NaK I_NaK_max stim_start stim_end I_amplitude
 
 D = Differential(t)
 
@@ -52,7 +52,9 @@ params = (
     K_ATP_K => 1.5,
     K_ATP_NaK => 0.5,
     I_NaK_max => 2.0,
-    I_stim => 10.0
+    stim_start => 100.0,
+    stim_end => 200.0,
+    I_amplitude => 10.0
 )
 
 # Initial conditions
