@@ -20,6 +20,7 @@ Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 TerminalLoggers = "5d786b92-1e48-4d6f-9151-6b4477ca9bed"
 
 [compat]
@@ -37,6 +38,7 @@ Requires = "1"
 SciMLBase = "2.77.2"
 SparseArrays = "1.11.0"
 StaticArrays = "1.9.13"
+Symbolics = "5.36.0"
 TerminalLoggers = "0.1"
 julia = "1"
 
