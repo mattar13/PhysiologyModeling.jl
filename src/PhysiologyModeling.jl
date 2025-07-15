@@ -5,8 +5,7 @@ using ElectroPhysiology
 #using PhysiologyPlotting
 # Write your package code here.
 using LinearAlgebra, SparseArrays
-using ForwardDiff, NLsolve
-using DifferentialEquations
+using NLsolve
 #using DiffEqCallbacks #This is necessary for inserting conductances into the model
 
 using Logging: global_logger

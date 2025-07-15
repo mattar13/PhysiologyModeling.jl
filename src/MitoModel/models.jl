@@ -1,123 +1,85 @@
-function pde_system!(du::Vector{T}, u::Vector{T}, p::Params2D, t; N = 1) where {T}
-    if t % 10 == 0
-        println("t = $t")
-    end
-    println("t = $t")
+# Create metabolic reaction network
+metabolic_network = @reaction_network begin
+    # ATP hydrolysis to ADP + Pi
+    k_atp_adp, ATP --> ADP + Pi
+    
+    # ADP conversion to AMP + Pi  
+    k_adp_amp, ADP --> AMP + Pi
+    
+    # AMP conversion to Adenosine + Pi
+    k_amp_ado, AMP --> Ado + Pi
+    
+    # Adenylate kinase reaction: ATP + AMP <--> 2 ADP
+    k_adk_forward, ATP + AMP --> 2*ADP
+    k_adk_reverse, 2*ADP --> ATP + AMP
+    
+    # ATP synthesis from ADP + Pi (mitochondrial)
+    k_atp_synth, ADP + Pi --> ATP
+    
+    # Adenosine salvage pathway
+    k_ado_kinase, Ado + ATP --> AMP + ADP
+    k_ado_salvage, Ado + R1P --> AMP
+    
+    # Glycolysis: Glucose → 2 Pyruvate + 2 ATP
+    k_glycolysis, GLU + 2*ADP + 2*Pi --> 2*Pyruvate + 2*ATP
+    
+    # Pyruvate oxidation: Pyruvate → Acetyl-CoA  
+    k_pyruvate_dehydrogenase, Pyruvate + CoA --> Acetyl_CoA + CO2
+    
+    # TCA cycle: Acetyl-CoA → 3 NADH + 1 FADH2 + 1 ATP
+    k_tca_cycle, Acetyl_CoA + 3*NAD + FAD + ADP + Pi --> 3*NADH + FADH2 + ATP + 2*CO2
+    
+    # Electron transport: NADH/FADH2 → ATP
+    k_complex_I, 2*NADH + 6*ADP + 6*Pi + O2 --> 2*NAD + 6*ATP + 2*H2O
+    k_complex_II, 2*FADH2 + 4*ADP + 4*Pi + O2 --> 2*FAD + 4*ATP + 2*H2O
+    
+    # Formation from glucose (simplified glycolysis)
+    k_glucose_to_pep, GLU + Pi --> PEP
+    k_glucose_to_bpg, GLU + Pi --> BPG
+    
+    # Bootstrap reactions - convert AMP to ADP using high-energy intermediates
+    k_pyruvate_kinase, AMP + PEP --> ADP + Pyruvate
+    k_pgk, AMP + BPG --> ADP + P3G
+    
+    # Glucose transport
+    kGLUT(GLU, k_glut_max), 0 --> GLU
 
-    # Split the solution vector into components
-    ca = @view u[1:N]
-    atp = @view u[N+1:2N]
-    adp = @view u[2N+1:3N]
-    amp = @view u[3N+1:4N]
-    ado = @view u[4N+1:5N]
-    P = @view u[5N+1:6N]  # Phosphate concentration
-    Vm = @view u[6N+1:7N]  # Membrane voltage
+    # Oxygen replenishment
+    k_oxygen_supply, 0 --> O2
+        
+    # Basal consumption
+    k_glucose_basal, GLU --> 0
+    k_oxygen_basal, O2 --> 0
     
-    # Split the derivative vector
-    dca = @view du[1:N]
-    datp = @view du[N+1:2N]
-    dadp = @view du[2N+1:3N]
-    damp = @view du[3N+1:4N]
-    dado = @view du[4N+1:5N]
-    dP = @view du[5N+1:6N]  # Phosphate derivative
-    dVm = @view du[6N+1:7N]  # Membrane voltage derivative
+    # Creatine kinase system
+    k_creatine_kinase_forward, ATP + Cr --> ADP + PCr
+    k_creatine_kinase_reverse, PCr + ADP --> ATP + Cr
     
-    # Convert masks to vectors for broadcasting
-    cyto_mask_vec = p.cyto_mask
-    mito_mask_vec = p.mito_mask  # Mitochondria mask is inverse of cytoplasm mask
-    
-    # Compute diffusion for all species (only in cytoplasm, with firm boundary at mitochondria)
-    mul!(dca, p.L, ca)
-    @. dca *= p.D_ca
-    
-    mul!(datp, p.L, atp)
-    @. datp *= p.D_atp
-    
-    mul!(dadp, p.L, adp)
-    @. dadp *= p.D_adp
-    
-    mul!(damp, p.L, amp)
-    @. damp *= p.D_amp
-    
-    mul!(dado, p.L, ado)
-    @. dado *= p.D_ado
-    
-    mul!(dP, p.L, P)
-    @. dP *= p.D_p
-    
-    # Hodgkin-Huxley channel dynamics
-    # ATP-dependent leak channel gating
-    θ_ATP = hill_equation.(atp, p.Kd_ATP, p.hill_n)
-    g_LEAK_eff = p.g_LEAK .+ p.gKATP_max .* θ_ATP
-    
-    # Leak current with ATP-dependent gating
-    I_LEAK = g_LEAK_eff .* (Vm .- p.E_LEAK)
-    
-    # NaV channel (m³h)
-    # Activation gate (m)
-    α_m = 0.1 * (Vm .+ 40.0) ./ (1.0 .- exp.(-(Vm .+ 40.0) ./ 10.0))
-    β_m = 4.0 * exp.(-(Vm .+ 65.0) ./ 18.0)
-    m_inf = α_m ./ (α_m .+ β_m)
-    τ_m = 1.0 ./ (α_m .+ β_m)
-    
-    # Inactivation gate (h)
-    α_h = 0.07 * exp.(-(Vm .+ 65.0) ./ 20.0)
-    β_h = 1.0 ./ (1.0 .+ exp.(-(Vm .+ 35.0) ./ 10.0))
-    h_inf = α_h ./ (α_h .+ β_h)
-    τ_h = 1.0 ./ (α_h .+ β_h)
-    
-    # NaV current
-    I_NaV = p.g_NaV * m_inf.^3 .* h_inf .* (Vm .- p.E_Na)
-    
-    # KV channel (n⁴)
-    # Activation gate (n)
-    α_n = 0.01 * (Vm .+ 55.0) ./ (1.0 .- exp.(-(Vm .+ 55.0) ./ 10.0))
-    β_n = 0.125 * exp.(-(Vm .+ 65.0) ./ 80.0)
-    n_inf = α_n ./ (α_n .+ β_n)
-    τ_n = 1.0 ./ (α_n .+ β_n)
-    
-    # KV current
-    I_KV = p.g_KV * n_inf.^4 .* (Vm .- p.E_K)
-    
-    # Total current and voltage update
-    I_APP = p.stim_start < t < p.stim_end ? p.stim_amplitude : 0.0
-    I_total = I_LEAK .+ I_NaV .+ I_KV .- I_APP
-    @. dVm = (-I_total / p.C_m) .* cyto_mask_vec
-    
-    # Calculate ATP consumption rate from ATP-dependent leak conductance
-    leak_atp_rate = (p.gKATP_max .* θ_ATP) .* p.k_leak_atp .* cyto_mask_vec
-    #println("leak_atp_rate = $(leak_atp_rate[1])")
-    # Add cytoplasmic reaction terms
-    # ATP → ADP conversion (in cytoplasm) - now includes leak current contribution
-    @. datp -= (p.k_atp_adp * atp + leak_atp_rate) .* cyto_mask_vec
-    @. dadp += (p.k_atp_adp * atp + leak_atp_rate) .* cyto_mask_vec
-    @. dP += (p.k_atp_adp * atp + leak_atp_rate) .* cyto_mask_vec  # Release phosphate
-    
-    # ADP → AMP conversion (in cytoplasm)
-    @. dadp -= p.k_adp_amp * adp .* cyto_mask_vec
-    @. damp += p.k_adp_amp * adp .* cyto_mask_vec
-    @. dP += p.k_adp_amp * adp .* cyto_mask_vec  # Release phosphate
-    
-    # AMP → Adenosine conversion (in cytoplasm)
-    @. damp -= p.k_amp_ado * amp .* cyto_mask_vec
-    @. dado += p.k_amp_ado * amp .* cyto_mask_vec
-    
-    # ADK reaction: Adenosine + ATP → AMP + ADP (in cytoplasm)
-    @. datp -= p.k_adk * atp .* ado .* cyto_mask_vec  # ATP consumed
-    @. dado -= p.k_adk * atp .* ado .* cyto_mask_vec  # Adenosine consumed
-    @. damp += p.k_adk * atp .* ado .* cyto_mask_vec  # AMP produced
-    @. dadp += p.k_adk * atp .* ado .* cyto_mask_vec  # ADP produced
-    
-    # Add mitochondrial reaction terms
-    # Mitochondrial adenylate kinase reaction: 2ADP → ATP + AMP (only in mitochondria)
-    @. datp += p.k_ak * mito_mask_vec .* adp.^2  # ATP produced
-    @. dadp -= 2.0 * p.k_ak * mito_mask_vec .* adp.^2  # 2 ADP consumed
-    @. damp += p.k_ak * mito_mask_vec .* adp.^2  # AMP produced
-    
-    # ATP synthesis from ADP + P (only in mitochondria)
-    @. datp += p.k_atp_synth * mito_mask_vec .* adp .* P  # ATP produced
-    @. dadp -= p.k_atp_synth * mito_mask_vec .* adp .* P  # ADP consumed
-    @. dP -= p.k_atp_synth * mito_mask_vec .* adp .* P    # Phosphate consumed
-    
-    return nothing
+    # Na/K ATPase consumption (ATP-dependent)
+    I_NaK_ATPase(ATP, I_NaK_max, K_ATP_NaK), ATP --> ADP + Pi
 end
+
+# Convert to ODESystem and get metabolic equations
+metabolic_sys = convert(ODESystem, metabolic_network)
+metabolic_eqs = equations(metabolic_sys)
+
+# Create HH equations manually
+hh_eqs = [
+    D(m) ~ (m_inf(V) - m) / τ_m(V),
+    D(h) ~ (h_inf(V) - h) / τ_h(V),
+    D(n) ~ (n_inf(V) - n) / τ_n(V),
+    D(V) ~ -(I_Na(V, m, h, g_Na_ATP(ATP, g_Na_max, K_ATP_Na), E_Na) + 
+             I_K(V, n, g_K_ATP(ATP, g_K_max, K_ATP_K), E_K) + 
+             I_leak(V, g_leak, E_leak) - 
+             #I_NaK_ATPase(ATP, I_NaK_max, K_ATP_NaK) + 
+             I_stim) / C_m
+]
+
+# Combine all equations
+all_eqs = vcat(metabolic_eqs, hh_eqs)
+
+# Create the complete system
+@named complete_system = ODESystem(all_eqs, t)
+
+# Complete the system
+complete_system = structural_simplify(complete_system)
