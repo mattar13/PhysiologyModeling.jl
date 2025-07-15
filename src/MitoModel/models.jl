@@ -13,9 +13,6 @@ metabolic_network = @reaction_network begin
     k_adk_forward, ATP + AMP --> 2*ADP
     k_adk_reverse, 2*ADP --> ATP + AMP
     
-    # ATP synthesis from ADP + Pi (mitochondrial)
-    k_atp_synth, ADP + Pi --> ATP
-    
     # Adenosine salvage pathway
     k_ado_kinase, Ado + ATP --> AMP + ADP
     k_ado_salvage, Ado + R1P --> AMP
@@ -26,12 +23,14 @@ metabolic_network = @reaction_network begin
     # Pyruvate oxidation: Pyruvate → Acetyl-CoA  
     k_pyruvate_dehydrogenase, Pyruvate + CoA --> Acetyl_CoA + CO2
     
-    # TCA cycle: Acetyl-CoA → 3 NADH + 1 FADH2 + 1 ATP
-    k_tca_cycle, Acetyl_CoA + 3*NAD + FAD + ADP + Pi --> 3*NADH + FADH2 + ATP + 2*CO2
-    
-    # Electron transport: NADH/FADH2 → ATP
-    k_complex_I, 2*NADH + 6*ADP + 6*Pi + O2 --> 2*NAD + 6*ATP + 2*H2O
-    k_complex_II, 2*FADH2 + 4*ADP + 4*Pi + O2 --> 2*FAD + 4*ATP + 2*H2O
+    # TCA cycle: Acetyl-CoA → 3 NADH + 1 FADH2 + 1 ATP + 2 CO2 + CoA
+    k_tca_cycle, Acetyl_CoA + 3*NAD + FAD + ADP + Pi --> 3*NADH + FADH2 + ATP + 2*CO2 + CoA
+
+    # Electron transport: NADH → 2.5 ATP (but using integers: 2 NADH → 5 ATP)
+    k_complex_I, 2*NADH + 5*ADP + 5*Pi + O2 --> 2*NAD + 5*ATP + H2O
+
+    # Electron transport: FADH2 → 1.5 ATP (but using integers: 2 FADH2 → 3 ATP)  
+    k_complex_II, 2*FADH2 + 3*ADP + 3*Pi + O2 --> 2*FAD + 3*ATP + H2O
     
     # Formation from glucose (simplified glycolysis)
     k_glucose_to_pep, GLU + Pi --> PEP
@@ -42,44 +41,40 @@ metabolic_network = @reaction_network begin
     k_pgk, AMP + BPG --> ADP + P3G
     
     # Glucose transport
-    kGLUT(GLU, k_glut_max), 0 --> GLU
+    kGLUT(GLU, k_glut_supply, k_glut_extracellular), 0 --> GLU
 
     # Oxygen replenishment
-    k_oxygen_supply, 0 --> O2
+    kOXYGEN(O2, k_oxygen_supply, k_oxygen_extracellular), 0 --> O2
         
     # Basal consumption
-    k_glucose_basal, GLU --> 0
+    k_glut_basal, GLU --> 0
     k_oxygen_basal, O2 --> 0
     
     # Creatine kinase system
     k_creatine_kinase_forward, ATP + Cr --> ADP + PCr
     k_creatine_kinase_reverse, PCr + ADP --> ATP + Cr
     
-    # Na/K ATPase consumption (ATP-dependent)
-    I_NaK_ATPase(ATP, I_NaK_max, K_ATP_NaK), ATP --> ADP + Pi
+    # === ION FLUXES AND PUMP ===
+    k_pump_max*a, ATP --> ADP + Pi    # 1 ATP per cycle
+        
+    # Add the voltage equations for the HH model here
+    @parameters C_m g_Na g_K g_leak E_Na E_K E_leak stim_start stim_end I_amplitude I_pump_max a_ATP_half a_V_half a_V_slope
+    @equations begin
+        # Remove dynamic reversal potentials and any equations involving Na_i, K_i, Na_o, K_o
+        # HH equations with dynamic E_Na, E_K
+        D(V) ~ (
+            - g_Na * m^3 * h * (V - E_Na + (1.0-a)*E_Na)
+            - g_K * n^4 * (V - E_K + (1.0-a)*E_K)
+            - g_leak * (V - E_leak)
+            + I_pump_max * a
+            + I_amplitude
+        ) / C_m
+        
+        # Direct HH equations without function calls
+        D(h) ~ (0.07 * exp(-(V + 65) / 20) * (1 - h) - (1 / (1 + exp(-(V + 35) / 10))) * h)
+        D(m) ~ (0.1 * (V + 40) / (1 - exp(-(V + 40) / 10)) * (1 - m) - 4 * exp(-(V + 65) / 18) * m)
+        D(n) ~ (0.01 * (V + 55) / (1 - exp(-(V + 55) / 10)) * (1 - n) - 0.125 * exp(-(V + 65) / 80) * n)
+        # Pump activation: combines ATP and voltage dependence
+        D(a) ~ (ATP/(ATP + a_ATP_half)) * (1/(1 + exp(-(V - a_V_half)/a_V_slope))) - a
+    end
 end
-
-# Convert to ODESystem and get metabolic equations
-metabolic_sys = convert(ODESystem, metabolic_network)
-metabolic_eqs = equations(metabolic_sys)
-
-# Create HH equations manually
-hh_eqs = [
-    D(m) ~ (m_inf(V) - m) / τ_m(V),
-    D(h) ~ (h_inf(V) - h) / τ_h(V),
-    D(n) ~ (n_inf(V) - n) / τ_n(V),
-    D(V) ~ -(I_Na(V, m, h, g_Na_ATP(ATP, g_Na_max, K_ATP_Na), E_Na) + 
-             I_K(V, n, g_K_ATP(ATP, g_K_max, K_ATP_K), E_K) + 
-             I_leak(V, g_leak, E_leak) - 
-             #I_NaK_ATPase(ATP, I_NaK_max, K_ATP_NaK) + 
-             I_APP(t, stim_start, stim_end, I_amplitude)) / C_m
-]
-
-# Combine all equations
-all_eqs = vcat(metabolic_eqs, hh_eqs)
-
-# Create the complete system
-@named complete_system = ODESystem(all_eqs, t)
-
-# Complete the system
-complete_system = structural_simplify(complete_system)
