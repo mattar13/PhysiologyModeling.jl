@@ -1,7 +1,7 @@
 # Create metabolic reaction network
 metabolic_network = @reaction_network begin
     # ATP hydrolysis to ADP + Pi
-    k_atp_adp, ATP --> ADP + Pi
+    #k_atp_adp, ATP --> ADP + Pi
     
     # ADP conversion to AMP + Pi  
     k_adp_amp, ADP --> AMP + Pi
@@ -17,7 +17,7 @@ metabolic_network = @reaction_network begin
     k_ado_kinase, Ado + ATP --> AMP + ADP
     k_ado_salvage, Ado + R1P --> AMP
     
-    # Glycolysis: Glucose → 2 Pyruvate + 2 ATP
+    # Glycolysis: Glucose → 2 Pyruvate + 2 ATP 
     k_glycolysis, GLU + 2*ADP + 2*Pi --> 2*Pyruvate + 2*ATP
     
     # Pyruvate oxidation: Pyruvate → Acetyl-CoA  
@@ -63,11 +63,11 @@ metabolic_network = @reaction_network begin
         # Remove dynamic reversal potentials and any equations involving Na_i, K_i, Na_o, K_o
         # HH equations with dynamic E_Na, E_K
         D(V) ~ (
-            - g_Na * m^3 * h * (V - E_Na + (1.0-a)*E_Na)
-            - g_K * n^4 * (V - E_K + (1.0-a)*E_K)
+            - g_Na * m^3 * h * (V - E_Na)
+            - g_K * n^4 * (V - E_K)
             - g_leak * (V - E_leak)
             + I_pump_max * a
-            + I_amplitude
+            + I_amplitude * min(1.0, max(0.0, (t - stim_start))) * min(1.0, max(0.0, (stim_end - t)))  # Step function from stim_start to stim_end
         ) / C_m
         
         # Direct HH equations without function calls
@@ -76,5 +76,6 @@ metabolic_network = @reaction_network begin
         D(n) ~ (0.01 * (V + 55) / (1 - exp(-(V + 55) / 10)) * (1 - n) - 0.125 * exp(-(V + 65) / 80) * n)
         # Pump activation: combines ATP and voltage dependence
         D(a) ~ (ATP/(ATP + a_ATP_half)) * (1/(1 + exp(-(V - a_V_half)/a_V_slope))) - a
+        
     end
 end

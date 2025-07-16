@@ -9,7 +9,7 @@ include("auxillary_functions.jl")
 include("models.jl")
 
 # Time span
-tspan = (0.0, 100.0)
+tspan = (0.0, 1000.0)
 # Create and solve the problem
 prob = ODEProblem(metabolic_network, u0, tspan, params)
 # Use a more robust solver for stiff systems
@@ -65,7 +65,6 @@ ax1f = Axis(fig[1, 6], xlabel = "Time (ms)", ylabel = "Concentration (mM)", titl
 # Row 2: R1P and PCr/Cr
 ax2a = Axis(fig[2, 1], xlabel = "Time (ms)", ylabel = "Concentration (mM)", title = "R1P")
 ax2b = Axis(fig[2, 2], xlabel = "Time (ms)", ylabel = "Concentration (mM)", title = "PCr & Cr")
-
 # Row 3: GLU and glycolysis elements
 ax3a = Axis(fig[3, 1], xlabel = "Time (ms)", ylabel = "Concentration (mM)", title = "GLU")
 ax3b = Axis(fig[3, 2], xlabel = "Time (ms)", ylabel = "Concentration (mM)", title = "PEP")
@@ -99,8 +98,9 @@ lines!(ax1e, tseries, pi_series, color = :purple, linewidth = 2)
 lines!(ax1f, tseries, ribose1p_series, color = :magenta, linewidth = 2)
 
 lines!(ax2a, tseries, ribose1p_series, color = :magenta, linewidth = 2)
-lines!(ax2b, tseries, pcr_series, color = :darkblue, linewidth = 2, label = "PCr")
-lines!(ax2b, tseries, cr_series, color = :darkorange, linewidth = 2, label = "Cr")
+lines_PCR = lines!(ax2b, tseries, pcr_series, color = :darkblue, linewidth = 2, label = "PCr")
+lines_CR = lines!(ax2b, tseries, cr_series, color = :darkorange, linewidth = 2, label = "Cr")
+legend_pcr_cr = Legend(fig[2, 3], [lines_PCR, lines_CR], ["PCr", "Cr"], tellwidth = false, tellheight = false)
 
 lines!(ax3a, tseries, glucose_series, color = :brown, linewidth = 2)
 lines!(ax3b, tseries, pep_series, color = :darkgreen, linewidth = 2)
@@ -133,7 +133,7 @@ lines!(ax6b, tseries, m_series, color = :red, linewidth = 2)
 lines!(ax6c, tseries, h_series, color = :blue, linewidth = 2)
 lines!(ax6d, tseries, n_series, color = :green, linewidth = 2)
 lines!(ax6e, tseries, a_series, color = :purple, linewidth = 2)
-
+fig
 #%% Figure 2 Just the voltage 
 fig2 = Figure(size = (800, 500))
 
@@ -158,11 +158,17 @@ lines!(ax1, tseries, v_series, color = :black, linewidth = 3)
 lines!(ax2, tseries, atp_series, color = :blue, linewidth = 2)
 fig3
 #%% Plot the Pump activation
+a_ATP_half_val = 0.005
+a_V_half_val = -30.0
+a_V_slope_val = 10.0
+
 atp_rng = LinRange(0.0, 10.0, 1000)
 v_rng = LinRange(-100.0, 0.0, 1000)
-fATP = (atp_rng./(atp_rng .+ 0.1))
+fATP = (atp_rng./(atp_rng .+ a_ATP_half_val))
 fV = 1 ./ (1 .+ exp.(-(v_rng .- -30.0)/10.0))
 
+
+#%%
 fig4 = Figure(size = (800, 500))
 
 ax1 = Axis(fig4[1, 1], xlabel = "ATP (mM)", ylabel = "Pump Activation (a)", title = "Pump Activation")
