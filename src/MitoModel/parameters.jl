@@ -14,7 +14,7 @@
 @parameters k_glucose_to_pep k_glucose_to_bpg k_pyruvate_kinase k_pgk k_p3g_utilization
 @parameters k_glycolysis k_pyruvate_dehydrogenase k_tca_cycle k_complex_I k_complex_II
 @parameters k_creatine_kinase_forward k_creatine_kinase_reverse
-@parameters k_lactate_production
+@parameters k_lactate_production k_LDH k_lactate_disposal
 @parameters K_pH K_pyruvate K_ATP_glyc k_alanine_synthesis K_alanine
 @parameters k_alanine_breakdown k_alanine_disposal
 # Hodgkin-Huxley parameters
@@ -69,7 +69,8 @@ params = (
     
     # ==== Anaerobic Metabolism ====
     k_lactate_production => 0.5,   # | 0.5 | Anaerobic lactate production | Pyruvate, NADH, Lactate, NAD
-    
+    k_LDH => 1.0,                  # | 1.0 | Lactate dehydrogenase | Lactate, NADH, Pyruvate, NAD
+    k_lactate_disposal => 0.1,     # | 0.5 | Lactate disposal | Lactate
     # ==== Feedback Inhibition Parameters ====
     K_pH => 2.0,                # | 2.0 | Lactate concentration for half-maximal pH inhibition | Lactate
     K_pyruvate => 1.0,           # | 1.0 | Pyruvate concentration for half-maximal inhibition | Pyruvate
@@ -106,8 +107,8 @@ params = (
 # Initial conditions
 u0 = [
     # === ADENINE NUCLEOTIDES === (sources: NCBI, PNAS studies)
-    ATP => 3.0,      # 1-10 mM typical range, brain uses ~25% of body's ATP
-    ADP => 5.0,      # Usually 10-20% of ATP concentration  
+    ATP => 5.0,      # 1-10 mM typical range, brain uses ~25% of body's ATP
+    ADP => 0.5,    # Usually 10-20% of ATP concentration  
     AMP => 0.1,      # Very low under normal conditions (~2-5% of ATP)
     
     # === PHOSPHATE SYSTEM === (sources: Nature Communications, PMC studies)
