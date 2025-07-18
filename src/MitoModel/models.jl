@@ -45,8 +45,8 @@ metabolic_network = @reaction_network begin
     k_p3g_utilization, P3G --> PEP
     
     # === Anaerobic Metabolism ===
-    # Lactate production: Pyruvate + NADH → Lactate + NAD
     k_lactate_production, Pyruvate + NADH --> Lactate + NAD
+    k_LDH, Lactate + NAD --> Pyruvate + NADH
     
     # === Alanine Metabolism ===
     # Bidirectional alanine-pyruvate conversion
@@ -55,6 +55,7 @@ metabolic_network = @reaction_network begin
     
     # Alanine disposal (export or utilization)
     k_alanine_disposal, Alanine --> 0               # Represents export or protein synthesis
+    k_lactate_disposal, Lactate --> 0
     
     # Glucose transport
     kGLUT(GLU, k_glut_supply, k_glut_extracellular), 0 --> GLU
