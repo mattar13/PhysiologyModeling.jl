@@ -2,6 +2,19 @@
 kGLUT(GLU, kMAX, GLUT_MAX) = kMAX * (1.0 - GLU / GLUT_MAX)
 kOXYGEN(O2, kMAX, O2_MAX) = kMAX * (1.0 - O2 / O2_MAX)
 
+# Feedback inhibition functions for glycolysis
+pH_inhibition(Lactate, K_pH) = K_pH / (K_pH + Lactate)
+pyruvate_inhibition(Pyruvate, K_pyruvate) = K_pyruvate / (K_pyruvate + Pyruvate)
+atp_inhibition(ATP, K_ATP_glyc) = K_ATP_glyc / (K_ATP_glyc + ATP)
+alanine_inhibition(Alanine, K_alanine) = K_alanine / (K_alanine + Alanine)
+
+# Combined glycolysis inhibition factor
+glycolysis_inhibition(Lactate, Pyruvate, ATP, Alanine, K_pH, K_pyruvate, K_ATP_glyc, K_alanine) = 
+    pH_inhibition(Lactate, K_pH) * 
+    pyruvate_inhibition(Pyruvate, K_pyruvate) * 
+    atp_inhibition(ATP, K_ATP_glyc) * 
+    alanine_inhibition(Alanine, K_alanine)
+
 # Hodgkin-Huxley auxiliary functions
 alpha_m(V) = 0.1 * (V + 40) / (1 - exp(-(V + 40) / 10))
 beta_m(V) = 4 * exp(-(V + 65) / 18)
