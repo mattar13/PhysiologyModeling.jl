@@ -25,7 +25,7 @@ tseries = LinRange(tspan[1], tspan[2], 1000)
 # Extract time series using correct variable order
 # Index mapping based on actual solver output (PPP removed):
 # 1: ATP, 2: ADP, 3: Pi, 4: AMP, 5: Ado, 6: GLU, 7: NAD, 8: Pyruvate, 9: NADH, 10: CoA, 11: Acetyl_CoA, 12: CO2, 13: FAD, 14: FADH2, 15: O2, 16: H2O, 17: PEP, 18: BPG, 19: P3G, 20: Lactate, 21: Alanine, 22: Cr, 23: PCr, 24: V, 25: h, 26: m, 27: n, 28: a, 29: d
-
+place_digits = 3
 atp_series        = round.(map(t -> sol(t)[1], tseries), digits=place_digits)
 adp_series        = round.(map(t -> sol(t)[2], tseries), digits=place_digits)
 pi_series         = round.(map(t -> sol(t)[3], tseries), digits=place_digits)
@@ -103,7 +103,7 @@ lines!(ax1c, tseries, amp_series, color = :green, linewidth = 2)
 lines!(ax1d, tseries, ado_series, color = :red, linewidth = 2)
 lines!(ax1e, tseries, pi_series, color = :purple, linewidth = 2)
 
-lines!(ax2a, tseries, pcr_series, color = :darkblue, linewidth = 2, label = "PCr")
+lines_PCR = lines!(ax2a, tseries, pcr_series, color = :darkblue, linewidth = 2, label = "PCr")
 lines_CR = lines!(ax2b, tseries, cr_series, color = :darkorange, linewidth = 2, label = "Cr")
 legend_pcr_cr = Legend(fig[2, 3], [lines_PCR, lines_CR], ["PCr", "Cr"], tellwidth = false, tellheight = false)
 
@@ -132,7 +132,6 @@ line_nadh = lines!(ax5c, tseries, nadh_series, color = :hotpink, linewidth = 2, 
 # Remove grid-based legends and use floating legends anchored to the right of each axis
 legend_o2 = Legend(fig[5, 4], [line_o2, line_co2, line_h2o], ["O2", "CO2", "H2O"], tellwidth = false, tellheight = false)
 legend_fad = Legend(fig[5, 5], [line_fad, line_fadh2, line_nad, line_nadh], ["FAD", "FADH2", "NAD", "NADH"], tellwidth = false, tellheight = false)
-
 
 # Plot voltage and gating variables
 lines!(ax6a, tseries, v_series, color = :black, linewidth = 3)
