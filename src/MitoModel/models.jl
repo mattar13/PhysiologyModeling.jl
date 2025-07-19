@@ -18,8 +18,8 @@ metabolic_network = @reaction_network begin
     k_ado_salvage, Ado + Pi --> AMP
     
     # Glycolysis with feedback inhibition: Glucose → 2 Pyruvate + 2 ATP 
-    # Rate is modulated by pH, pyruvate, ATP, and alanine levels
-    k_glycolysis * glycolysis_inhibition(Lactate, Pyruvate, ATP, Alanine, K_pH, K_pyruvate, K_ATP_glyc, K_alanine), GLU + 2*ADP + 2*Pi + 2*NAD --> 2*Pyruvate + 2*ATP + 2*NADH
+    # Rate is modulated by pH, pyruvate, ATP, alanine, and H+ levels
+    k_glycolysis * glycolysis_inhibition(Lactate, Pyruvate, ATP, Alanine, H, K_pH, K_pyruvate, K_ATP_glyc, K_alanine, K_H), GLU + 2*ADP + 2*Pi + 2*NAD --> 2*Pyruvate + 2*ATP + 2*NADH
 
     # Pyruvate oxidation: Pyruvate → Acetyl-CoA  
     k_pyruvate_dehydrogenase, Pyruvate + CoA --> Acetyl_CoA + CO2
@@ -32,17 +32,6 @@ metabolic_network = @reaction_network begin
 
     # Electron transport: FADH2 → 1.5 ATP (but using integers: 2 FADH2 → 3 ATP)  
     k_complex_II, 2*FADH2 + 3*ADP + 3*Pi + O2 --> 2*FAD + 3*ATP + H2O
-    
-    # Formation from glucose (simplified glycolysis)
-    k_glucose_to_pep, GLU + Pi --> PEP
-    k_glucose_to_bpg, GLU + Pi --> BPG
-    
-    # Bootstrap reactions - convert AMP to ADP using high-energy intermediates
-    k_pyruvate_kinase, AMP + PEP --> ADP + Pyruvate
-    k_pgk, AMP + BPG --> ADP + P3G
-    
-    # P3G utilization - convert P3G back to PEP to prevent accumulation
-    k_p3g_utilization, P3G --> PEP
     
     # === Anaerobic Metabolism ===
     k_lactate_production, Pyruvate + NADH --> Lactate + NAD
@@ -71,6 +60,16 @@ metabolic_network = @reaction_network begin
     k_creatine_kinase_forward, ATP + Cr --> ADP + PCr
     k_creatine_kinase_reverse, PCr + ADP --> ATP + Cr
     
+    # === CARBONIC ACID EQUILIBRIUM ===
+    k_hydration,    CO2 + H2O       --> H2CO3
+    k_dehydration,  H2CO3           --> CO2 + H2O
+    k_dissociation, H2CO3           --> HCO3 + 2*H
+    k_assoc,        HCO3 + 2*H        --> H2CO3
+    
+    #CO2 and H2O disposal
+    k_co2_disposal, CO2 --> 0
+    k_h2o_disposal, H2O --> 0
+
     # === ION FLUXES AND PUMP ===
     k_pump_max*a*d, ATP --> ADP + Pi    # 1 ATP per cycle, now product of activation and drive
         
